@@ -1,0 +1,22 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "mcp": {
+    "TestSprite": {
+      "type": "local",
+      "command": [
+        "C:\\Windows\\System32\\cmd.exe",
+        "/d",
+        "/c",
+        "set PATH=C:\\Program Files\\nodejs;%PATH%&& npx -y @testsprite/testsprite-mcp@latest"
+      ],
+      "environment": {
+        "API_KEY": "sk-user-mu1RbCBkLaAPQaAbp_oPOc82X4Q3b6JxjFy_8lfNaNebmEzoZ1FWgDo2_w7BZ6jcHtaERL_bqIdiKuZ8kzivzCMgfVYkpyQ2bSyRjUqyINcIngfl7nQvwDIrEOayGB8Itss"
+      },
+      "enabled": true,
+      "timeout": 30000
+    }
+  },
+  "commit_message": {
+    "prompt": ""
+  }
+}

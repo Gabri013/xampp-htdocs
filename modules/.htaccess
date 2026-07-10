@@ -1,0 +1,9 @@
+# Permitir acesso apenas a arquivos públicos
+<FilesMatch "\.(php|html|css|js|jpg|png|gif)$">
+    Require all granted
+</FilesMatch>
+
+# Bloquear arquivos sensíveis
+<FilesMatch "^\.|\.bak|\.swp">
+    Require all denied
+</FilesMatch>

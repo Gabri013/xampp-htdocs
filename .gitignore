@@ -1,0 +1,7 @@
+# Ignorar arquivos de configuração de ambiente local
+/config/config.local.php
+/config/database.local.php
+
+# Ignorar uploads e arquivos temporários se desejar
+/assets/uploads/
+/uploads/

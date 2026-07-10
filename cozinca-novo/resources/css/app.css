@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .cz-sidebar {
+    @apply bg-cozinca-sidebar text-white w-64 min-h-screen flex flex-col;
+  }
+
+  .cz-sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors rounded-md mx-2;
+  }
+
+  .cz-sidebar-link.active {
+    @apply bg-cozinca-blue text-white;
+  }
+
+  .cz-btn-primary {
+    @apply bg-cozinca-blue hover:bg-cozinca-blue/90 text-white font-medium px-4 py-2 rounded-md transition-colors;
+  }
+
+  .cz-btn-accent {
+    @apply bg-cozinca-orange hover:bg-cozinca-orange/90 text-white font-medium px-4 py-2 rounded-md transition-colors;
+  }
+
+  .cz-card {
+    @apply bg-white rounded-lg shadow-sm border border-slate-200 p-5;
+  }
+
+  .cz-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .cz-badge-pendente {
+    @apply cz-badge bg-amber-100 text-amber-800;
+  }
+
+  .cz-badge-concluida {
+    @apply cz-badge bg-emerald-100 text-emerald-800;
+  }
+}
