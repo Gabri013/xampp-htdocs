@@ -17,6 +17,29 @@ $showImportModal = false;
 
 // Processar importação CSV quando submetida do modal
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'importar_csv') {
+    // Garantir que a tabela de materiais da OS existe (mesma definição de importar_csv.php)
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS os_materiais (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            os_id INT NOT NULL,
+            numero_item INT NOT NULL,
+            quantidade DECIMAL(12,4) NOT NULL DEFAULT 1,
+            dimensao_x DECIMAL(12,2) NULL,
+            dimensao_y DECIMAL(12,2) NULL,
+            material VARCHAR(200) NULL,
+            descricao TEXT NULL,
+            codigo VARCHAR(50) NULL,
+            processo VARCHAR(50) NULL,
+            quantidade_total DECIMAL(12,4) NULL,
+            usuario_importacao_id INT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (os_id) REFERENCES ordens_servico(id) ON DELETE CASCADE,
+            FOREIGN KEY (usuario_importacao_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
+            INDEX idx_os (os_id),
+            INDEX idx_processo (processo)
+        ) ENGINE=InnoDB
+    ");
+
     $osId = (int) ($_POST['os_id'] ?? 0);
     
     if ($osId <= 0) {

@@ -108,7 +108,7 @@ try {
 // Orçamentos abertos
 $orcamentos_abertos = 0;
 try {
-    $stmt = $db->query("SELECT COUNT(*) FROM orcamentos WHERE (status = 'aberto' OR status IS NULL) AND (validade IS NULL OR validade >= CURDATE())");
+    $stmt = $db->query("SELECT COUNT(*) FROM orcamentos WHERE (status = 'pendente' OR status IS NULL) AND (validade IS NULL OR validade >= CURDATE())");
     $orcamentos_abertos = (int) $stmt->fetchColumn();
 } catch (Exception $e) {}
 

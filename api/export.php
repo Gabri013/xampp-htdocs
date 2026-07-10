@@ -3,6 +3,11 @@
 require_once '../config/config.php';
 require_once '../includes/auth.php';
 
+if (!isLoggedIn()) {
+    http_response_code(401);
+    exit('Não autorizado');
+}
+
 $formato = $_GET['format'] ?? 'csv';
 $modulo = $_GET['modulo'] ?? 'vendas';
 
@@ -55,6 +60,10 @@ if ($formato === 'csv') {
 }
 
 if ($formato === 'pdf') {
+    if (!file_exists('../vendor/tcpdf/tcpdf.php')) {
+        http_response_code(501);
+        exit('Exportação em PDF indisponível: biblioteca TCPDF não instalada. Use format=csv.');
+    }
     require_once '../vendor/tcpdf/tcpdf.php';
     
     $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
@@ -64,7 +73,14 @@ if ($formato === 'pdf') {
     
     $pdf->SetFont('helvetica', '', 10);
     foreach ($rows as $row) {
-        $pdf->Cell(0, 8, implode(' | ', array_column($row, $thead)), 0, 1);
+        $pdf->Cell(0, 8, implode(' | ', [
+            $row['id'],
+            $row['numero'],
+            $row['razao_social'],
+            $row['valor_total'],
+            $row['status'],
+            $row['created_at']
+        ]), 0, 1);
     }
     
     $pdf->Output($modulo . '_' . date('Y-m-d') . '.pdf', 'D');

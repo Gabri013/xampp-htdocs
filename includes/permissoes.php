@@ -94,7 +94,7 @@ function hasPermissao(PDO $db, int $usuarioId, string $chave): bool
         WHERE up.usuario_id = ? AND p.chave = ?
     ");
     $stmt->execute([$usuarioId, $chave]);
-    return (bool) $stmt;
+    return (bool) $stmt->fetchColumn();
 }
 
 function concederPermissao(PDO $db, int $usuarioId, string $chave): void

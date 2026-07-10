@@ -1,6 +1,7 @@
 <?php
 session_start();
 
+if (!isset($_SESSION['usuario']) || ($_SESSION['tipo'] ?? 'user') !== 'admin') { header("Location: login.php"); exit; }
 
 require 'db.php';
 

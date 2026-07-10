@@ -8,7 +8,7 @@ $db = getDB();
 $q = trim($_GET['q'] ?? '');
 if ($q === '' || mb_strlen($q) < 2) { echo json_encode([]); exit; }
 
-$sql = "SELECT id, razao_social as nome, documento, telefone, email, endereco FROM clientes WHERE razao_social LIKE ? OR documento LIKE ? OR email LIKE ? OR telefone LIKE ? ORDER BY razao_social LIMIT 20";
+$sql = "SELECT id, razao_social as nome, cnpj_cpf as documento, telefone, email, endereco FROM clientes WHERE razao_social LIKE ? OR cnpj_cpf LIKE ? OR email LIKE ? OR telefone LIKE ? ORDER BY razao_social LIMIT 20";
 $stmt = $db->prepare($sql);
 $like = "%$q%";
 $stmt->execute([$like, $like, $like, $like]);

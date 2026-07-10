@@ -1,5 +1,6 @@
 <?php
 session_start();
+if (!isset($_SESSION['usuario'])) { header("Location: login.php"); exit; }
 require 'db.php';
 $timezone = new DateTimeZone('America/Sao_Paulo');
 

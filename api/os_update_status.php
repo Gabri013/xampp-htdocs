@@ -6,6 +6,12 @@ require_once '../includes/workflow.php';
 
 header('Content-Type: application/json');
 
+if (!isLoggedIn()) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Não autorizado']);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Method not allowed']);
@@ -38,7 +44,7 @@ if (!$validation['valid']) {
     exit;
 }
 
-$stmt = $db->prepare("UPDATE ordens_servico SET status = ?, atualizado_em = NOW() WHERE id = ?");
+$stmt = $db->prepare("UPDATE ordens_servico SET status = ?, updated_at = NOW() WHERE id = ?");
 $stmt->execute([$status, $id]);
 
 echo json_encode(['success' => true, 'message' => 'Status atualizado com sucesso']);

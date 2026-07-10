@@ -490,30 +490,6 @@ include '../../includes/header_vendedor.php';
         </div>
     </div>
 
-    <div id="estoqueInsuficienteModal" class="modal" style="display:none; position:fixed; z-index:10000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5);">
-    <div style="background:#fff; margin:15% auto; padding:20px; width:90%; max-width:400px; border-radius:8px; text-align:center;">
-        <h3>Estoque Insuficiente</h3>
-        <p id="estoqueMensagem"></p>
-        <div style="margin-top:20px;">
-            <button type="button" class="vbtn-sm" onclick="fecharModalEstoque()">Ok</button>
-        </div>
-    </div>
-</div>
-
-<script>
-        function verificarEstoque(produtoId, quantidade) {
-            return new Promise((resolve, reject) => {
-                fetch('api/estoque_check.php?produto_id=' + produtoId + '&qtd=' + quantidade)
-                    .then(r => r.json())
-                    .then(data => resolve(data))
-                    .catch(err => reject(err));
-            });
-        }
-
-        function fecharModalEstoque() {
-            document.getElementById('estoqueInsuficienteModal').style.display = 'none';
-        }
-    </script>
 </div>
 
 <script>
@@ -642,7 +618,6 @@ include '../../includes/header_vendedor.php';
             // Desabilitar botão durante a verificação
             const originalHtml = btnAdd.innerHTML;
             btnAdd.disabled = true;
-            btnAdd.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
             
             try {
                 let desc = '';
@@ -663,19 +638,6 @@ include '../../includes/header_vendedor.php';
 
                 if(qtd <= 0) return alert('Qtd inválida');
 
-                // Verificar estoque para produtos cadastrados
-                if(selTipo.value === 'P' && prod_id) {
-                    const estoqueDisponivel = await verificarEstoque(prod_id, qtd);
-                    if (estoqueDisponivel < qtd) {
-                        document.getElementById('estoqueMensagem').innerHTML = 
-                            'Estoque insuficiente para o produto selecionado.<br>' +
-                            'Estoque disponível: ' + estoqueDisponivel + '<br>' +
-                            'Quantidade solicitada: ' + qtd;
-                        document.getElementById('estoqueInsuficienteModal').style.display = 'block';
-                        return;
-                    }
-                }
-
                 itens.push({
                     uid: Date.now(),
                     produto_id: prod_id,
@@ -687,8 +649,8 @@ include '../../includes/header_vendedor.php';
                 render();
                 
             } catch (error) {
-                console.error('Erro ao verificar estoque:', error);
-                alert('Erro ao verificar estoque. Por favor, tente novamente.');
+                console.error('Erro ao adicionar item:', error);
+                alert('Erro ao adicionar item. Por favor, tente novamente.');
             } finally {
                 // Restaurar botão
                 btnAdd.disabled = false;

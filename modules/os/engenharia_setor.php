@@ -80,8 +80,8 @@ include '../../includes/header_vendedor.php';
 <div id="modalOS" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="modalTitulo">Detalhes da O.S</h3><button class="close" onclick="fecharModal()">&times;</button></div><div class="modal-body" id="detalhesOS"></div></div></div>
 
 <script>
-const fluxo_etapas = ['programacao','corte','mobiliario','coccao','refrigeracao','embalagem','engenharia','dobra','tubo','solda','concluida'];
-const etapasDestinoDisponiveis = ['corte','mobiliario','coccao','refrigeracao','embalagem','engenharia','dobra','tubo','solda','concluida'];
+const fluxo_etapas = ['autorizacao','corte','dobra','solda','refrigeracao','acabamento','finalizacao','montagem','concluida'];
+const etapasDestinoDisponiveis = ['corte','dobra','solda','refrigeracao','acabamento','finalizacao','montagem','concluida'];
 
 function abrirModalRetorno(os) {
     document.getElementById('os_id_retorno').value = os.id;
@@ -93,7 +93,7 @@ function abrirModalRetorno(os) {
     const opcoesRetorno = [{valor:'projetista',label:'Projetista (avaliar alteracoes)'}];
     const pos_atual = fluxo_etapas.indexOf(os.etapa_atual);
     if (pos_atual > 0) {
-        for (let i = 0; i < pos_atual; i++) {
+        for (let i = 1; i < pos_atual; i++) {
             const etapa = fluxo_etapas[i];
             opcoesRetorno.push({valor:etapa,label:etapa.charAt(0).toUpperCase()+etapa.slice(1)});
         }

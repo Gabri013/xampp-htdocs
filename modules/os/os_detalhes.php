@@ -1,7 +1,15 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../includes/engenharia.php';
-requirePermission(['master', 'vendedor', 'projetista']);
+// Leitura liberada também para gestão e setores de produção (ver detalhes/etapas da O.S.)
+requirePermission(['master', 'vendedor', 'projetista', 'gerente', 'producao', 'producao_geral', 'corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem']);
+
+// Ações de escrita (gerar OP, propostas, anexos) continuam restritas
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !hasPermission(['master', 'vendedor', 'projetista', 'gerente'])) {
+    setError('Você não tem permissão para executar esta ação.');
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit;
+}
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
@@ -48,11 +56,11 @@ function garantirOrdemProducao(PDO $db, int $osId, int $usuarioId): array
         throw new RuntimeException($validation['message']);
     }
 
-    $stmt = $db->prepare("UPDATE ordens_servico SET status = 'em_producao', etapa_atual = 'programacao' WHERE id = ?");
+    $stmt = $db->prepare("UPDATE ordens_servico SET status = 'em_producao', etapa_atual = 'corte' WHERE id = ?");
     $stmt->execute([$osId]);
 
     $stmt = $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, ?, 'em_producao', ?, ?)");
-    $stmt->execute([$osId, $statusAtual ?: 'pendente', $usuarioId, 'Ordem de produção gerada e liberada para programacao']);
+    $stmt->execute([$osId, $statusAtual ?: 'pendente', $usuarioId, 'Ordem de produção gerada e liberada para corte']);
 
     return [
         'created' => true,
@@ -219,7 +227,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'aprovar
         exit;
     }
 
-    $db->prepare("UPDATE ordens_servico SET status='em_producao', etapa_atual='programacao' WHERE id=?")->execute([$os_id]);
+    $db->prepare("UPDATE ordens_servico SET status='em_producao', etapa_atual='corte' WHERE id=?")->execute([$os_id]);
     $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, ?, 'em_producao', ?, 'Proposta aprovada')")
        ->execute([$os_id, $statusAtual, $uid]);
     setSuccess('Proposta aprovada!');
@@ -242,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'devolve
 
     $db->prepare("UPDATE ordens_servico SET status='em_projeto', etapa_atual=NULL WHERE id=?")->execute([$os_id]);
     $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, ?, 'em_projeto', ?, ?)")
-       ->execute([$statusAtual, 'em_projeto', $uid, $motivo ?: 'Proposta devolvida para ajustes']);
+       ->execute([$os_id, $statusAtual, $uid, $motivo ?: 'Proposta devolvida para ajustes']);
     setSuccess('Proposta devolvida!');
     header('Location: ' . $_SERVER['REQUEST_URI']);
     exit;

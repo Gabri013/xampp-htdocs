@@ -25,37 +25,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $itens = json_decode($itens_json, true);
 
     try {
+        if (empty($cliente_id)) {
+            throw new Exception('Selecione um cliente cadastrado. Caso o cliente ainda não exista, cadastre-o primeiro em Cadastros > Clientes.');
+        }
+
         $db->beginTransaction();
         $numero = getNextNumber('orcamentos', 'ORC-');
-        
+
         $total = 0;
         foreach ($itens as $item) {
             $total += ($item['quantidade'] ?? 0) * ($item['valor_unitario'] ?? 0);
         }
         $total_final = $total * (1 - $desconto / 100) + $frete;
 
-        $stmt = $db->prepare("INSERT INTO orcamentos (numero, cliente_id, nome_cliente, endereco, telefone, email, cnpj, forma_pagamento, condicoes_entrega, frete, desconto, total, total_final, usuario_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aberto')");
-        $stmt->execute([$numero, $cliente_id, $nome_cliente ?: null, $endereco, $telefone, $email, $cnpj, $forma_pagamento, $condicoes_entrega, $frete, $desconto, $total, $total_final, $_SESSION['usuario_id']]);
+        // A tabela orcamentos não possui colunas para os dados manuais do cliente,
+        // forma de pagamento, prazo de entrega e frete — preservados em observacoes.
+        $observacoes_partes = [];
+        if ($nome_cliente) $observacoes_partes[] = "Cliente (manual): $nome_cliente";
+        if ($endereco) $observacoes_partes[] = "Endereço: $endereco";
+        if ($telefone) $observacoes_partes[] = "Telefone: $telefone";
+        if ($email) $observacoes_partes[] = "Email: $email";
+        if ($cnpj) $observacoes_partes[] = "CNPJ: $cnpj";
+        if ($forma_pagamento) $observacoes_partes[] = "Forma de pagamento: $forma_pagamento";
+        if ($condicoes_entrega) $observacoes_partes[] = "Prazo para entrega: $condicoes_entrega";
+        if ($frete > 0) $observacoes_partes[] = "Frete: R$ " . number_format($frete, 2, ',', '.');
+        $observacoes = $observacoes_partes ? implode("\n", $observacoes_partes) : null;
+
+        $stmt = $db->prepare("INSERT INTO orcamentos (numero, cliente_id, usuario_id, data_orcamento, valor_total, desconto, status, observacoes) VALUES (?, ?, ?, CURDATE(), ?, ?, 'pendente', ?)");
+        $stmt->execute([$numero, $cliente_id, $_SESSION['usuario_id'], $total_final, $desconto, $observacoes]);
         $orcamento_id = $db->lastInsertId();
 
         foreach ($itens as $item) {
-            $stmt = $db->prepare("INSERT INTO orcamentos_itens (orcamento_id, produto_id, descricao, quantidade, valor_unitario, valor_total) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt = $db->prepare("INSERT INTO orcamentos_itens (orcamento_id, produto_id, descricao_manual, quantidade, valor_unitario, valor_total) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $orcamento_id,
-                $item['produto_id'] ?? null,
+                !empty($item['produto_id']) ? $item['produto_id'] : null,
                 $item['descricao'] ?? '',
                 $item['quantidade'] ?? 1,
                 $item['valor_unitario'] ?? 0,
                 ($item['quantidade'] ?? 1) * ($item['valor_unitario'] ?? 0)
             ]);
         }
-        
+
         $db->commit();
         setSuccess("Orçamento $numero criado com sucesso!");
         header('Location: index.php');
         exit;
     } catch (Exception $e) {
-        $db->rollBack();
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
         setError("Erro ao salvar: " . $e->getMessage());
     }
 }

@@ -39,6 +39,13 @@ try {
         exit;
     }
 
+    // Apontamento (iniciar/finalizar) só existe para etapas de bancada,
+    // que são as aceitas pelo ENUM de os_etapas_producao.
+    if (in_array($acao, ['iniciar_etapa', 'finalizar_etapa'], true) && !in_array($etapa, getEtapasBancada(), true)) {
+        echo json_encode(['error' => 'Etapa inválida para apontamento de produção: ' . $etapa]);
+        exit;
+    }
+
     switch ($acao) {
         case 'iniciar_etapa':
             $statusExpediente = getStatusExpedienteHoje($db, (int) $_SESSION['usuario_id']);

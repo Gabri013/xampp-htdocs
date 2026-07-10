@@ -79,11 +79,11 @@ include '../../includes/header_vendedor.php';
                     <div class="vend-filters-grid">
                         <div class="vend-filter-item">
                             <label class="vend-filter-label">Período Inicial</label>
-                            <input type="date" name="inicio" value="<?php echo $inicio; ?>" class="vend-filter-input">
+                            <input type="date" name="inicio" value="<?php echo htmlspecialchars($inicio); ?>" class="vend-filter-input">
                         </div>
                         <div class="vend-filter-item">
                             <label class="vend-filter-label">Período Final</label>
-                            <input type="date" name="fim" value="<?php echo $fim; ?>" class="vend-filter-input">
+                            <input type="date" name="fim" value="<?php echo htmlspecialchars($fim); ?>" class="vend-filter-input">
                         </div>
                         <div class="vend-filter-item" style="align-self:flex-end">
                             <button type="submit" class="vbtn-sm"><i class="fas fa-search"></i></button>

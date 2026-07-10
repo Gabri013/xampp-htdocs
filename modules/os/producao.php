@@ -13,7 +13,7 @@ if ($usuario_tipo === 'producao' || $usuario_tipo === 'master') {
     $etapa_usuario = null;
 }
 
-$fluxo_etapas = ['programacao', 'corte', 'mobiliario', 'coccao', 'refrigeracao', 'embalagem', 'engenharia', 'dobra', 'tubo', 'solda', 'concluida'];
+$fluxo_etapas = ['autorizacao', 'corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem'];
 $ordens_por_etapa = [];
 
 foreach ($fluxo_etapas as $etapa) {
@@ -53,16 +53,13 @@ include '../../includes/header_vendedor.php';
         <hr class="vend-nav-divider">
         <div class="vend-nav-group">
             <span class="vend-nav-label">Setores</span>
-            <a href="programacao.php" class="vend-nav-item"><i class="fas fa-calendar-alt"></i> Programação</a>
             <a href="corte.php" class="vend-nav-item"><i class="fas fa-cut"></i> Corte</a>
-            <a href="mobiliario.php" class="vend-nav-item"><i class="fas fa-couch"></i> Mobiliário</a>
-            <a href="coccao.php" class="vend-nav-item"><i class="fas fa-fire-burner"></i> Cocção</a>
-            <a href="refrigeracao.php" class="vend-nav-item"><i class="fas fa-snowflake"></i> Refrigeração</a>
-            <a href="embalagem.php" class="vend-nav-item"><i class="fas fa-box-open"></i> Embalagem</a>
-            <a href="engenharia_setor.php" class="vend-nav-item"><i class="fas fa-drafting-compass"></i> Engenharia</a>
             <a href="dobra.php" class="vend-nav-item"><i class="fas fa-dharmachakra"></i> Dobra</a>
-            <a href="tubo.php" class="vend-nav-item"><i class="fas fa-water"></i> Tubo</a>
             <a href="solda.php" class="vend-nav-item"><i class="fas fa-fire"></i> Solda</a>
+            <a href="refrigeracao.php" class="vend-nav-item"><i class="fas fa-snowflake"></i> Refrigeração</a>
+            <a href="acabamento.php" class="vend-nav-item"><i class="fas fa-paint-roller"></i> Acabamento</a>
+            <a href="finalizacao.php" class="vend-nav-item"><i class="fas fa-clipboard-check"></i> Finalização</a>
+            <a href="montagem.php" class="vend-nav-item"><i class="fas fa-tools"></i> Montagem</a>
         </div>
     </aside>
     <div class="vend-main">
@@ -347,8 +344,8 @@ include '../../includes/header_vendedor.php';
 </style>
 
 <script>
-const fluxo_etapas = ['programacao', 'corte', 'mobiliario', 'coccao', 'refrigeracao', 'embalagem', 'engenharia', 'dobra', 'tubo', 'solda', 'concluida'];
-const etapasDestinoDisponiveis = ['corte', 'mobiliario', 'coccao', 'refrigeracao', 'embalagem', 'engenharia', 'dobra', 'tubo', 'solda', 'concluida'];
+const fluxo_etapas = ['autorizacao', 'corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem', 'concluida'];
+const etapasDestinoDisponiveis = ['corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem', 'concluida'];
 
 function selecionarEtapaDestino(etapaAtual) {
     const opcoes = etapasDestinoDisponiveis.filter(e => e !== etapaAtual);

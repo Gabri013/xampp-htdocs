@@ -7,18 +7,18 @@ header('Content-Type: application/json; charset=utf-8');
 $db = getDB();
 
 $q = $_GET['q'] ?? '';
-$limit = (int)($_GET['limit'] ?? 10);
+$limit = max(1, min(50, (int)($_GET['limit'] ?? 10)));
 
 if (mb_strlen($q) < 2) {
     echo json_encode([]);
     exit;
 }
 
-$sql = "SELECT p.id, p.nome, p.descricao, p.preco_base, p.sku, p.imagem, c.nome as categoria FROM produtos p LEFT JOIN categorias c ON c.id = p.categoria_id WHERE p.nome LIKE ? OR p.descricao LIKE ? OR p.sku LIKE ? ORDER BY p.nome ASC LIMIT ?";
+$sql = "SELECT p.id, p.nome, p.descricao, p.valor as preco_base, p.codigo as sku, p.foto as imagem, c.nome as categoria FROM produtos p LEFT JOIN produto_categorias c ON c.id = p.categoria_id WHERE p.nome LIKE ? OR p.descricao LIKE ? OR p.codigo LIKE ? ORDER BY p.nome ASC LIMIT $limit";
 
 $stmt = $db->prepare($sql);
 $term = "%$q%";
-$stmt->execute([$term, $term, $term, $limit]);
+$stmt->execute([$term, $term, $term]);
 $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 foreach ($produtos as &$p) {

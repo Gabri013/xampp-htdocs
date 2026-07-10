@@ -1,6 +1,7 @@
 <?php
 // imprimir_venda.php — Impressão de Venda (agrupa por Setor, mostra frete/desc e fotos)
 session_start();
+if (!isset($_SESSION['usuario'])) { header("Location: login.php"); exit; }
 require 'includes/db.php';
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT); // ajuda no debug

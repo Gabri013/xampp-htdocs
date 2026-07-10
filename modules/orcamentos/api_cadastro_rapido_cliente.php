@@ -19,7 +19,7 @@ if (!$nome) {
 }
 
 try {
-    $stmt = $db->prepare("INSERT INTO clientes (razao_social, endereco, telefone, email, documento) VALUES (?, ?, ?, ?, ?)");
+    $stmt = $db->prepare("INSERT INTO clientes (razao_social, endereco, telefone, email, cnpj_cpf) VALUES (?, ?, ?, ?, ?)");
     $stmt->execute([$nome, $endereco, $telefone, $email, $cnpj]);
     
     echo json_encode([

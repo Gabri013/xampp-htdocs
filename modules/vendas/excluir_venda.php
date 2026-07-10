@@ -3,7 +3,7 @@ require_once '../../config/config.php';
 require_once '../../includes/financeiro.php';
 header('Content-Type: application/json');
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isLoggedIn()) {
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !hasPermission(['master', 'vendedor'])) {
     echo json_encode(['success' => false, 'message' => 'Acesso negado']);
     exit;
 }

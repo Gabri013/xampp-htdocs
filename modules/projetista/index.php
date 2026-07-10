@@ -3,12 +3,12 @@ require_once '../../config/config.php';
 require_once '../../includes/auth.php';
 require_once '../../includes/engenharia.php';
 
+requirePermission(['master', 'projetista', 'gerente', 'producao']);
+
 $usuario = getCurrentUser();
 $tipo_usuario = $usuario['tipo'];
 
 $GLOBALS['modulo_tipo'] = 'projetista';
-
-requirePermission(['master', 'projetista', 'gerente', 'producao']);
 
 $db = getDB();
 ensureOrdensServicoIndependentesSchema($db);

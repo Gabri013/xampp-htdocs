@@ -23,19 +23,18 @@ function getValidOSStatuses(): array {
 
 /**
  * Retorna a lista de etapas válidas da O.S. no fluxo produtivo.
+ * Deve espelhar o ENUM de ordens_servico.etapa_atual no banco.
  */
 function getValidOSEtapas(): array {
     return [
-        'programacao',
+        'autorizacao',
         'corte',
-        'mobiliario',
-        'coccao',
-        'refrigeracao',
-        'embalagem',
-        'engenharia',
         'dobra',
-        'tubo',
         'solda',
+        'refrigeracao',
+        'acabamento',
+        'finalizacao',
+        'montagem',
         'concluida',
     ];
 }
@@ -48,21 +47,32 @@ function getEtapaFluxo(): array {
 }
 
 /**
- * Mapa de etapas permitidas por perfil de usuário.
+ * Etapas de bancada (apontamento em os_etapas_producao).
+ * Deve espelhar o ENUM de os_etapas_producao.etapa no banco.
+ */
+function getEtapasBancada(): array {
+    return array_values(array_diff(getEtapaFluxo(), ['autorizacao', 'concluida']));
+}
+
+/**
+ * Mapa de etapas que o perfil pode OPERAR (iniciar/finalizar/retornar).
+ * Cada setor opera apenas a própria etapa; perfis de gestão operam todas.
+ * Perfis fora do mapa não operam etapa nenhuma (acesso somente leitura).
  */
 function getPermittedEtapasByProfile(string $userType): array {
+    $todas = getValidOSEtapas();
     $map = [
-        'master' => getValidOSEtapas(),
-        'gerente' => getValidOSEtapas(),
-        'producao' => getValidOSEtapas(),
-        'producao_geral' => getValidOSEtapas(),
-        'corte' => ['programacao','corte','dobra','solda','refrigeracao','mobiliario','coccao','embalagem','tubo','engenharia','concluida'],
-        'dobra' => ['programacao','corte','dobra','solda','refrigeracao','mobiliario','coccao','embalagem','tubo','engenharia','concluida'],
-        'solda' => ['programacao','corte','dobra','solda','refrigeracao','mobiliario','coccao','embalagem','tubo','engenharia','concluida'],
-        'refrigeracao' => ['programacao','corte','dobra','solda','refrigeracao','mobiliario','coccao','embalagem','tubo','engenharia','concluida'],
-        'acabamento' => ['programacao','corte','dobra','solda','refrigeracao','mobiliario','coccao','embalagem','tubo','engenharia','concluida'],
-        'finalizacao' => ['programacao','corte','dobra','solda','refrigeracao','mobiliario','coccao','embalagem','tubo','engenharia','concluida'],
-        'montagem' => ['programacao','corte','dobra','solda','refrigeracao','mobiliario','coccao','embalagem','tubo','engenharia','concluida'],
+        'master' => $todas,
+        'gerente' => $todas,
+        'producao' => $todas,
+        'producao_geral' => $todas,
+        'corte' => ['corte'],
+        'dobra' => ['dobra'],
+        'solda' => ['solda'],
+        'refrigeracao' => ['refrigeracao'],
+        'acabamento' => ['acabamento'],
+        'finalizacao' => ['finalizacao'],
+        'montagem' => ['montagem'],
     ];
 
     return $map[strtolower($userType)] ?? [];
@@ -133,27 +143,14 @@ function validateEtapaTransition(string $from, string $to, ?string $userType = n
         return ['valid' => false, 'message' => 'Etapa concluída não pode ser alterada.'];
     }
 
-    if ($to === 'concluida') {
-        if ($posFrom !== count($fluxo) - 2) {
-            return ['valid' => false, 'message' => 'Só é permitido concluir a partir da etapa anterior à conclusão.'];
-        }
-        return ['valid' => true, 'message' => 'Transição para conclusão permitida.'];
-    }
-
-    // Apenas passo seguinte ou para 'engenharia' (revisão técnica global)
-    if ($to === 'engenharia') {
-        return ['valid' => true, 'message' => 'Retorno para engenharia permitido.'];
-    }
-
+    // Retrocesso só é permitido pelo fluxo de retorno (retornar_etapa), com justificativa
     if ($posTo <= $posFrom) {
-        return ['valid' => false, 'message' => 'Só é permitido avançar para a próxima etapa.'];
+        return ['valid' => false, 'message' => 'Só é permitido avançar para uma etapa posterior.'];
     }
 
-    // Diferença não pode ser maior que 1 (exceto para engenharia)
-    if ($posTo - $posFrom > 1) {
-        return ['valid' => false, 'message' => 'Não é permitido pular etapas.'];
-    }
-
+    // Avançar mais de uma posição é permitido: as etapas de cada O.S. são
+    // definidas pelo planejamento da engenharia (os_etapas_producao), então
+    // etapas não planejadas (ex: refrigeração) são puladas legitimamente.
     return ['valid' => true, 'message' => 'Transição permitida.'];
 }
 
@@ -163,7 +160,7 @@ function validateEtapaTransition(string $from, string $to, ?string $userType = n
 function validateUserCanOperateEtapa(string $etapa, string $userType): array {
     $permitted = getPermittedEtapasByProfile($userType);
     if (empty($permitted)) {
-        return ['valid' => true, 'message' => 'Perfil com acesso geral.'];
+        return ['valid' => false, 'message' => "Usuário do perfil '$userType' não pode operar etapas de produção."];
     }
 
     if (!in_array($etapa, $permitted, true)) {
@@ -188,7 +185,7 @@ function validateCanApproveProposal(string $userType): array {
  * Usado para impedir avanço sem apontamento inicial.
  */
 function validateFirstProductionStepStarted(PDO $db, int $osId, string $currentEtapa): array {
-    $fluxo = getEtapaFluxo();
+    $fluxo = getEtapasBancada();
     if (empty($fluxo)) {
         return ['valid' => true, 'message' => 'Fluxo vazio.'];
     }
@@ -201,7 +198,7 @@ function validateFirstProductionStepStarted(PDO $db, int $osId, string $currentE
         $etapa = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$etapa || ($etapa['status'] ?? 'pendente') === 'pendente') {
-            return ['valid' => false, 'message' => "Inicie o primeiro processo '{firstEtapa}' antes de prosseguir."];
+            return ['valid' => false, 'message' => "Inicie o primeiro processo '$firstEtapa' antes de prosseguir."];
         }
     }
 
@@ -221,11 +218,11 @@ function validateStepTrackingAndAttachment(PDO $db, int $osId, string $etapa, st
     $etapaInfo = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$etapaInfo || ($etapaInfo['status'] ?? 'pendente') === 'pendente') {
-        return ['valid' => false, 'message' => "Inicie o apontamento da etapa '{etapa}' antes de avançar."];
+        return ['valid' => false, 'message' => "Inicie o apontamento da etapa '$etapa' antes de avançar."];
     }
 
     if (empty($etapaInfo['data_inicio'])) {
-        return ['valid' => false, 'message' => "Inicie o cronômetro na etapa '{etapa}' antes de avançar."];
+        return ['valid' => false, 'message' => "Inicie o cronômetro na etapa '$etapa' antes de avançar."];
     }
 
     $stmtArq = $db->prepare("SELECT COUNT(*) FROM os_arquivos WHERE os_id = ? AND tipo IN ('projeto_pdf','projeto_dxf','projeto_foto','projeto')");
@@ -233,7 +230,7 @@ function validateStepTrackingAndAttachment(PDO $db, int $osId, string $etapa, st
     $temAnexo = (int) $stmtArq->fetchColumn() > 0;
 
     if (!$temAnexo) {
-        return ['valid' => false, 'message' => "Anexe pelo menos um arquivo à O.S. antes de avançar da etapa '{etapa}'."];
+        return ['valid' => false, 'message' => "Anexe pelo menos um arquivo à O.S. antes de avançar da etapa '$etapa'."];
     }
 
     return ['valid' => true, 'message' => 'Apontamento e anexo ok.'];
