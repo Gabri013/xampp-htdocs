@@ -13,13 +13,19 @@ function getTiposUsuarioDisponiveis(): array
         'projetista' => 'Projetista',
         'gerente' => 'Gerente de Produção',
         'producao' => 'Produção Geral',
+        'engenharia' => 'Setor de Engenharia',
+        'programacao' => 'Setor de Programação',
         'corte' => 'Setor de Corte',
         'dobra' => 'Setor de Dobra',
+        'tubo' => 'Setor de Tubo',
         'solda' => 'Setor de Solda',
+        'mobiliario' => 'Setor de Mobiliário',
+        'coccao' => 'Setor de Cocção',
         'refrigeracao' => 'Setor de Refrigeração',
         'acabamento' => 'Setor de Acabamento',
-        'finalizacao' => 'Setor de Finalização',
         'montagem' => 'Setor de Montagem',
+        'embalagem' => 'Setor de Embalagem',
+        'finalizacao' => 'Setor de Finalização',
         'dashboard_producao' => 'Dashboard de Produção'
     ];
 }

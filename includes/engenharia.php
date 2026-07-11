@@ -74,7 +74,7 @@ function ensureEngenhariaSchema(PDO $db): void
         CREATE TABLE IF NOT EXISTS os_etapas_producao (
             id INT AUTO_INCREMENT PRIMARY KEY,
             os_id INT NOT NULL,
-            etapa ENUM('corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem') NOT NULL,
+            etapa ENUM('engenharia', 'programacao', 'corte', 'dobra', 'tubo', 'solda', 'mobiliario', 'coccao', 'refrigeracao', 'acabamento', 'montagem', 'embalagem', 'finalizacao') NOT NULL,
             status ENUM('pendente', 'em_andamento', 'concluida') DEFAULT 'pendente',
             data_inicio DATETIME NULL,
             data_fim DATETIME NULL,
@@ -138,7 +138,7 @@ function ensureEngenhariaSchema(PDO $db): void
     
     // Add etapa_atual primeiro (depois de status)
     if (!in_array('etapa_atual', $colunasOS, true)) {
-        $db->exec("ALTER TABLE ordens_servico ADD COLUMN etapa_atual ENUM('autorizacao', 'corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem', 'concluida') DEFAULT 'autorizacao' AFTER status");
+        $db->exec("ALTER TABLE ordens_servico ADD COLUMN etapa_atual ENUM('autorizacao', 'engenharia', 'programacao', 'corte', 'dobra', 'tubo', 'solda', 'mobiliario', 'coccao', 'refrigeracao', 'acabamento', 'montagem', 'embalagem', 'finalizacao', 'concluida') DEFAULT 'autorizacao' AFTER status");
     }
     
     // Add tipo (depois de status)
@@ -152,19 +152,19 @@ function ensureEngenhariaSchema(PDO $db): void
     }
 
     $tipoEtapaAtual = (string) ($db->query("SHOW COLUMNS FROM ordens_servico LIKE 'etapa_atual'")->fetch(PDO::FETCH_ASSOC)['Type'] ?? '');
-    if ($tipoEtapaAtual !== '' && stripos($tipoEtapaAtual, 'refrigeracao') === false) {
+    if ($tipoEtapaAtual !== '' && stripos($tipoEtapaAtual, 'embalagem') === false) {
         $db->exec("
             ALTER TABLE ordens_servico
-            MODIFY COLUMN etapa_atual ENUM('autorizacao', 'corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem', 'concluida')
+            MODIFY COLUMN etapa_atual ENUM('autorizacao', 'engenharia', 'programacao', 'corte', 'dobra', 'tubo', 'solda', 'mobiliario', 'coccao', 'refrigeracao', 'acabamento', 'montagem', 'embalagem', 'finalizacao', 'concluida')
             DEFAULT 'autorizacao'
         ");
     }
 
     $tipoEtapaProducao = (string) ($db->query("SHOW COLUMNS FROM os_etapas_producao LIKE 'etapa'")->fetch(PDO::FETCH_ASSOC)['Type'] ?? '');
-    if ($tipoEtapaProducao !== '' && stripos($tipoEtapaProducao, 'refrigeracao') === false) {
+    if ($tipoEtapaProducao !== '' && stripos($tipoEtapaProducao, 'embalagem') === false) {
         $db->exec("
             ALTER TABLE os_etapas_producao
-            MODIFY COLUMN etapa ENUM('corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem') NOT NULL
+            MODIFY COLUMN etapa ENUM('engenharia', 'programacao', 'corte', 'dobra', 'tubo', 'solda', 'mobiliario', 'coccao', 'refrigeracao', 'acabamento', 'montagem', 'embalagem', 'finalizacao') NOT NULL
         ");
     }
 
@@ -581,7 +581,10 @@ function atualizarCustosProdutosAfetados(PDO $db, array $insumoIds, array $produ
 
 function getFluxoPadraoEngenharia(): array
 {
-    return ['corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem'];
+    // Fluxo padrão quando o produto não tem planejamento específico.
+    // Mobiliário, cocção e refrigeração são etapas condicionais: só entram
+    // quando o planejamento do produto (tempo_producao) as inclui.
+    return ['engenharia', 'programacao', 'corte', 'dobra', 'tubo', 'solda', 'acabamento', 'montagem', 'embalagem', 'finalizacao'];
 }
 
 function normalizarEtapaEngenharia(string $etapa): ?string
@@ -592,16 +595,25 @@ function normalizarEtapaEngenharia(string $etapa): ?string
     }
 
     $mapa = [
+        'engenharia' => 'engenharia',
+        'programacao' => 'programacao',
+        'programação' => 'programacao',
         'corte' => 'corte',
         'dobra' => 'dobra',
+        'tubo' => 'tubo',
         'solda' => 'solda',
+        'mobiliario' => 'mobiliario',
+        'mobiliário' => 'mobiliario',
+        'coccao' => 'coccao',
+        'cocção' => 'coccao',
         'refrigeracao' => 'refrigeracao',
         'refrigeração' => 'refrigeracao',
         'acabamento' => 'acabamento',
-        'finalizacao' => 'finalizacao',
-        'finalização' => 'finalizacao',
         'montagem' => 'montagem',
         'montar' => 'montagem',
+        'embalagem' => 'embalagem',
+        'finalizacao' => 'finalizacao',
+        'finalização' => 'finalizacao',
     ];
 
     return $mapa[$etapa] ?? null;

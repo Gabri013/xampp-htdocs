@@ -1,5 +1,6 @@
 <?php
 require_once '../../config/config.php';
+require_once '../../includes/workflow.php';
 require_once '../../includes/engenharia.php';
 requirePermission(['master', 'gerente']);
 
@@ -673,7 +674,7 @@ include '../../includes/header_vendedor.php';
 
 <script src="<?= SITE_URL; ?>/assets/js/main.js"></script>
 <script>
-const fluxo_etapas = ['autorizacao', 'corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem', 'concluida'];
+const fluxo_etapas = <?php echo json_encode(getValidOSEtapas()); ?>;
 
 function isImagemArquivo(nomeArquivo) {
     if (!nomeArquivo) return false;

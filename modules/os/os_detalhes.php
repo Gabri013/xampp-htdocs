@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../includes/engenharia.php';
 // Leitura liberada também para gestão e setores de produção (ver detalhes/etapas da O.S.)
-requirePermission(['master', 'vendedor', 'projetista', 'gerente', 'producao', 'producao_geral', 'corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem']);
+requirePermission(['master', 'vendedor', 'projetista', 'gerente', 'producao', 'producao_geral', 'engenharia', 'programacao', 'corte', 'dobra', 'tubo', 'solda', 'mobiliario', 'coccao', 'refrigeracao', 'acabamento', 'montagem', 'embalagem', 'finalizacao']);
 
 // Ações de escrita (gerar OP, propostas, anexos) continuam restritas
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !hasPermission(['master', 'vendedor', 'projetista', 'gerente'])) {

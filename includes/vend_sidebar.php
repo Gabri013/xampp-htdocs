@@ -24,15 +24,21 @@ $ve_relatorios     = in_array($tipo_usuario, ['master', 'vendedor']);
 $ve_expediente     = in_array($tipo_usuario, ['master', 'gerente']);
 $ve_admin          = ($tipo_usuario === 'master');
 
-// Setores de produção: gestão vê todos; cada setor vê o seu.
+// Setores de produção (ordem do fluxo): gestão vê todos; cada setor vê o seu.
 $setores_sidebar = [
-    'corte'        => ['label' => 'Corte',        'icon' => 'fa-cut'],
-    'dobra'        => ['label' => 'Dobra',        'icon' => 'fa-dharmachakra'],
-    'solda'        => ['label' => 'Solda',        'icon' => 'fa-fire'],
-    'refrigeracao' => ['label' => 'Refrigeração', 'icon' => 'fa-snowflake'],
-    'acabamento'   => ['label' => 'Acabamento',   'icon' => 'fa-paint-roller'],
-    'montagem'     => ['label' => 'Montagem',     'icon' => 'fa-tools'],
-    'finalizacao'  => ['label' => 'Finalização',  'icon' => 'fa-flag-checkered'],
+    'engenharia'   => ['label' => 'Engenharia',   'icon' => 'fa-cogs',          'page' => 'engenharia_setor.php'],
+    'programacao'  => ['label' => 'Programação',  'icon' => 'fa-calendar-alt',  'page' => 'programacao.php'],
+    'corte'        => ['label' => 'Corte',        'icon' => 'fa-cut',           'page' => 'corte.php'],
+    'dobra'        => ['label' => 'Dobra',        'icon' => 'fa-dharmachakra',  'page' => 'dobra.php'],
+    'tubo'         => ['label' => 'Tubo',         'icon' => 'fa-grip-lines',    'page' => 'tubo.php'],
+    'solda'        => ['label' => 'Solda',        'icon' => 'fa-fire',          'page' => 'solda.php'],
+    'mobiliario'   => ['label' => 'Mobiliário',   'icon' => 'fa-couch',         'page' => 'mobiliario.php'],
+    'coccao'       => ['label' => 'Cocção',       'icon' => 'fa-burn',          'page' => 'coccao.php'],
+    'refrigeracao' => ['label' => 'Refrigeração', 'icon' => 'fa-snowflake',     'page' => 'refrigeracao.php'],
+    'acabamento'   => ['label' => 'Acabamento',   'icon' => 'fa-paint-roller',  'page' => 'acabamento.php'],
+    'montagem'     => ['label' => 'Montagem',     'icon' => 'fa-tools',         'page' => 'montagem.php'],
+    'embalagem'    => ['label' => 'Embalagem',    'icon' => 'fa-box-open',      'page' => 'embalagem.php'],
+    'finalizacao'  => ['label' => 'Finalização',  'icon' => 'fa-flag-checkered', 'page' => 'finalizacao.php'],
 ];
 $ve_todos_setores = in_array($tipo_usuario, ['master', 'gerente', 'producao', 'projetista']);
 $setores_visiveis = [];
@@ -120,7 +126,7 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
     <div class="vend-nav-group">
         <span class="vend-nav-label">Setores</span>
         <?php foreach ($setores_visiveis as $setor_key => $setor_info): ?>
-        <a href="<?php echo SITE_URL; ?>/modules/os/<?php echo $setor_key; ?>.php" class="vend-nav-item <?php echo czNavActive($setor_key . '.php'); ?>"><i class="fas <?php echo $setor_info['icon']; ?>"></i> <?php echo $setor_info['label']; ?></a>
+        <a href="<?php echo SITE_URL; ?>/modules/os/<?php echo $setor_info['page']; ?>" class="vend-nav-item <?php echo czNavActive($setor_info['page']); ?>"><i class="fas <?php echo $setor_info['icon']; ?>"></i> <?php echo $setor_info['label']; ?></a>
         <?php endforeach; ?>
     </div>
     <?php endif; ?>

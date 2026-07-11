@@ -4,6 +4,7 @@
  * Substituir 'montagem' pelo nome do setor (ex: corte, dobra, solda)
  */
 require_once '../../config/config.php';
+require_once '../../includes/workflow.php';
 require_once '../../includes/expediente.php';
 
 // Definir o setor desta página
@@ -249,8 +250,8 @@ include '../../includes/header_vendedor.php';
 
 <script>
 
-const fluxo_etapas = ['autorizacao', 'corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem', 'concluida'];
-const etapasDestinoDisponiveis = ['corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem', 'concluida'];
+const fluxo_etapas = <?php echo json_encode(getValidOSEtapas()); ?>;
+const etapasDestinoDisponiveis = <?php echo json_encode(array_values(array_diff(getValidOSEtapas(), ['autorizacao']))); ?>;
 
 function isImagemArquivo(nomeArquivo) {
     if (!nomeArquivo) return false;

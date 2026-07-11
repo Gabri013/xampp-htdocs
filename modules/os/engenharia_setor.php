@@ -1,5 +1,6 @@
 <?php
 require_once '../../config/config.php';
+require_once '../../includes/workflow.php';
 require_once '../../includes/expediente.php';
 
 $setor_atual = 'engenharia';
@@ -80,8 +81,8 @@ include '../../includes/header_vendedor.php';
 <div id="modalOS" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="modalTitulo">Detalhes da O.S</h3><button class="close" onclick="fecharModal()">&times;</button></div><div class="modal-body" id="detalhesOS"></div></div></div>
 
 <script>
-const fluxo_etapas = ['autorizacao','corte','dobra','solda','refrigeracao','acabamento','finalizacao','montagem','concluida'];
-const etapasDestinoDisponiveis = ['corte','dobra','solda','refrigeracao','acabamento','finalizacao','montagem','concluida'];
+const fluxo_etapas = <?php echo json_encode(getValidOSEtapas()); ?>;
+const etapasDestinoDisponiveis = <?php echo json_encode(array_values(array_diff(getValidOSEtapas(), ['autorizacao']))); ?>;
 
 function abrirModalRetorno(os) {
     document.getElementById('os_id_retorno').value = os.id;

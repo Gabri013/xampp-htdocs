@@ -28,13 +28,19 @@ function getValidOSStatuses(): array {
 function getValidOSEtapas(): array {
     return [
         'autorizacao',
+        'engenharia',
+        'programacao',
         'corte',
         'dobra',
+        'tubo',
         'solda',
+        'mobiliario',
+        'coccao',
         'refrigeracao',
         'acabamento',
-        'finalizacao',
         'montagem',
+        'embalagem',
+        'finalizacao',
         'concluida',
     ];
 }
@@ -66,13 +72,19 @@ function getPermittedEtapasByProfile(string $userType): array {
         'gerente' => $todas,
         'producao' => $todas,
         'producao_geral' => $todas,
+        'engenharia' => ['engenharia'],
+        'programacao' => ['programacao'],
         'corte' => ['corte'],
         'dobra' => ['dobra'],
+        'tubo' => ['tubo'],
         'solda' => ['solda'],
+        'mobiliario' => ['mobiliario'],
+        'coccao' => ['coccao'],
         'refrigeracao' => ['refrigeracao'],
         'acabamento' => ['acabamento'],
-        'finalizacao' => ['finalizacao'],
         'montagem' => ['montagem'],
+        'embalagem' => ['embalagem'],
+        'finalizacao' => ['finalizacao'],
     ];
 
     return $map[strtolower($userType)] ?? [];

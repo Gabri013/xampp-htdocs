@@ -66,8 +66,12 @@ if (!isset($qtd_notificacoes_nao_lidas)) $qtd_notificacoes_nao_lidas = 0;
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-<div id="czSidebarBackdrop" class="cz-sidebar-backdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1049"></div>
-<div style="position:sticky;top:0;left:0;right:0;height:60px;background:#fff;border-bottom:1px solid #e9ecef;z-index:100;display:flex;align-items:center;justify-content:flex-end;padding:0 20px;gap:12px">
+<div id="czSidebarBackdrop" class="cz-sidebar-backdrop"></div>
+<div class="cz-topbar" style="position:sticky;top:0;left:0;right:0;height:60px;background:#fff;border-bottom:1px solid #e9ecef;z-index:100;display:flex;align-items:center;padding:0 20px;gap:12px">
+    <button id="czMobileMenuBtn" class="cz-mobile-menu-btn" type="button" aria-label="Abrir menu">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div style="flex:1"></div>
     <?php if ($qtd_notificacoes_nao_lidas > 0): ?>
         <a href="<?php echo SITE_URL; ?>/modules/notificacoes/index.php" class="vbtn-sm" style="border-color:#D85A30;color:#D85A30"><i class="fas fa-bell"></i> <?php echo $qtd_notificacoes_nao_lidas; ?></a>
     <?php endif; ?>

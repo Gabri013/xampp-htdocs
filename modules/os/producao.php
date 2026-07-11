@@ -1,5 +1,6 @@
 <?php
 require_once '../../config/config.php';
+require_once '../../includes/workflow.php';
 requirePermission(['master', 'gerente', 'producao', 'corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem', 'programacao', 'mobiliario', 'coccao', 'embalagem', 'tubo', 'engenharia', 'vendedor']);
 
 $page_title = 'Painel de Produção - Fluxo de Etapas';
@@ -323,8 +324,8 @@ include '../../includes/header_vendedor.php';
 </style>
 
 <script>
-const fluxo_etapas = ['autorizacao', 'corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem', 'concluida'];
-const etapasDestinoDisponiveis = ['corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem', 'concluida'];
+const fluxo_etapas = <?php echo json_encode(getValidOSEtapas()); ?>;
+const etapasDestinoDisponiveis = <?php echo json_encode(array_values(array_diff(getValidOSEtapas(), ['autorizacao']))); ?>;
 
 function selecionarEtapaDestino(etapaAtual) {
     const opcoes = etapasDestinoDisponiveis.filter(e => e !== etapaAtual);

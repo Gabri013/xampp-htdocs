@@ -7,8 +7,10 @@
 $czAutoRefreshPaths = [
     '/os/vendedor.php', '/os/gerente.php', '/os/producao.php',
     '/os/dashboard_producao.php', '/os/estatisticas.php', '/os/checkup.php',
-    '/os/corte.php', '/os/dobra.php', '/os/solda.php', '/os/refrigeracao.php',
-    '/os/acabamento.php', '/os/montagem.php', '/os/finalizacao.php',
+    '/os/engenharia_setor.php', '/os/programacao.php',
+    '/os/corte.php', '/os/dobra.php', '/os/tubo.php', '/os/solda.php',
+    '/os/mobiliario.php', '/os/coccao.php', '/os/refrigeracao.php',
+    '/os/acabamento.php', '/os/montagem.php', '/os/embalagem.php', '/os/finalizacao.php',
     '/projetista/index.php', '/vendas/index.php',
     '/financeiro/index.php', '/financeiro/faturamento.php', '/financeiro/contas_pagar.php',
 ];
