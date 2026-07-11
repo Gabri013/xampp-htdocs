@@ -128,62 +128,91 @@ header('Content-Type: text/html; charset=UTF-8');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ordem de Produção <?= htmlspecialchars($numeroOp) ?></title>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+        *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;color:#000}
         body{background:#f5f5f5}
-        .op-page{background:#fff;width:210mm;min-height:297mm;margin:0 auto 10px;padding:10mm 12mm;position:relative;display:flex;flex-direction:column}
+        .op-page{background:#fff;width:210mm;min-height:297mm;margin:0 auto 10px;padding:8mm 9mm 10mm;position:relative;display:flex;flex-direction:column}
 
-        /* Cabeçalho: logo | título | nº da OP */
-        .op-header{display:flex;align-items:stretch;border:1px solid #000}
-        .op-header .logo-box{width:52mm;display:flex;align-items:center;justify-content:center;padding:3mm;border-right:1px solid #000}
-        .op-header .logo-box img{max-width:100%;max-height:18mm;object-fit:contain}
-        .op-header .titulo{flex:1;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:bold;letter-spacing:.5px}
-        .op-header .num-box{width:52mm;border-left:1px solid #000;padding:2mm 3mm;text-align:center}
-        .op-header .num-box .lbl{font-size:8px;font-weight:bold}
-        .op-header .num-box .num{font-size:16px;font-weight:bold;margin-top:1mm}
+        /* ── Grade superior contínua ─────────────────────────────── */
+        .grade{border:1px solid #000}
+        .row{display:flex}
+        .cell{border-right:1px solid #000;border-bottom:1px solid #000;padding:1mm 1.6mm;position:relative}
+        .cell:last-child{border-right:none}
+        .row:last-child > .cell{border-bottom:none}
+        .lbl{font-size:7.5px;line-height:1.25}
+        .val{font-size:10px;font-weight:bold;line-height:1.25}
 
-        /* Descrição do produto */
-        .sec-label{font-size:9px;font-weight:bold;padding:1.5mm 2mm;border:1px solid #000;border-top:none;background:#efefef}
-        .desc-produto{border:1px solid #000;border-top:none;padding:3mm 2mm;font-size:14px;font-weight:bold;min-height:14mm;text-transform:uppercase}
+        /* Cabeçalho */
+        .hd-logo{width:52mm;display:flex;align-items:center;justify-content:center;padding:1.5mm 2mm}
+        .hd-logo img{width:100%;max-height:19mm;object-fit:contain}
+        .hd-title{flex:1;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:bold}
+        .hd-num{width:44mm;padding:1mm 1.6mm}
+        .hd-num .lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .hd-num .num{font-size:15px;font-weight:bold;margin-top:1.5mm}
 
-        /* Grade de campos */
-        .campos{display:grid;grid-template-columns:1.2fr .7fr 1.4fr 1fr .9fr;border-left:1px solid #000;border-right:1px solid #000}
-        .campo{border-right:1px solid #000;border-bottom:1px solid #000;padding:1.5mm 2mm;min-height:11mm}
-        .campo:last-child{border-right:none}
-        .campo .lbl{font-size:8px;font-weight:bold;color:#222}
-        .campo .val{font-size:11px;font-weight:bold;margin-top:1mm}
-        .campos-2{display:grid;grid-template-columns:2fr 1.1fr;border-left:1px solid #000;border-right:1px solid #000}
-        .campos-1{display:grid;grid-template-columns:1fr;border-left:1px solid #000;border-right:1px solid #000}
+        /* Descrição + barcode */
+        .desc-cell{flex:1;min-height:16mm}
+        .desc-cell .texto{font-size:12px;font-weight:bold;text-transform:uppercase;margin-top:1mm;line-height:1.3}
+        .bc-cell{width:44mm;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1mm}
+        .bc-cell svg{width:38mm;height:9mm}
+        .bc-cell .bc-num{font-size:8px;margin-top:.5mm}
 
-        /* Tabela de processos */
-        .processos{margin-top:4mm}
+        /* Linha de campos: código / ns / liberação / prazo / qtde */
+        .c-codigo{width:34mm}
+        .c-ns{width:22mm}
+        .c-lib{flex:1}
+        .c-prazo{width:30mm}
+        .c-qtde{width:30mm;display:flex;align-items:flex-start;gap:2mm}
+        .c-qtde .bloco{flex:1}
+        .c-qtde .qtd-num{font-size:13px;font-weight:bold;text-align:center}
+        .c-qtde .un{font-size:9px;font-weight:bold;align-self:center}
+
+        /* Pedido / emissão */
+        .c-pedido{flex:1.4}
+        .c-pedido .val{text-align:center}
+        .c-emissao{flex:1}
+
+        /* Inform adicional + complementar (célula direita com 2 linhas de altura) */
+        .col-esq{flex:1.2;display:flex;flex-direction:column}
+        .col-esq .cell{border-right:1px solid #000}
+        .col-esq .cell:last-child{border-bottom:none}
+        .col-dir{flex:1;padding:1mm 1.6mm}
+
+        .inline-lv{display:flex;gap:2mm;align-items:baseline}
+        .inline-lv .lbl{font-size:8px}
+        .inline-lv .val{font-size:10px}
+
+        /* ── Tabela de processos ─────────────────────────────────── */
+        .processos{margin-top:3mm}
         .processos table{width:100%;border-collapse:collapse}
-        .processos th{background:#efefef;font-size:9px;border:1px solid #000;padding:1.5mm;text-transform:uppercase}
-        .processos td{border:1px solid #000;padding:2.4mm 1.5mm;font-size:10px}
-        .processos td.n{width:6mm;text-align:center}
-        .processos td.proc{width:34mm;font-weight:bold}
-        .processos th.c-ini,.processos th.c-ter{width:18mm}
-        .processos th.c-obs{width:26mm}
-        .processos th.c-resp{width:32mm}
-        .processos th.c-lider{width:26mm}
+        .processos th{font-size:8px;font-weight:bold;border:1px solid #000;padding:1.2mm 1mm;text-transform:uppercase;background:#fff;text-align:center}
+        .processos td{border:1px solid #000;padding:1.6mm 1.2mm;font-size:9px}
+        .processos td.n{width:5mm;text-align:left;padding-left:1.5mm}
+        .processos td.proc{width:32mm}
+        .processos th.c-ini{width:20mm}
+        .processos th.c-ter{width:20mm}
+        .processos th.c-obs{width:46mm}
+        .processos th.c-resp{width:30mm}
+        .processos th.c-lider{width:22mm}
 
-        /* Controle de revisão de prazo */
-        .revisao{margin-top:4mm}
-        .revisao .titulo-sec{font-size:10px;font-weight:bold;border:1px solid #000;border-bottom:none;background:#efefef;padding:1.5mm 2mm;text-transform:uppercase}
+        /* ── Controle de revisão ─────────────────────────────────── */
+        .revisao{margin-top:3.5mm}
+        .revisao .titulo-sec{font-size:8.5px;font-weight:bold;text-transform:uppercase;margin-bottom:1.2mm}
         .revisao table{width:100%;border-collapse:collapse}
-        .revisao th{background:#f7f7f7;font-size:9px;border:1px solid #000;padding:1.5mm;text-transform:uppercase}
-        .revisao td{border:1px solid #000;padding:2.6mm 1.5mm;font-size:10px}
-        .revisao td.n{width:16mm;text-align:center;font-weight:bold}
-        .revisao th.c-data{width:26mm}
-        .revisao th.c-prazo{width:30mm}
+        .revisao th{font-size:8px;font-weight:bold;border:1px solid #000;padding:1.2mm 1mm;text-transform:uppercase;background:#fff;text-align:center}
+        .revisao td{border:1px solid #000;padding:1.8mm 1.2mm;font-size:9px}
+        .revisao td.n{width:22mm;text-align:center}
+        .revisao th.c-data{width:24mm}
+        .revisao th.c-prazo{width:28mm}
 
-        /* Observação final */
+        /* ── Observação com linhas pautadas ──────────────────────── */
         .obs-final{margin-top:4mm;flex:1;display:flex;flex-direction:column}
-        .obs-final .titulo-sec{font-size:10px;font-weight:bold;border:1px solid #000;border-bottom:none;background:#efefef;padding:1.5mm 2mm;text-transform:uppercase}
-        .obs-final .area{border:1px solid #000;flex:1;min-height:22mm;padding:2mm;font-size:10px}
+        .obs-final .titulo-sec{font-size:8.5px;font-weight:bold;text-transform:uppercase;margin-bottom:2mm}
+        .obs-final .linhas{flex:1;display:flex;flex-direction:column;justify-content:flex-start;gap:6.5mm;padding-top:4mm}
+        .obs-final .linha{border-bottom:1px solid #000;height:0}
 
-        /* Rodapé */
-        .op-footer{margin-top:3mm;display:flex;justify-content:space-between;font-size:8px;color:#333}
-        .op-footer .doc{text-align:right}
+        /* ── Rodapé ──────────────────────────────────────────────── */
+        .op-footer{margin-top:4mm;display:flex;justify-content:space-between;align-items:flex-end;font-size:7px;color:#333}
+        .op-footer .doc{text-align:right;line-height:1.5}
 
         .printbar{position:sticky;top:0;background:#111827;color:#fff;padding:8px 12px;display:flex;gap:8px;z-index:10}
         .printbar button{background:#16a34a;border:0;color:#fff;font-weight:700;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px}
@@ -192,10 +221,11 @@ header('Content-Type: text/html; charset=UTF-8');
         @media print{
             .printbar{display:none!important}
             body{background:#fff}
-            .op-page{width:100%;min-height:auto;margin:0;padding:8mm 10mm;page-break-after:always}
+            .op-page{width:100%;min-height:auto;margin:0;padding:6mm 8mm;page-break-after:always}
             .op-page:last-child{page-break-after:auto}
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
     <div class="printbar">
@@ -207,92 +237,107 @@ header('Content-Type: text/html; charset=UTF-8');
         $numItem = str_pad((string)($idx + 1), 2, '0', STR_PAD_LEFT);
         $descricaoItem = trim((string)($item['descricao_manual'] ?: ($item['produto_nome'] ?? '')));
         $qtdItem = (float)($item['quantidade'] ?? 0);
+        $numOpItem = $numeroOp . ($totalPaginas > 1 ? '-' . $numItem : '');
     ?>
     <div class="op-page">
-        <div class="op-header">
-            <div class="logo-box">
-                <img src="<?= SITE_URL ?>/assets/img/logo_cozinca_impressao.png" alt="Cozinca Inox">
+        <div class="grade">
+            <!-- Cabeçalho: logo | título | nº -->
+            <div class="row">
+                <div class="cell hd-logo">
+                    <img src="<?= SITE_URL ?>/assets/img/logo_cozinca_op.png" alt="Cozinca Inox">
+                </div>
+                <div class="cell hd-title">ORDEM DE PRODUÇÃO</div>
+                <div class="cell hd-num">
+                    <div class="lbl">Nº da Ordem de produção</div>
+                    <div class="num"><?= htmlspecialchars($numOpItem) ?></div>
+                </div>
             </div>
-            <div class="titulo">ORDEM DE PRODUÇÃO</div>
-            <div class="num-box">
-                <div class="lbl">Nº da Ordem de produção</div>
-                <div class="num"><?= htmlspecialchars($numeroOp) ?><?= $totalPaginas > 1 ? '-' . $numItem : '' ?></div>
+
+            <!-- Descrição do produto + barcode -->
+            <div class="row">
+                <div class="cell desc-cell">
+                    <div class="lbl">Descrição do produto</div>
+                    <div class="texto"><?= htmlspecialchars($descricaoItem !== '' ? $descricaoItem : '-') ?></div>
+                </div>
+                <div class="cell bc-cell">
+                    <svg class="barcode" data-code="<?= htmlspecialchars($numOpItem) ?>"></svg>
+                    <div class="bc-num"><?= htmlspecialchars($numOpItem) ?></div>
+                </div>
+            </div>
+
+            <!-- Código / N.S. / Liberação OP / Prazo / Qtde -->
+            <div class="row">
+                <div class="cell c-codigo">
+                    <div class="lbl">Código do Produto</div>
+                    <div class="val"><?= htmlspecialchars((string)($item['produto_codigo'] ?? '-') ?: '-') ?></div>
+                </div>
+                <div class="cell c-ns">
+                    <div class="lbl">N.S.:</div>
+                    <div class="val">&nbsp;</div>
+                </div>
+                <div class="cell c-lib">
+                    <div class="lbl">Liberação OP</div>
+                    <div class="val">Data da emissão: <?= htmlspecialchars($dataEmissaoOp) ?></div>
+                </div>
+                <div class="cell c-prazo">
+                    <div class="lbl">Prazo</div>
+                    <div class="val"><?= htmlspecialchars(formatDate($os['data_termino']) ?: '-') ?></div>
+                </div>
+                <div class="cell c-qtde">
+                    <div class="bloco">
+                        <div class="lbl">Qtde</div>
+                        <div class="qtd-num"><?= number_format($qtdItem, 0, ',', '.') ?></div>
+                    </div>
+                    <div class="un">UN</div>
+                </div>
+            </div>
+
+            <!-- Nº do pedido / Emissão do pedido -->
+            <div class="row">
+                <div class="cell c-pedido">
+                    <div class="inline-lv"><span class="lbl">Nº do pedido:</span></div>
+                    <div class="val" style="text-align:center;margin-top:-2.5mm"><?= htmlspecialchars($os['venda_numero']) ?></div>
+                </div>
+                <div class="cell c-emissao">
+                    <div class="inline-lv"><span class="lbl">Emissão do pedido:</span> <span class="val"><?= htmlspecialchars($dataEmissaoPedido) ?></span></div>
+                </div>
+            </div>
+
+            <!-- Cliente -->
+            <div class="row">
+                <div class="cell" style="flex:1">
+                    <div class="inline-lv"><span class="lbl">Cliente:</span> <span class="val"><?= htmlspecialchars($os['razao_social']) ?></span></div>
+                </div>
+            </div>
+
+            <!-- Inform. Adicion / Observação | Informação complementar do item -->
+            <div class="row">
+                <div class="col-esq">
+                    <div class="cell" style="border-bottom:1px solid #000">
+                        <div class="inline-lv"><span class="lbl">Inform. Adicion:</span> <span class="val">ITEM <?= $numItem ?><?= $os['venda_numero'] !== 'Independente' ? '' : '' ?></span></div>
+                    </div>
+                    <div class="cell" style="flex:1;border-bottom:none">
+                        <div class="inline-lv"><span class="lbl">Observação:</span> <span class="val" style="font-weight:normal;font-size:9px"><?= htmlspecialchars((string)($os['observacoes_gerais'] ?? '') ?: '') ?></span></div>
+                    </div>
+                </div>
+                <div class="cell col-dir" style="border-bottom:none">
+                    <div class="lbl">Informação complementar do item</div>
+                </div>
             </div>
         </div>
 
-        <div class="sec-label">Descrição do produto</div>
-        <div class="desc-produto"><?= htmlspecialchars($descricaoItem !== '' ? $descricaoItem : '-') ?></div>
-
-        <div class="campos">
-            <div class="campo">
-                <div class="lbl">Código do Produto</div>
-                <div class="val"><?= htmlspecialchars((string)($item['produto_codigo'] ?? '-') ?: '-') ?></div>
-            </div>
-            <div class="campo">
-                <div class="lbl">N.S.:</div>
-                <div class="val">&nbsp;</div>
-            </div>
-            <div class="campo">
-                <div class="lbl">Liberação OP</div>
-                <div class="val">Data da emissão: <?= htmlspecialchars($dataEmissaoOp) ?></div>
-            </div>
-            <div class="campo">
-                <div class="lbl">Prazo</div>
-                <div class="val"><?= htmlspecialchars(formatDate($os['data_termino']) ?: '-') ?></div>
-            </div>
-            <div class="campo">
-                <div class="lbl">Qtde</div>
-                <div class="val"><?= number_format($qtdItem, 0, ',', '.') ?> UN</div>
-            </div>
-        </div>
-
-        <div class="campos-2">
-            <div class="campo">
-                <div class="lbl">Nº do pedido:</div>
-                <div class="val"><?= htmlspecialchars($os['venda_numero']) ?> &nbsp;&nbsp;(O.S. <?= htmlspecialchars($os['numero']) ?>)</div>
-            </div>
-            <div class="campo" style="border-right:none">
-                <div class="lbl">Emissão do pedido:</div>
-                <div class="val"><?= htmlspecialchars($dataEmissaoPedido) ?></div>
-            </div>
-        </div>
-
-        <div class="campos-1">
-            <div class="campo" style="border-right:none">
-                <div class="lbl">Cliente:</div>
-                <div class="val"><?= htmlspecialchars($os['razao_social']) ?></div>
-            </div>
-        </div>
-
-        <div class="campos-2">
-            <div class="campo">
-                <div class="lbl">Inform. Adicion:</div>
-                <div class="val">ITEM <?= $numItem ?></div>
-            </div>
-            <div class="campo" style="border-right:none">
-                <div class="lbl">Informação complementar do item</div>
-                <div class="val">&nbsp;</div>
-            </div>
-        </div>
-
-        <div class="campos-1">
-            <div class="campo" style="border-right:none">
-                <div class="lbl">Observação:</div>
-                <div class="val"><?= nl2br(htmlspecialchars((string)($os['observacoes_gerais'] ?? '') ?: ' ')) ?></div>
-            </div>
-        </div>
-
+        <!-- Tabela de processos -->
         <div class="processos">
             <table>
                 <thead>
                     <tr>
-                        <th></th>
+                        <th style="width:5mm"></th>
                         <th>Processo</th>
                         <th class="c-ini">Início</th>
                         <th class="c-ter">Término</th>
                         <th class="c-obs">OBS</th>
                         <th class="c-resp">Responsável</th>
-                        <th class="c-lider">Líder</th>
+                        <th class="c-lider">Lider</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -307,12 +352,13 @@ header('Content-Type: text/html; charset=UTF-8');
             </table>
         </div>
 
+        <!-- Controle de revisão de prazo -->
         <div class="revisao">
             <div class="titulo-sec">Controle de Revisão de Prazo O.P.</div>
             <table>
                 <thead>
                     <tr>
-                        <th>Revisão</th>
+                        <th style="width:22mm">Revisão</th>
                         <th class="c-data">Data</th>
                         <th class="c-prazo">Novo Prazo</th>
                         <th>Motivo / Justificativa</th>
@@ -325,9 +371,12 @@ header('Content-Type: text/html; charset=UTF-8');
             </table>
         </div>
 
+        <!-- Observação (linhas pautadas) -->
         <div class="obs-final">
             <div class="titulo-sec">Observação</div>
-            <div class="area"></div>
+            <div class="linhas">
+                <?php for ($l = 0; $l < 10; $l++): ?><div class="linha"></div><?php endfor; ?>
+            </div>
         </div>
 
         <div class="op-footer">
@@ -339,7 +388,14 @@ header('Content-Type: text/html; charset=UTF-8');
 
     <script>
         window.addEventListener('load', function () {
-            setTimeout(function () { try { window.print(); } catch (e) {} }, 500);
+            if (typeof JsBarcode !== 'undefined') {
+                document.querySelectorAll('svg.barcode').forEach(function (el) {
+                    try {
+                        JsBarcode(el, el.dataset.code, { format: 'CODE128', displayValue: false, height: 34, margin: 0 });
+                    } catch (e) {}
+                });
+            }
+            setTimeout(function () { try { window.print(); } catch (e) {} }, 600);
         });
     </script>
 </body>
