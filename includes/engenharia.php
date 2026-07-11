@@ -123,7 +123,7 @@ function ensureEngenhariaSchema(PDO $db): void
         CREATE TABLE IF NOT EXISTS os_arquivos (
             id INT AUTO_INCREMENT PRIMARY KEY,
             os_id INT NOT NULL,
-            tipo ENUM('venda','projeto','projeto_foto','projeto_pdf','projeto_dxf') NOT NULL DEFAULT 'projeto',
+            tipo ENUM('venda','projeto','projeto_foto','projeto_pdf','projeto_dxf','projeto_3d') NOT NULL DEFAULT 'projeto',
             nome_original VARCHAR(255) NOT NULL,
             nome_arquivo VARCHAR(255) NOT NULL,
             usuario_id INT NULL,
@@ -180,10 +180,10 @@ function ensureEngenhariaSchema(PDO $db): void
     }
 
     $tipoArquivoProjeto = (string) ($db->query("SHOW COLUMNS FROM os_arquivos LIKE 'tipo'")->fetch(PDO::FETCH_ASSOC)['Type'] ?? '');
-    if ($tipoArquivoProjeto !== '' && stripos($tipoArquivoProjeto, 'projeto_dxf') === false) {
+    if ($tipoArquivoProjeto !== '' && stripos($tipoArquivoProjeto, 'projeto_3d') === false) {
         $db->exec("
             ALTER TABLE os_arquivos
-            MODIFY COLUMN tipo ENUM('venda','projeto','projeto_foto','projeto_pdf','projeto_dxf') NOT NULL DEFAULT 'projeto'
+            MODIFY COLUMN tipo ENUM('venda','projeto','projeto_foto','projeto_pdf','projeto_dxf','projeto_3d') NOT NULL DEFAULT 'projeto'
         ");
     }
 

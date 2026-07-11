@@ -22,7 +22,7 @@ ensureEngenhariaSchema($db);
 
 function getTipoArquivoProducao(string $nomeArquivo): string
 {
-    if (preg_match('/\.(dxf)$/i', $nomeArquivo)) {
+    if (preg_match('/\.(dxf|dwg)$/i', $nomeArquivo)) {
         return 'projeto_dxf';
     }
     if (preg_match('/\.(pdf)$/i', $nomeArquivo)) {
@@ -30,6 +30,9 @@ function getTipoArquivoProducao(string $nomeArquivo): string
     }
     if (preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $nomeArquivo)) {
         return 'projeto_foto';
+    }
+    if (isArquivo3D($nomeArquivo)) {
+        return 'projeto_3d';
     }
     return 'projeto';
 }
@@ -182,23 +185,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'gerar_o
     exit;
 }
 
-// POST: anexar arquivo por item
+// POST: anexar arquivo(s) por item — aceita seleção múltipla (3 a 50
+// DXFs/PDFs/3D de uma vez, como o projetista exporta do SolidWorks)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'anexar_arquivo_item') {
     $osId = (int)($_POST['os_id'] ?? 0);
     $itemId = (int)($_POST['os_item_id'] ?? 0);
-    $arqNome = $_FILES['arquivo']['name'] ?? '';
-    $tipoArquivo = getTipoArquivoProducao($arqNome);
-    
+
     if ($osId > 0 && $itemId > 0 && !empty($_SESSION['usuario_id'])) {
-        $up = uploadFile($_FILES['arquivo'], 'projetos');
-        if ($up['success'] ?? false) {
-            $db->prepare("INSERT INTO os_itens_arquivos (os_id, os_item_id, tipo, nome_original, nome_arquivo, usuario_id) VALUES (?, ?, ?, ?, ?, ?)")
-               ->execute([$osId, $itemId, $tipoArquivo, $_FILES['arquivo']['name'], $up['filename'], $_SESSION['usuario_id']]);
-            $db->prepare("INSERT INTO os_arquivos (os_id, tipo, nome_original, nome_arquivo, usuario_id) VALUES (?, ?, ?, ?, ?)")
-               ->execute([$osId, $tipoArquivo, $_FILES['arquivo']['name'], $up['filename'], $_SESSION['usuario_id']]);
-            setSuccess('Arquivo anexado ao item com sucesso.');
+        // Normaliza: input single (name="arquivo") ou múltiplo (name="arquivo[]")
+        $arquivos = [];
+        if (isset($_FILES['arquivo'])) {
+            if (is_array($_FILES['arquivo']['name'])) {
+                foreach ($_FILES['arquivo']['name'] as $k => $nome) {
+                    $arquivos[] = [
+                        'name' => $nome,
+                        'type' => $_FILES['arquivo']['type'][$k],
+                        'tmp_name' => $_FILES['arquivo']['tmp_name'][$k],
+                        'error' => $_FILES['arquivo']['error'][$k],
+                        'size' => $_FILES['arquivo']['size'][$k],
+                    ];
+                }
+            } else {
+                $arquivos[] = $_FILES['arquivo'];
+            }
+        }
+
+        $ok = 0; $erros = [];
+        foreach ($arquivos as $arq) {
+            if (($arq['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) continue;
+            $tipoArquivo = getTipoArquivoProducao($arq['name']);
+            $up = uploadFile($arq, 'projetos');
+            if ($up['success'] ?? false) {
+                $db->prepare("INSERT INTO os_itens_arquivos (os_id, os_item_id, tipo, nome_original, nome_arquivo, usuario_id) VALUES (?, ?, ?, ?, ?, ?)")
+                   ->execute([$osId, $itemId, $tipoArquivo, $arq['name'], $up['filename'], $_SESSION['usuario_id']]);
+                $db->prepare("INSERT INTO os_arquivos (os_id, tipo, nome_original, nome_arquivo, usuario_id) VALUES (?, ?, ?, ?, ?)")
+                   ->execute([$osId, $tipoArquivo, $arq['name'], $up['filename'], $_SESSION['usuario_id']]);
+                $ok++;
+            } else {
+                $erros[] = $arq['name'] . ': ' . ($up['message'] ?? 'arquivo inválido');
+            }
+        }
+
+        if ($ok > 0 && empty($erros)) {
+            setSuccess($ok . ' arquivo(s) anexado(s) ao item com sucesso.');
+        } elseif ($ok > 0) {
+            setError($ok . ' anexado(s), mas houve falhas: ' . implode(' | ', $erros));
         } else {
-            setError('Erro ao anexar arquivo: ' . ($up['message'] ?? 'arquivo inválido'));
+            setError('Erro ao anexar: ' . (empty($erros) ? 'nenhum arquivo recebido' : implode(' | ', $erros)));
         }
     }
     header('Location: ' . $_SERVER['REQUEST_URI']);
@@ -417,24 +450,34 @@ include '../../includes/header_vendedor.php';
                                                 <input type="hidden" name="acao" value="anexar_arquivo_item">
                                                 <input type="hidden" name="os_id" value="<?= $os_id ?>">
                                                 <input type="hidden" name="os_item_id" value="<?= $item['id'] ?>">
-                                                <input type="file" name="arquivo" accept=".pdf" onchange="document.getElementById('form-pdf-<?= $item['id'] ?>').submit()" style="display:none" id="upload-pdf-<?= $item['id'] ?>">
-                                                <label for="upload-pdf-<?= $item['id'] ?>" class="vbtn-sm" title="Anexar PDF"><i class="fas fa-file-pdf"></i></label>
+                                                <input type="file" name="arquivo[]" accept=".pdf" multiple onchange="document.getElementById('form-pdf-<?= $item['id'] ?>').submit()" style="display:none" id="upload-pdf-<?= $item['id'] ?>">
+                                                <label for="upload-pdf-<?= $item['id'] ?>" class="vbtn-sm" title="Anexar PDFs (pode selecionar vários)"><i class="fas fa-file-pdf"></i></label>
                                             </form>
                                             <form method="POST" enctype="multipart/form-data" style="display:inline" id="form-dxf-<?= $item['id'] ?>">
                                                 <input type="hidden" name="acao" value="anexar_arquivo_item">
                                                 <input type="hidden" name="os_id" value="<?= $os_id ?>">
                                                 <input type="hidden" name="os_item_id" value="<?= $item['id'] ?>">
-                                                <input type="file" name="arquivo" accept=".dxf" onchange="document.getElementById('form-dxf-<?= $item['id'] ?>').submit()" style="display:none" id="upload-dxf-<?= $item['id'] ?>">
-                                                <label for="upload-dxf-<?= $item['id'] ?>" class="vbtn-sm" title="Anexar DXF"><i class="fas fa-drafting-compass"></i></label>
+                                                <input type="file" name="arquivo[]" accept=".dxf,.dwg" multiple onchange="document.getElementById('form-dxf-<?= $item['id'] ?>').submit()" style="display:none" id="upload-dxf-<?= $item['id'] ?>">
+                                                <label for="upload-dxf-<?= $item['id'] ?>" class="vbtn-sm" title="Anexar DXFs de corte (pode selecionar vários)"><i class="fas fa-drafting-compass"></i></label>
+                                            </form>
+                                            <form method="POST" enctype="multipart/form-data" style="display:inline" id="form-3d-<?= $item['id'] ?>">
+                                                <input type="hidden" name="acao" value="anexar_arquivo_item">
+                                                <input type="hidden" name="os_id" value="<?= $os_id ?>">
+                                                <input type="hidden" name="os_item_id" value="<?= $item['id'] ?>">
+                                                <input type="file" name="arquivo[]" accept=".step,.stp,.obj,.stl,.iges,.igs,.3mf,.glb,.gltf,.ply,.fbx,.3ds,.brep,.sldprt,.sldasm" multiple onchange="document.getElementById('form-3d-<?= $item['id'] ?>').submit()" style="display:none" id="upload-3d-<?= $item['id'] ?>">
+                                                <label for="upload-3d-<?= $item['id'] ?>" class="vbtn-sm" title="Anexar modelos 3D (STEP, OBJ, STL…)"><i class="fas fa-cube"></i></label>
                                             </form>
                                         <?php endif; ?>
                                     </div>
 
                                     <?php if (!empty($arquivosPorItem[$item['id']])): ?>
                                         <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">
-                                            <?php foreach ($arquivosPorItem[$item['id']] as $arqItem): ?>
-                                                <a href="<?= SITE_URL ?>/assets/uploads/projetos/<?= htmlspecialchars($arqItem['nome_arquivo']) ?>" target="_blank" class="vbadge vbadge-info"><?= htmlspecialchars($arqItem['tipo']) ?></a>
-                                            <?php endforeach; ?>
+                                            <?php foreach ($arquivosPorItem[$item['id']] as $arqItem):
+                                                if (isArquivo3DVisualizavel($arqItem['nome_arquivo'])): ?>
+                                                <a href="visualizar_3d.php?arquivo=<?= urlencode($arqItem['nome_arquivo']) ?>&nome=<?= urlencode($arqItem['nome_original'] ?? $arqItem['nome_arquivo']) ?>" target="_blank" class="vbadge vbadge-ok" title="Visualizar em 3D: <?= htmlspecialchars($arqItem['nome_original'] ?? '') ?>"><i class="fas fa-cube"></i> 3D</a>
+                                            <?php else: ?>
+                                                <a href="<?= SITE_URL ?>/assets/uploads/projetos/<?= htmlspecialchars($arqItem['nome_arquivo']) ?>" target="_blank" class="vbadge vbadge-info" title="<?= htmlspecialchars($arqItem['nome_original'] ?? '') ?>"><?= htmlspecialchars($arqItem['tipo']) ?></a>
+                                            <?php endif; endforeach; ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
@@ -450,17 +493,22 @@ include '../../includes/header_vendedor.php';
             <div class="vend-card-head"><span class="vend-card-title">Arquivos Anexados</span></div>
             <div class="vend-card-body">
                 <?php
-                $arquivosOS = $db->prepare("SELECT * FROM os_arquivos WHERE os_id = ? AND tipo IN ('projeto_pdf', 'projeto_dxf', 'projeto_foto') ORDER BY id DESC");
+                $arquivosOS = $db->prepare("SELECT * FROM os_arquivos WHERE os_id = ? AND tipo IN ('projeto', 'projeto_pdf', 'projeto_dxf', 'projeto_foto', 'projeto_3d') ORDER BY id DESC");
                 $arquivosOS->execute([$os_id]);
                 $arqsOS = $arquivosOS->fetchAll();
-                if (!empty($arqsOS)): 
-                    foreach ($arqsOS as $arq): 
+                if (!empty($arqsOS)):
+                    foreach ($arqsOS as $arq):
                         $url = SITE_URL . '/assets/uploads/projetos/' . htmlspecialchars($arq['nome_arquivo']);
+                        if (isArquivo3DVisualizavel($arq['nome_arquivo'])):
                 ?>
-                    <a href="<?= $url ?>" class="vbadge vbadge-info" target="_blank" style="margin:2px;">
-                        <i class="fas fa-file-pdf"></i> <?= htmlspecialchars($arq['nome_original']) ?>
+                    <a href="visualizar_3d.php?arquivo=<?= urlencode($arq['nome_arquivo']) ?>&nome=<?= urlencode($arq['nome_original']) ?>" class="vbadge vbadge-ok" target="_blank" style="margin:2px;">
+                        <i class="fas fa-cube"></i> <?= htmlspecialchars($arq['nome_original']) ?>
                     </a>
-                <?php endforeach; else: ?>
+                <?php else: ?>
+                    <a href="<?= $url ?>" class="vbadge vbadge-info" target="_blank" style="margin:2px;">
+                        <i class="fas <?= $arq['tipo'] === 'projeto_dxf' ? 'fa-drafting-compass' : 'fa-file-pdf' ?>"></i> <?= htmlspecialchars($arq['nome_original']) ?>
+                    </a>
+                <?php endif; endforeach; else: ?>
                     <p class="text-muted">Nenhum arquivo anexado.</p>
                 <?php endif; ?>
             </div>

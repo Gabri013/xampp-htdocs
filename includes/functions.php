@@ -414,3 +414,26 @@ function encontrarClienteDuplicado(PDO $db, string $razao_social, string $cnpj_c
 
     return null;
 }
+
+/**
+ * Extensões de modelos 3D aceitas (SolidWorks e formatos de intercâmbio).
+ * As com visualização no navegador (visualizar_3d.php) estão em getExtensoes3DVisualizaveis().
+ */
+function getExtensoes3D(): array {
+    return ['step', 'stp', 'obj', 'stl', 'iges', 'igs', '3mf', 'glb', 'gltf', 'ply', 'fbx', '3ds', 'brep', 'sldprt', 'sldasm'];
+}
+
+function getExtensoes3DVisualizaveis(): array {
+    // Formatos que o visualizador (Online 3D Viewer) abre no navegador
+    return ['step', 'stp', 'obj', 'stl', 'iges', 'igs', '3mf', 'glb', 'gltf', 'ply', 'fbx', '3ds', 'brep'];
+}
+
+function isArquivo3D(string $nomeArquivo): bool {
+    $ext = strtolower(pathinfo($nomeArquivo, PATHINFO_EXTENSION));
+    return in_array($ext, getExtensoes3D(), true);
+}
+
+function isArquivo3DVisualizavel(string $nomeArquivo): bool {
+    $ext = strtolower(pathinfo($nomeArquivo, PATHINFO_EXTENSION));
+    return in_array($ext, getExtensoes3DVisualizaveis(), true);
+}
