@@ -100,6 +100,9 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
         <?php if ($ve_os_lista): ?>
         <a href="<?php echo SITE_URL; ?>/modules/os/vendedor.php" class="vend-nav-item <?php echo czNavActive('vendedor.php'); ?>"><i class="fas fa-clipboard-list"></i> O.S.</a>
         <?php endif; ?>
+        <?php if (in_array($tipo_usuario, ['master', 'gerente', 'producao', 'vendedor', 'projetista'])): ?>
+        <a href="<?php echo SITE_URL; ?>/modules/os/kanban.php" class="vend-nav-item <?php echo czNavActive('kanban.php'); ?>"><i class="fas fa-columns"></i> Kanban</a>
+        <?php endif; ?>
         <?php if ($ve_producao_geral): ?>
         <a href="<?php echo SITE_URL; ?>/modules/os/producao.php" class="vend-nav-item <?php echo czNavActive('producao.php', 'os'); ?>"><i class="fas fa-industry"></i> Produção</a>
         <a href="<?php echo SITE_URL; ?>/modules/os/estatisticas.php" class="vend-nav-item <?php echo czNavActive('estatisticas.php'); ?>"><i class="fas fa-chart-line"></i> Estatísticas</a>

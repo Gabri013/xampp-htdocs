@@ -25,12 +25,45 @@ try {
                COUNT(*) as total_concluidas,
                MIN(tempo_total_segundos) as tempo_minimo,
                MAX(tempo_total_segundos) as tempo_maximo
-        FROM os_etapas_producao 
+        FROM os_etapas_producao
         WHERE status = 'concluida'
         GROUP BY etapa
-        ORDER BY FIELD(etapa, 'corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem')
+        ORDER BY FIELD(etapa, 'engenharia', 'programacao', 'corte', 'dobra', 'tubo', 'solda', 'mobiliario', 'coccao', 'refrigeracao', 'acabamento', 'montagem', 'embalagem', 'finalizacao')
     ");
     $estatisticas_etapas = $stmt->fetchAll();
+
+    // 2b. Painel gerencial: O.S. por status
+    $os_por_status = $db->query("
+        SELECT status, COUNT(*) as total
+        FROM ordens_servico
+        WHERE status <> 'cancelada'
+        GROUP BY status
+    ")->fetchAll(PDO::FETCH_KEY_PAIR);
+
+    // 2c. Carga por setor (fila): O.S. em produção paradas em cada etapa
+    $fila_por_setor = $db->query("
+        SELECT etapa_atual, COUNT(*) as total
+        FROM ordens_servico
+        WHERE status = 'em_producao' AND etapa_atual NOT IN ('autorizacao', 'concluida')
+        GROUP BY etapa_atual
+        ORDER BY FIELD(etapa_atual, 'engenharia', 'programacao', 'corte', 'dobra', 'tubo', 'solda', 'mobiliario', 'coccao', 'refrigeracao', 'acabamento', 'montagem', 'embalagem', 'finalizacao')
+    ")->fetchAll(PDO::FETCH_KEY_PAIR);
+
+    // 2d. O.S. concluídas por mês (últimos 6 meses)
+    $concluidas_mes = $db->query("
+        SELECT DATE_FORMAT(updated_at, '%Y-%m') as mes, COUNT(*) as total
+        FROM ordens_servico
+        WHERE status = 'concluida' AND updated_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+        GROUP BY mes ORDER BY mes
+    ")->fetchAll(PDO::FETCH_KEY_PAIR);
+
+    // 2e. Faturamento por mês (vendas faturadas, últimos 6 meses)
+    $faturamento_mes = $db->query("
+        SELECT DATE_FORMAT(faturado_em, '%Y-%m') as mes, SUM(valor_total) as total
+        FROM vendas
+        WHERE faturado_em IS NOT NULL AND faturado_em >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+        GROUP BY mes ORDER BY mes
+    ")->fetchAll(PDO::FETCH_KEY_PAIR);
 
     // 3. Tempo total por O.S (Últimas 20 Concluídas)
     $stmt = $db->query("
@@ -81,6 +114,10 @@ try {
     $total_os = 0;
     $total_concluidas = 0;
     $total_producao = 0;
+    $os_por_status = [];
+    $fila_por_setor = [];
+    $concluidas_mes = [];
+    $faturamento_mes = [];
     $estatisticas_etapas = [];
     $recentes = [];
     $produtividade_mes = [];
@@ -132,6 +169,78 @@ foreach ($estatisticas_etapas as $est) {
 <div class="vend-layout">
     <?php include '../../includes/vend_sidebar.php'; ?>
     <div class="vend-main"><div class="vend-page-head"><h1 class="vend-page-title">Estatísticas de Produção</h1></div><div class="vend-content">
+
+<!-- Painel gerencial -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:20px">
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-chart-pie"></i> O.S. por Status</h3></div>
+        <div class="card-body"><div style="height:240px"><canvas id="graficoStatus"></canvas></div></div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-industry"></i> Fila por Setor (em produção)</h3></div>
+        <div class="card-body"><div style="height:240px"><canvas id="graficoFila"></canvas></div></div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-check-circle"></i> O.S. Concluídas por Mês</h3></div>
+        <div class="card-body"><div style="height:240px"><canvas id="graficoConcluidas"></canvas></div></div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-file-invoice-dollar"></i> Faturamento por Mês (R$)</h3></div>
+        <div class="card-body"><div style="height:240px"><canvas id="graficoFaturamento"></canvas></div></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof Chart === 'undefined') return;
+    const laranja = '#D85A30';
+
+    const statusLabels = {pendente:'Pendente', em_projeto:'Em Projeto', proposta:'Proposta', em_revisao:'Em Revisão', em_producao:'Em Produção', concluida:'Concluída'};
+    const statusData = <?php echo json_encode($os_por_status); ?>;
+    new Chart(document.getElementById('graficoStatus'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(statusData).map(k => statusLabels[k] || k),
+            datasets: [{
+                data: Object.values(statusData).map(Number),
+                backgroundColor: ['#64748b', '#0284c7', '#7c3aed', '#d97706', laranja, '#16a34a']
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+    });
+
+    const filaData = <?php echo json_encode($fila_por_setor); ?>;
+    new Chart(document.getElementById('graficoFila'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(filaData).map(k => k.charAt(0).toUpperCase() + k.slice(1)),
+            datasets: [{ label: 'O.S. na fila', data: Object.values(filaData).map(Number), backgroundColor: 'rgba(216,90,48,.7)' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+    });
+
+    const conclData = <?php echo json_encode($concluidas_mes); ?>;
+    new Chart(document.getElementById('graficoConcluidas'), {
+        type: 'line',
+        data: {
+            labels: Object.keys(conclData),
+            datasets: [{ label: 'Concluídas', data: Object.values(conclData).map(Number), borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,.15)', fill: true, tension: .3 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+    });
+
+    const fatData = <?php echo json_encode($faturamento_mes); ?>;
+    new Chart(document.getElementById('graficoFaturamento'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(fatData),
+            datasets: [{ label: 'Faturamento', data: Object.values(fatData).map(Number), backgroundColor: 'rgba(2,132,199,.7)' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => 'R$ ' + Number(v).toLocaleString('pt-BR') } } } }
+    });
+});
+</script>
+
 <div class="card mb-20">
     <div class="card-header">
         <h3><i class="fas fa-chart-bar"></i> Gráfico de Desempenho (Tempo Médio em Horas)</h3>

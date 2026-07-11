@@ -199,16 +199,38 @@ function debounce(fn, delay) {
             e.preventDefault();
             zone.classList.remove('drag-over');
             if (draggedCard) {
-                zone.appendChild(draggedCard);
-                const itemId = draggedCard.dataset.id;
+                const card = draggedCard;
+                const origem = card.parentElement;
+                const irmaoSeguinte = card.nextElementSibling;
+                zone.appendChild(card);
+                const itemId = card.dataset.id;
                 const newStatus = zone.closest('.vend-kanban-column').dataset.status;
-                // Envia update via AJAX
-                fetch('/api/os_update_status.php', {
+
+                function atualizarContadores() {
+                    document.querySelectorAll('.vend-kanban-column').forEach(col => {
+                        const count = col.querySelector('.vend-kanban-count');
+                        if (count) count.textContent = col.querySelectorAll('.vend-kanban-card').length;
+                    });
+                }
+
+                fetch('<?php echo SITE_URL; ?>/api/os_update_status.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({id: itemId, status: newStatus})
                 }).then(r => r.json()).then(data => {
-                    if (data.success) showToast('Status atualizado', 'success');
+                    if (data.success) {
+                        showToast('Status atualizado', 'success');
+                        atualizarContadores();
+                    } else {
+                        // Transição negada pelo fluxo: devolve o cartão à coluna original
+                        if (irmaoSeguinte) origem.insertBefore(card, irmaoSeguinte);
+                        else origem.appendChild(card);
+                        showToast(data.message || 'Transição não permitida', 'danger');
+                    }
+                }).catch(() => {
+                    if (irmaoSeguinte) origem.insertBefore(card, irmaoSeguinte);
+                    else origem.appendChild(card);
+                    showToast('Erro de comunicação — tente novamente', 'danger');
                 });
             }
         });
