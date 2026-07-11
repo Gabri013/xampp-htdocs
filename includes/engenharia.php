@@ -151,6 +151,17 @@ function ensureEngenhariaSchema(PDO $db): void
         $db->exec("ALTER TABLE ordens_servico ADD COLUMN alteracoes_projeto TEXT NULL AFTER tipo");
     }
 
+    // O workflow usa o status 'proposta' (desenho aguardando aprovação);
+    // garante que o ENUM do banco o aceite, senão o MySQL grava vazio.
+    $tipoStatusOS = (string) ($db->query("SHOW COLUMNS FROM ordens_servico LIKE 'status'")->fetch(PDO::FETCH_ASSOC)['Type'] ?? '');
+    if ($tipoStatusOS !== '' && stripos($tipoStatusOS, 'proposta') === false) {
+        $db->exec("
+            ALTER TABLE ordens_servico
+            MODIFY COLUMN status ENUM('pendente', 'em_projeto', 'proposta', 'em_revisao', 'em_producao', 'concluida', 'cancelada')
+            DEFAULT 'pendente'
+        ");
+    }
+
     $tipoEtapaAtual = (string) ($db->query("SHOW COLUMNS FROM ordens_servico LIKE 'etapa_atual'")->fetch(PDO::FETCH_ASSOC)['Type'] ?? '');
     if ($tipoEtapaAtual !== '' && stripos($tipoEtapaAtual, 'embalagem') === false) {
         $db->exec("

@@ -34,6 +34,27 @@ function getTipoArquivoProducao(string $nomeArquivo): string
     return 'projeto';
 }
 
+// Primeira etapa do planejamento da O.S. (os_etapas_producao); usa o fluxo
+// canônico como ordem e 'corte' apenas como último recurso.
+function getPrimeiraEtapaPlanejada(PDO $db, int $osId): string
+{
+    require_once __DIR__ . '/../../includes/workflow.php';
+    $stmtVenda = $db->prepare("SELECT venda_id FROM ordens_servico WHERE id = ?");
+    $stmtVenda->execute([$osId]);
+    $vendaId = (int) $stmtVenda->fetchColumn();
+
+    $etapasPlanejadas = sincronizarPlanejamentoOS($db, $osId, max(0, $vendaId));
+    $etapas = array_column($etapasPlanejadas, 'etapa');
+    if (!empty($etapas)) {
+        foreach (getEtapaFluxo() as $etapaFluxo) {
+            if (in_array($etapaFluxo, $etapas, true)) {
+                return $etapaFluxo;
+            }
+        }
+    }
+    return 'corte';
+}
+
 function garantirOrdemProducao(PDO $db, int $osId, int $usuarioId): array
 {
     require_once __DIR__ . '/../../includes/workflow.php';
@@ -56,11 +77,12 @@ function garantirOrdemProducao(PDO $db, int $osId, int $usuarioId): array
         throw new RuntimeException($validation['message']);
     }
 
-    $stmt = $db->prepare("UPDATE ordens_servico SET status = 'em_producao', etapa_atual = 'corte' WHERE id = ?");
-    $stmt->execute([$osId]);
+    $etapaInicial = getPrimeiraEtapaPlanejada($db, $osId);
+    $stmt = $db->prepare("UPDATE ordens_servico SET status = 'em_producao', etapa_atual = ? WHERE id = ?");
+    $stmt->execute([$etapaInicial, $osId]);
 
     $stmt = $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, ?, 'em_producao', ?, ?)");
-    $stmt->execute([$osId, $statusAtual ?: 'pendente', $usuarioId, 'Ordem de produção gerada e liberada para corte']);
+    $stmt->execute([$osId, $statusAtual ?: 'pendente', $usuarioId, 'Ordem de produção gerada e liberada para ' . $etapaInicial]);
 
     return [
         'created' => true,
@@ -104,11 +126,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'gerar_o
         $stmtStatus->execute([$os_id]);
         $statusAtual = (string) $stmtStatus->fetchColumn();
         if ($statusAtual !== 'em_producao') {
-            $stmt = $db->prepare("UPDATE ordens_servico SET status = 'em_producao', etapa_atual = 'corte' WHERE id = ?");
-            $stmt->execute([$os_id]);
+            $etapaInicial = getPrimeiraEtapaPlanejada($db, (int) $os_id);
+            $stmt = $db->prepare("UPDATE ordens_servico SET status = 'em_producao', etapa_atual = ? WHERE id = ?");
+            $stmt->execute([$etapaInicial, $os_id]);
 
             $stmt = $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, ?, 'em_producao', ?, ?)");
-            $stmt->execute([$os_id, $statusAtual ?: 'pendente', (int) $_SESSION['usuario_id'], 'Ordem de produção liberada para corte']);
+            $stmt->execute([$os_id, $statusAtual ?: 'pendente', (int) $_SESSION['usuario_id'], 'Ordem de produção liberada para ' . $etapaInicial]);
         }
         $db->commit();
         setSuccess($opInfo['created'] ? 'Ordem de produção gerada para a O.S.' : 'Esta O.S. já possuía ordem de produção.');
@@ -139,11 +162,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'gerar_o
         $stmtStatus->execute([$os_id]);
         $statusAtual = (string) $stmtStatus->fetchColumn();
         if ($statusAtual !== 'em_producao') {
-            $stmt = $db->prepare("UPDATE ordens_servico SET status = 'em_producao', etapa_atual = 'corte' WHERE id = ?");
-            $stmt->execute([$os_id]);
+            $etapaInicial = getPrimeiraEtapaPlanejada($db, (int) $os_id);
+            $stmt = $db->prepare("UPDATE ordens_servico SET status = 'em_producao', etapa_atual = ? WHERE id = ?");
+            $stmt->execute([$etapaInicial, $os_id]);
 
             $stmt = $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, ?, 'em_producao', ?, ?)");
-            $stmt->execute([$os_id, $statusAtual ?: 'pendente', (int) $_SESSION['usuario_id'], 'Ordem de produção liberada para corte']);
+            $stmt->execute([$os_id, $statusAtual ?: 'pendente', (int) $_SESSION['usuario_id'], 'Ordem de produção liberada para ' . $etapaInicial]);
         }
         $db->commit();
         setSuccess($opInfo['created'] ? 'Ordem de produção gerada para o item.' : 'Item vinculado a uma OP já existente.');
@@ -227,7 +251,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'aprovar
         exit;
     }
 
-    $db->prepare("UPDATE ordens_servico SET status='em_producao', etapa_atual='corte' WHERE id=?")->execute([$os_id]);
+    $etapaInicialAprov = getPrimeiraEtapaPlanejada($db, (int) $os_id);
+    $db->prepare("UPDATE ordens_servico SET status='em_producao', etapa_atual=? WHERE id=?")->execute([$etapaInicialAprov, $os_id]);
     $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, ?, 'em_producao', ?, 'Proposta aprovada')")
        ->execute([$os_id, $statusAtual, $uid]);
     setSuccess('Proposta aprovada!');

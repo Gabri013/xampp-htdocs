@@ -164,7 +164,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        if ($resultado === 'reprovado' && ($motivo === '' || !in_array($setor_retorno, ['programacao','corte','mobiliario','coccao','refrigeracao','embalagem','engenharia','dobra','tubo','solda'], true))) {
+        require_once '../../includes/workflow.php';
+        if ($resultado === 'reprovado' && ($motivo === '' || !in_array($setor_retorno, getEtapasBancada(), true))) {
             setError('Para reprovação, informe motivo e setor de retorno.');
             header('Location: checkup.php?os=' . urlencode($os['numero']));
             exit;
