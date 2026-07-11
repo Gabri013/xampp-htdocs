@@ -13,7 +13,7 @@ if ($usuario && !empty($usuario['id'])) {
     
     // Contar orçamentos abertos
     try {
-        $stmt = $db->query("SELECT COUNT(*) FROM orcamentos WHERE (status = 'aberto' OR status IS NULL) AND (validade IS NULL OR validade >= CURDATE())");
+        $stmt = $db->query("SELECT COUNT(*) FROM orcamentos WHERE (status = 'pendente' OR status IS NULL) AND (validade IS NULL OR validade >= CURDATE())");
         $orcamentos_abertos = (int) $stmt->fetchColumn();
     } catch (Exception $e) {
         $orcamentos_abertos = 0;
@@ -25,7 +25,7 @@ if ($usuario && !empty($usuario['id'])) {
             SELECT COUNT(DISTINCT os.id) 
             FROM ordens_servico os
             JOIN vendas v ON os.venda_id = v.id
-            WHERE v.usuario_id = ? AND os.status = 'producao'
+            WHERE v.usuario_id = ? AND os.status = 'em_producao'
         ");
         $stmt->execute([$usuario['id']]);
         $os_abertas = (int) $stmt->fetchColumn();

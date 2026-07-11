@@ -86,14 +86,7 @@ $page_title = "Editar O.S " . $dados['numero'];
 include '../../includes/header_vendedor.php';
 ?>
 <div class="vend-layout">
-    <aside class="vend-sidebar">
-        <div class="vend-sidebar-logo">
-            <div class="vend-logo-icon"><i class="fas fa-edit"></i></div>
-            <div><div class="vend-logo-text">Cozinca Inox</div><div class="vend-logo-sub">Produção</div></div>
-        </div>
-        <div class="vend-nav-group"><span class="vend-nav-label">Principal</span><a href="../vendas/dashboard_vendedor.php" class="vend-nav-item"><i class="fas fa-th-large"></i> Dashboard</a><a href="os_detalhes.php?os_id=<?php echo $id; ?>" class="vend-nav-item"><i class="fas fa-eye"></i> Detalhes da O.S</a></div>
-        <hr class="vend-nav-divider" />
-    </aside>
+    <?php include '../../includes/vend_sidebar.php'; ?>
     <div class="vend-main"><div class="vend-page-head"><h1 class="vend-page-title">Editar O.S <?php echo $dados['numero']; ?></h1></div><div class="vend-content">
         <div class="vend-card">
             <div class="vend-card-header">

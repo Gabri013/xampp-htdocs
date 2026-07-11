@@ -88,23 +88,7 @@ include '../../includes/header_vendedor.php';
 ?>
 
 <div class="vend-layout">
-    <aside class="vend-sidebar">
-        <div class="vend-sidebar-logo">
-            <div class="vend-logo-icon"><i class="fas fa-fire"></i></div>
-            <div><div class="vend-logo-text">Cozinca Inox</div><div class="vend-logo-sub">Administração</div></div>
-        </div>
-        <div class="vend-nav-group">
-            <span class="vend-nav-label">Principal</span>
-            <a href="../vendas/dashboard_vendedor.php" class="vend-nav-item"><i class="fas fa-th-large"></i> Dashboard</a>
-            <a href="logs_retorno.php" class="vend-nav-item active"><i class="fas fa-history"></i> Logs</a>
-        </div>
-        <hr class="vend-nav-divider">
-        <div class="vend-nav-group">
-            <span class="vend-nav-label">Cadastros</span>
-            <a href="../cadastros/clientes.php" class="vend-nav-item"><i class="fas fa-users"></i> Clientes</a>
-            <a href="../cadastros/produtos.php" class="vend-nav-item"><i class="fas fa-box"></i> Produtos</a>
-        </div>
-    </aside>
+    <?php include '../../includes/vend_sidebar.php'; ?>
     <div class="vend-main">
         <div class="vend-page-head"><h1 class="vend-page-title">Logs do Sistema</h1></div>
 

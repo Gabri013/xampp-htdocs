@@ -185,15 +185,16 @@ function renderItens() {
                 <select class="form-control" onchange="updateItem(${i}, 'produto_id', this.value)">
                     <option value="">Selecione...</option>
                     <?php foreach ($produtos as $p): ?>
-                        <option value="<?php echo $p['id']; ?>" data-valor="<?php echo $p['valor']; ?>" <?= $p['id'] == $item['produto_id'] ? 'selected' : '' ?>><?php echo htmlspecialchars($p['nome']); ?></option>
+                        <option value="<?php echo $p['id']; ?>" data-valor="<?php echo $p['valor']; ?>"><?php echo htmlspecialchars($p['nome']); ?></option>
                     <?php endforeach; ?>
                     <option value="0">Produto manual</option>
                 </select>
             </div>
-            <div class="col-md-4"><input type="text" class="form-control" placeholder="Descrição" onchange="updateItem(${i}, 'descricao', this.value)"></div>
-            <div class="col-md-2"><input type="number" step="0.01" class="form-control" placeholder="Qtd" onchange="updateItem(${i}, 'quantidade', this.value)"></div>
-            <div class="col-md-2"><input type="number" step="0.01" class="form-control" placeholder="Valor" onchange="updateItem(${i}, 'valor_unitario', this.value)"></div>
+            <div class="col-md-4"><input type="text" class="form-control" placeholder="Descrição" value="${(item.descricao || '').replace(/"/g, '&quot;')}" onchange="updateItem(${i}, 'descricao', this.value)"></div>
+            <div class="col-md-2"><input type="number" step="0.01" class="form-control" placeholder="Qtd" value="${item.quantidade || ''}" onchange="updateItem(${i}, 'quantidade', this.value)"></div>
+            <div class="col-md-2"><input type="number" step="0.01" class="form-control" placeholder="Valor" value="${item.valor_unitario || ''}" onchange="updateItem(${i}, 'valor_unitario', this.value)"></div>
         `;
+        div.querySelector('select').value = item.produto_id || '';
         container.appendChild(div);
     });
     atualizarTotal();

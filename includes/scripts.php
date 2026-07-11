@@ -1,8 +1,66 @@
 <?php
 // includes/scripts.php - Scripts JS padrão do ERP Cozinca
 // Este arquivo deve ser incluído no final do body antes do footer
+
+// Painéis com auto-atualização (listas somente leitura; nunca formulários
+// de criação/edição, para não perder dados digitados).
+$czAutoRefreshPaths = [
+    '/os/vendedor.php', '/os/gerente.php', '/os/producao.php',
+    '/os/dashboard_producao.php', '/os/estatisticas.php', '/os/checkup.php',
+    '/os/corte.php', '/os/dobra.php', '/os/solda.php', '/os/refrigeracao.php',
+    '/os/acabamento.php', '/os/montagem.php', '/os/finalizacao.php',
+    '/projetista/index.php', '/vendas/index.php',
+    '/financeiro/index.php', '/financeiro/faturamento.php', '/financeiro/contas_pagar.php',
+];
+$czSelf = $_SERVER['PHP_SELF'] ?? '';
+$czAutoRefresh = false;
+foreach ($czAutoRefreshPaths as $czPath) {
+    if (substr($czSelf, -strlen($czPath)) === $czPath) { $czAutoRefresh = true; break; }
+}
 ?>
 <script>
+// ── Tempo real: badge de notificações + auto-atualização dos painéis ──
+(function() {
+  const REALTIME_URL = '<?php echo SITE_URL; ?>/api/realtime.php';
+  const AUTO_REFRESH = <?php echo $czAutoRefresh ? 'true' : 'false'; ?>;
+  const INTERVALO_MS = 15000;
+  let fpInicial = null;
+
+  function podeRecarregar() {
+    // Não recarregar com modal aberto ou campo em edição
+    const modalAberto = Array.from(document.querySelectorAll('.modal')).some(m =>
+      m.classList.contains('show') || (m.style.display && m.style.display !== 'none')
+    );
+    if (modalAberto) return false;
+    const el = document.activeElement;
+    if (el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return false;
+    return true;
+  }
+
+  async function tick() {
+    try {
+      const r = await fetch(REALTIME_URL, { cache: 'no-store' });
+      if (!r.ok) return;
+      const d = await r.json();
+
+      const badge = document.getElementById('czNotifBadge');
+      if (badge) {
+        if (d.notif > 0) { badge.textContent = d.notif; badge.style.display = ''; }
+        else { badge.style.display = 'none'; }
+      }
+
+      if (AUTO_REFRESH && d.fp) {
+        if (fpInicial === null) { fpInicial = d.fp; return; }
+        if (d.fp !== fpInicial && podeRecarregar()) {
+          location.reload();
+        }
+      }
+    } catch (e) { /* offline/erro transitório: tenta no próximo tick */ }
+  }
+
+  setInterval(tick, INTERVALO_MS);
+  tick();
+})();
 (function() {
   const sidebar = document.getElementById('czSidebar');
   const toggleBtn = document.getElementById('czSidebarToggle');

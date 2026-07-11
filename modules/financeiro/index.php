@@ -110,32 +110,7 @@ include '../../includes/header_vendedor.php';
 ?>
 
 <div class="vend-layout">
-    <aside class="vend-sidebar">
-        <div class="vend-sidebar-logo">
-            <div class="vend-logo-icon"><i class="fas fa-fire"></i></div>
-            <div><div class="vend-logo-text">Cozinca Inox</div><div class="vend-logo-sub">Financeiro</div></div>
-        </div>
-        <div class="vend-nav-group">
-            <span class="vend-nav-label">Principal</span>
-            <a href="../vendas/dashboard_vendedor.php" class="vend-nav-item"><i class="fas fa-th-large"></i> Dashboard</a>
-            <a href="index.php" class="vend-nav-item active"><i class="fas fa-arrow-down"></i> Contas a Receber</a>
-            <a href="contas_pagar.php" class="vend-nav-item"><i class="fas fa-arrow-up"></i> Contas a Pagar</a>
-            <a href="faturamento.php" class="vend-nav-item"><i class="fas fa-file-invoice-dollar"></i> Faturamento</a>
-        </div>
-        <hr class="vend-nav-divider">
-        <div class="vend-nav-group">
-            <span class="vend-nav-label">Vendas</span>
-            <a href="../vendas/nova_venda.php" class="vend-nav-item"><i class="fas fa-shopping-cart"></i> Nova venda</a>
-            <a href="../orcamentos/criar_orcamento.php" class="vend-nav-item"><i class="fas fa-file-invoice"></i> Novo orçamento</a>
-            <a href="../os/nova_os_independente.php" class="vend-nav-item"><i class="fas fa-plus-square"></i> Lançar O.S.</a>
-        </div>
-        <hr class="vend-nav-divider">
-        <div class="vend-nav-group">
-            <span class="vend-nav-label">Cadastros</span>
-            <a href="../cadastros/clientes.php" class="vend-nav-item"><i class="fas fa-users"></i> Clientes</a>
-            <a href="../cadastros/produtos.php" class="vend-nav-item"><i class="fas fa-box"></i> Produtos</a>
-        </div>
-    </aside>
+    <?php include '../../includes/vend_sidebar.php'; ?>
     <div class="vend-main">
         <div class="vend-page-head"><h1 class="vend-page-title">Contas a Receber</h1></div>
 

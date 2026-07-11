@@ -40,28 +40,7 @@ include '../../includes/header_vendedor.php';
 ?>
 
 <div class="vend-layout">
-    <aside class="vend-sidebar">
-        <div class="vend-sidebar-logo">
-            <div class="vend-logo-icon"><i class="fas fa-fire"></i></div>
-            <div><div class="vend-logo-text">Cozinca Inox</div><div class="vend-logo-sub">Produção</div></div>
-        </div>
-        <div class="vend-nav-group">
-            <span class="vend-nav-label">Principal</span>
-            <a href="../vendas/dashboard_vendedor.php" class="vend-nav-item"><i class="fas fa-th-large"></i> Dashboard</a>
-            <a href="producao.php" class="vend-nav-item active"><i class="fas fa-industry"></i> Produção</a>
-        </div>
-        <hr class="vend-nav-divider">
-        <div class="vend-nav-group">
-            <span class="vend-nav-label">Setores</span>
-            <a href="corte.php" class="vend-nav-item"><i class="fas fa-cut"></i> Corte</a>
-            <a href="dobra.php" class="vend-nav-item"><i class="fas fa-dharmachakra"></i> Dobra</a>
-            <a href="solda.php" class="vend-nav-item"><i class="fas fa-fire"></i> Solda</a>
-            <a href="refrigeracao.php" class="vend-nav-item"><i class="fas fa-snowflake"></i> Refrigeração</a>
-            <a href="acabamento.php" class="vend-nav-item"><i class="fas fa-paint-roller"></i> Acabamento</a>
-            <a href="finalizacao.php" class="vend-nav-item"><i class="fas fa-clipboard-check"></i> Finalização</a>
-            <a href="montagem.php" class="vend-nav-item"><i class="fas fa-tools"></i> Montagem</a>
-        </div>
-    </aside>
+    <?php include '../../includes/vend_sidebar.php'; ?>
     <div class="vend-main">
         <div class="vend-page-head"><h1 class="vend-page-title">Painel Kanban de Produção</h1></div>
 
