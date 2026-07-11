@@ -120,7 +120,7 @@ include '../../includes/header_vendedor.php';
                                     <form method="POST" style="display:inline;">
                                         <input type="hidden" name="acao" value="faturar_venda">
                                         <input type="hidden" name="venda_id" value="<?php echo (int) $v['id']; ?>">
-                                        <button type="submit" class="vbtn-sm" style="border-color:#28a745;color:#28a745"><i class="fas fa-file-invoice-dollar"></i> Faturar</button>
+                                        <button type="submit" class="vbtn-sm vbtn-ok"><i class="fas fa-file-invoice-dollar"></i> Faturar</button>
                                     </form>
                                     <a class="vbtn-sm btn-info" href="<?php echo SITE_URL; ?>/modules/vendas/detalhes_venda.php?id=<?php echo (int) $v['id']; ?>"><i class="fas fa-eye"></i></a>
                                 </td>

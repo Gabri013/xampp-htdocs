@@ -75,7 +75,7 @@ include '../../includes/header_vendedor.php';
     <div class="vend-main">
         <div class="vend-page-head">
             <div><h1 class="vend-page-title">Clientes Cadastrados</h1></div>
-            <button class="vbtn-sm" style="border-color:#D85A30;color:#D85A30" onclick="abrirModal()"><i class="fas fa-plus"></i> Novo Cliente</button>
+            <button class="vbtn-sm vbtn-brand" onclick="abrirModal()"><i class="fas fa-plus"></i> Novo Cliente</button>
         </div>
         
         <form method="GET" style="margin-bottom:20px;display:flex;gap:8px;align-items:end">
@@ -162,7 +162,7 @@ include '../../includes/header_vendedor.php';
             </div>
             <div class="modal-footer" style="margin-top:16px;text-align:right">
                 <button type="button" class="vbtn-sm" onclick="fecharModal()">Cancelar</button>
-                <button type="submit" class="vbtn-sm" style="border-color:#D85A30;color:#D85A30">Salvar</button>
+                <button type="submit" class="vbtn-sm vbtn-brand">Salvar</button>
             </div>
         </form>
     </div>

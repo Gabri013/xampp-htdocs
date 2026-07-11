@@ -257,7 +257,7 @@ include '../../includes/header_vendedor.php';
             
             <input type="hidden" name="itens_json" id="itens_json" value="[]">
             
-            <button type="submit" class="vbtn-sm" style="border-color:#D85A30;color:#D85A30">Criar O.S. Independente</button>
+            <button type="submit" class="vbtn-sm vbtn-brand">Criar O.S. Independente</button>
         </form>
     </div>
 </div>

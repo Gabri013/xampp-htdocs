@@ -165,7 +165,7 @@ include '../../includes/header_vendedor.php';
 
             <input type="hidden" name="itens_json" id="itens_json">
             <div class="text-end mt-4">
-                <button type="submit" class="vbtn-sm" style="border-color:#D85A30;color:#D85A30"><i class="fas fa-save"></i> Salvar Orçamento</button>
+                <button type="submit" class="vbtn-sm vbtn-brand"><i class="fas fa-save"></i> Salvar Orçamento</button>
             </div>
         </form>
     </div>

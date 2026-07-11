@@ -73,7 +73,7 @@ if (!isset($qtd_notificacoes_nao_lidas)) $qtd_notificacoes_nao_lidas = 0;
     </button>
     <div style="flex:1"></div>
     <?php if ($qtd_notificacoes_nao_lidas > 0): ?>
-        <a href="<?php echo SITE_URL; ?>/modules/notificacoes/index.php" class="vbtn-sm" style="border-color:#D85A30;color:#D85A30"><i class="fas fa-bell"></i> <?php echo $qtd_notificacoes_nao_lidas; ?></a>
+        <a href="<?php echo SITE_URL; ?>/modules/notificacoes/index.php" class="vbtn-sm vbtn-brand"><i class="fas fa-bell"></i> <?php echo $qtd_notificacoes_nao_lidas; ?></a>
     <?php endif; ?>
     <span class="vend-user-pill"><span class="vend-user-avatar"><?php echo strtoupper(substr($usuario['nome'] ?? 'U', 0, 1)); ?></span> <?php echo htmlspecialchars($usuario['nome'] ?? ''); ?></span>
 </div>

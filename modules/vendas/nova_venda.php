@@ -451,7 +451,7 @@ include '../../includes/header_vendedor.php';
                 <input type="hidden" name="itens_json" id="itens_json" value="[]">
                 <input type="hidden" name="desconto_final" id="desconto_final" value="0">
                 
-<div class="mt-20"><button type="submit" class="vbtn-sm" style="border-color:#D85A30;color:#D85A30">Finalizar Venda</button></div>
+<div class="mt-20"><button type="submit" class="vbtn-sm vbtn-brand">Finalizar Venda</button></div>
 </form>
     </div>
 </div>
@@ -485,7 +485,7 @@ include '../../includes/header_vendedor.php';
             </div>
             <div class="modal-footer" style="padding: 0 24px 24px;">
 <button type="button" class="vbtn-sm btn-secondary" id="btn_canc_modal">Cancelar</button>
-                 <button type="button" class="vbtn-sm" style="border-color:#D85A30;color:#D85A30" id="btn_salvar_cli">Salvar Cliente</button>
+                 <button type="button" class="vbtn-sm vbtn-brand" id="btn_salvar_cli">Salvar Cliente</button>
             </div>
         </div>
     </div>

@@ -40,7 +40,7 @@ include '../../includes/header_vendedor.php';
     <div class="vend-main">
         <div class="vend-page-head">
             <div><h1 class="vend-page-title">Orçamentos</h1></div>
-            <a href="criar_orcamento.php" class="vbtn-sm" style="border-color:#D85A30;color:#D85A30"><i class="fas fa-plus"></i> Novo Orçamento</a>
+            <a href="criar_orcamento.php" class="vbtn-sm vbtn-brand"><i class="fas fa-plus"></i> Novo Orçamento</a>
         </div>
         
         <div class="vend-alert warning">

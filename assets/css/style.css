@@ -118,11 +118,11 @@
     --default-font-family: var(--font-sans);
     --default-mono-font-family: var(--font-mono);
     --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --color-primary-200: #c7d2fe;
-    --color-primary-300: #a5b4fc;
-    --color-primary-500: #4f46e5;
-    --color-primary-600: #4338ca;
-    --color-primary-700: #3730a3;
+    --color-primary-200: #f6cdbd;
+    --color-primary-300: #eda583;
+    --color-primary-500: #D85A30;
+    --color-primary-600: #b84a26;
+    --color-primary-700: #973d1e;
     --color-cozinca: #D85A30;
     --color-cozinca-light: #FEF0EA;
     --color-cozinca-dark: #993C1D;
@@ -2701,7 +2701,7 @@ table tbody tr:last-child td {
   padding: calc(var(--spacing) * 10);
   --tw-shadow: 0 25px 50px -12px var(--tw-shadow-color, rgb(0 0 0 / 0.25));
   box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-  border-top-color: #d37c4b;
+  border-top-color: #D85A30;
 }
 .login-header h1 {
   margin: 0;
@@ -2756,10 +2756,10 @@ table tbody tr:last-child td {
   transition-duration: var(--tw-duration, var(--default-transition-duration));
   --tw-duration: 300ms;
   transition-duration: 300ms;
-  background-color: #d37c4b;
+  background-color: #D85A30;
 }
 .login-form .btn-primary:hover {
-  background-color: #b36539;
+  background-color: #b84a26;
 }
 @keyframes slideIn {
   from {
@@ -4158,4 +4158,98 @@ table tbody tr:last-child td {
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
+}
+
+/* ============================================================
+   ERP Cozinca — Padronização de botões e cores de texto
+   Paleta única:
+   - Marca/primária: #D85A30 (hover #b84a26)
+   - Sucesso: #16a34a (hover #15803d)
+   - Perigo:  #dc2626 (hover #b91c1c)
+   - Aviso:   #d97706 (hover #b45309)
+   - Info:    #0284c7 (hover #0369a1)
+   - Neutro:  #475569 (hover #334155)
+   Regra: botão SÓLIDO tem texto branco; botão OUTLINE tem texto
+   da própria cor e vira sólido (texto branco) no hover.
+   ============================================================ */
+
+/* --- btn-info: usado em todo o ERP mas não existia no CSS --- */
+.btn-info {
+  --tw-gradient-position: to bottom right in oklab;
+  background-image: linear-gradient(var(--tw-gradient-stops));
+  --tw-gradient-from: #0284c7;
+  --tw-gradient-to: #0369a1;
+  --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  color: #fff;
+  --tw-shadow: 0 4px 6px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 2px 4px -2px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+}
+.btn-info:hover {
+  --tw-gradient-from: #0369a1;
+  --tw-gradient-to: #075985;
+}
+
+/* --- Texto branco garantido em todos os botões sólidos --- */
+.btn-primary, .btn-primary:hover,
+.btn-success, .btn-success:hover,
+.btn-danger, .btn-danger:hover,
+.btn-warning, .btn-warning:hover,
+.btn-secondary, .btn-secondary:hover,
+.btn-info, .btn-info:hover {
+  color: #fff;
+}
+
+/* --- btn-outline-*: usados no ERP mas não existiam no CSS --- */
+.btn-outline-primary, .btn-outline-secondary, .btn-outline-danger, .btn-outline-dark {
+  background: transparent;
+  background-image: none;
+  border: 1px solid;
+  border-radius: var(--radius-lg);
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all .15s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-outline-primary { border-color: #D85A30; color: #D85A30; }
+.btn-outline-primary:hover { background: #D85A30; color: #fff; }
+.btn-outline-secondary { border-color: #475569; color: #475569; }
+.btn-outline-secondary:hover { background: #475569; color: #fff; }
+.btn-outline-danger { border-color: #dc2626; color: #dc2626; }
+.btn-outline-danger:hover { background: #dc2626; color: #fff; }
+.btn-outline-dark { border-color: #1e293b; color: #1e293b; }
+.btn-outline-dark:hover { background: #1e293b; color: #fff; }
+
+/* --- Combos vbtn-sm + btn-*: sólidos, texto branco, sem borda cinza --- */
+.vbtn-sm.btn-primary   { background: #D85A30; border-color: #D85A30; color: #fff; background-image: none; }
+.vbtn-sm.btn-primary:hover   { background: #b84a26; border-color: #b84a26; color: #fff; }
+.vbtn-sm.btn-success   { background: #16a34a; border-color: #16a34a; color: #fff; background-image: none; }
+.vbtn-sm.btn-success:hover   { background: #15803d; border-color: #15803d; color: #fff; }
+.vbtn-sm.btn-danger    { background: #dc2626; border-color: #dc2626; color: #fff; background-image: none; }
+.vbtn-sm.btn-danger:hover    { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+.vbtn-sm.btn-warning   { background: #d97706; border-color: #d97706; color: #fff; background-image: none; }
+.vbtn-sm.btn-warning:hover   { background: #b45309; border-color: #b45309; color: #fff; }
+.vbtn-sm.btn-info      { background: #0284c7; border-color: #0284c7; color: #fff; background-image: none; }
+.vbtn-sm.btn-info:hover      { background: #0369a1; border-color: #0369a1; color: #fff; }
+.vbtn-sm.btn-secondary { background: #475569; border-color: #475569; color: #fff; background-image: none; }
+.vbtn-sm.btn-secondary:hover { background: #334155; border-color: #334155; color: #fff; }
+
+/* --- Variantes outline do vbtn (substituem estilos inline antigos) --- */
+.vbtn-brand  { border-color: #D85A30; color: #D85A30; }
+.vbtn-brand:hover  { background: #D85A30; border-color: #D85A30; color: #fff; }
+.vbtn-ok     { border-color: #16a34a; color: #16a34a; }
+.vbtn-ok:hover     { background: #16a34a; border-color: #16a34a; color: #fff; }
+.vbtn-info   { border-color: #0284c7; color: #0284c7; }
+.vbtn-info:hover   { background: #0284c7; border-color: #0284c7; color: #fff; }
+.vbtn-danger { border-color: #dc2626; color: #dc2626; }
+.vbtn-danger:hover { background: #dc2626; border-color: #dc2626; color: #fff; }
+
+/* --- Foco visível e acessível em todos os botões --- */
+.btn:focus-visible, .vbtn-sm:focus-visible,
+.btn-outline-primary:focus-visible, .btn-outline-secondary:focus-visible,
+.btn-outline-danger:focus-visible, .btn-outline-dark:focus-visible {
+  outline: 2px solid #D85A30;
+  outline-offset: 2px;
 }

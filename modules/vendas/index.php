@@ -148,7 +148,7 @@ include '../../includes/header_vendedor.php';
                     <input type="text" name="busca" value="<?php echo htmlspecialchars($busca); ?>" placeholder="Buscar vendas..." class="vbtn-sm" style="width:200px">
                     <button type="submit" class="vbtn-sm"><i class="fas fa-search"></i></button>
                 </form>
-                <a href="nova_venda.php" class="vbtn-sm" style="border-color:#D85A30;color:#D85A30"><i class="fas fa-plus"></i> Nova Venda</a>
+                <a href="nova_venda.php" class="vbtn-sm vbtn-brand"><i class="fas fa-plus"></i> Nova Venda</a>
             </div>
         </div>
 
@@ -182,7 +182,7 @@ include '../../includes/header_vendedor.php';
                             </td>
                             <td>
                                 <?php if (!empty($venda['os_numero'])): ?>
-                                    <a href="../os/vendedor.php?os=<?php echo urlencode($venda['os_numero']); ?>" class="vbtn-sm" style="border-color:#1565C0;color:#1565C0"><?php echo htmlspecialchars($venda['os_numero']); ?></a>
+                                    <a href="../os/vendedor.php?os=<?php echo urlencode($venda['os_numero']); ?>" class="vbtn-sm vbtn-info"><?php echo htmlspecialchars($venda['os_numero']); ?></a>
                                 <?php endif; ?>
                             </td>
                             <td>

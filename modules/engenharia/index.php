@@ -523,7 +523,7 @@ include '../../includes/header_vendedor.php';
         <div class="vend-card">
             <div class="vend-card-head" style="display: flex; justify-content: space-between; align-items: center;">
                 <h3>Produtos</h3>
-                <button type="button" class="vbtn-sm" style="background: #28a745; color: white; padding: 5px 10px; font-size: 12px; border-radius: 4px; border: none; cursor: pointer;" data-toggle="modal" data-target="#modalImportarCsv">
+                <button type="button" class="vbtn-sm btn-success" data-toggle="modal" data-target="#modalImportarCsv">
                     <i class="fas fa-upload"></i> Importar CSV
                 </button>
             </div>

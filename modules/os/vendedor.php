@@ -144,7 +144,7 @@ include '../../includes/header_vendedor.php';
 .prio-baixa{color:#2e7d32}
 .vend-empty{padding:40px;text-align:center;color:#bbb;font-size:13px}
 .vbtn-primary{background:#D85A30;color:#fff;border-color:#D85A30}
-.vbtn-primary:hover{background:#c04e28;color:#fff}
+.vbtn-primary:hover{background:#b84a26;color:#fff}
 </style>
 <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/kanban.css">
 
@@ -253,7 +253,7 @@ include '../../includes/header_vendedor.php';
             <td>
               <a href="os_detalhes.php?os_id=<?php echo $os['id']; ?>" class="vbtn-sm"><i class="fas fa-eye"></i></a>
               <?php if (hasPermission(['master', 'gerente']) && $os['status'] === 'em_revisao'): ?>
-                <a href="gerente.php" class="vbtn-sm" style="color:#2e7d32;border-color:#c8e6c9"><i class="fas fa-check"></i> Liberar</a>
+                <a href="gerente.php" class="vbtn-sm vbtn-ok"><i class="fas fa-check"></i> Liberar</a>
               <?php endif; ?>
             </td>
           </tr>
