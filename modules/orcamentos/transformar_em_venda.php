@@ -1,5 +1,6 @@
 <?php
 require_once '../../config/config.php';
+require_once '../../includes/engenharia.php';
 requirePermission(['master', 'vendedor']);
 
 $db = getDB();
@@ -79,8 +80,17 @@ try {
     $stmtUpd = $db->prepare("UPDATE orcamentos SET status = 'convertido' WHERE id = ?");
     $stmtUpd->execute([$id_orc]);
 
+    // Gerar a O.S. da venda (mesmo fluxo de nova_venda: entra em
+    // autorização para o projetista/engenharia trabalhar)
+    ensureEngenhariaSchema($db);
+    $numero_os = getNextNumber('ordens_servico', 'OS-');
+    $stmtOS = $db->prepare("INSERT INTO ordens_servico (numero, venda_id, cliente_id, data_inicio, status, etapa_atual, prioridade) VALUES (?, ?, ?, CURDATE(), 'pendente', 'autorizacao', 'verde')");
+    $stmtOS->execute([$numero_os, $id_venda, $orc['cliente_id']]);
+    $os_id = (int) $db->lastInsertId();
+    sincronizarPlanejamentoOS($db, $os_id, (int) $id_venda);
+
     $db->commit();
-    setSuccess("Orçamento convertido em venda com sucesso! Venda #$numero criada.");
+    setSuccess("Orçamento convertido em venda com sucesso! Venda #$numero e O.S. $numero_os criadas.");
 
 } catch (Exception $e) {
     if ($db->inTransaction()) $db->rollBack();

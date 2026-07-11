@@ -5,3 +5,13 @@
 # Ignorar uploads e arquivos temporários se desejar
 /assets/uploads/
 /uploads/
+
+# Não versionar: projetos alheios, dependências e artefatos locais
+/twenty-main/
+/node_modules/
+/dashboard/
+/webalizer/
+/xampp/
+/img/
+/.kilo/
+/testsprite_tests/
