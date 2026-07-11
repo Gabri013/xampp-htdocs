@@ -386,3 +386,31 @@ function paginate($total_items, $current_page = 1, $items_per_page = ITEMS_PER_P
         'offset' => $offset
     ];
 }
+
+/**
+ * Procura cliente já cadastrado com o mesmo CNPJ/CPF (comparando apenas os
+ * dígitos) ou com a mesma razão social. Evita cadastro duplicado.
+ */
+function encontrarClienteDuplicado(PDO $db, string $razao_social, string $cnpj_cpf = ''): ?array {
+    $docDigitos = preg_replace('/\D+/', '', $cnpj_cpf);
+    if ($docDigitos !== '') {
+        $stmt = $db->prepare("
+            SELECT id, razao_social, cnpj_cpf FROM clientes
+            WHERE REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(cnpj_cpf,''), '.', ''), '-', ''), '/', ''), ' ', '') = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$docDigitos]);
+        $c = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($c) return $c;
+    }
+
+    $razao = trim($razao_social);
+    if ($razao !== '') {
+        $stmt = $db->prepare("SELECT id, razao_social, cnpj_cpf FROM clientes WHERE LOWER(TRIM(razao_social)) = LOWER(?) LIMIT 1");
+        $stmt->execute([$razao]);
+        $c = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($c) return $c;
+    }
+
+    return null;
+}

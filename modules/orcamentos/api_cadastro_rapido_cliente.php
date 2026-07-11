@@ -19,9 +19,21 @@ if (!$nome) {
 }
 
 try {
+    // Cliente já existente: devolve o cadastro atual em vez de duplicar
+    $existente = encontrarClienteDuplicado($db, $nome, $cnpj);
+    if ($existente) {
+        echo json_encode([
+            'success' => true,
+            'ja_existia' => true,
+            'id' => $existente['id'],
+            'nome' => $existente['razao_social'],
+        ]);
+        exit;
+    }
+
     $stmt = $db->prepare("INSERT INTO clientes (razao_social, endereco, telefone, email, cnpj_cpf) VALUES (?, ?, ?, ?, ?)");
     $stmt->execute([$nome, $endereco, $telefone, $email, $cnpj]);
-    
+
     echo json_encode([
         'success' => true,
         'id' => $db->lastInsertId(),

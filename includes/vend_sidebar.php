@@ -194,6 +194,7 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
 
     <div class="vend-nav-group">
         <span class="vend-nav-label">Alertas</span>
+        <a href="<?php echo SITE_URL; ?>/modules/os/scan.php" class="vend-nav-item <?php echo czNavActive('scan.php'); ?>"><i class="fas fa-qrcode"></i> Escanear O.P.</a>
         <a href="<?php echo SITE_URL; ?>/modules/notificacoes/index.php" class="vend-nav-item <?php echo czNavActive('index.php', 'notificacoes'); ?>">
             <i class="fas fa-bell"></i> Notificações
             <span class="vend-nav-badge" id="czNotifBadge" <?php echo $qtd_notificacoes_nao_lidas > 0 ? '' : 'style="display:none"'; ?>><?php echo $qtd_notificacoes_nao_lidas; ?></span>

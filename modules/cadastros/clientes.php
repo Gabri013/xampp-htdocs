@@ -30,6 +30,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$razao_social, $nome_fantasia, $cnpj_cpf, $inscricao_estadual, $endereco, $cidade, $estado, $cep, $telefone, $email, $observacoes, $id]);
                 setSuccess('Cliente atualizado com sucesso!');
             } else {
+                // Evita cadastro em duplicidade (mesmo CNPJ/CPF ou razão social)
+                $existente = encontrarClienteDuplicado($db, $razao_social, $cnpj_cpf);
+                if ($existente) {
+                    setError('Cliente já cadastrado: ' . $existente['razao_social'] . ' (código #' . $existente['id'] . '). Use a busca para localizá-lo em vez de cadastrar novamente.');
+                    header('Location: clientes.php?busca=' . urlencode($existente['razao_social']));
+                    exit;
+                }
                 $stmt = $db->prepare("INSERT INTO clientes (razao_social, nome_fantasia, cnpj_cpf, inscricao_estadual, endereco, cidade, estado, cep, telefone, email, observacoes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt->execute([$razao_social, $nome_fantasia, $cnpj_cpf, $inscricao_estadual, $endereco, $cidade, $estado, $cep, $telefone, $email, $observacoes]);
                 setSuccess('Cliente cadastrado com sucesso!');

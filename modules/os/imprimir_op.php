@@ -111,6 +111,18 @@ foreach (getValidOSEtapas() as $etapaFluxo) {
     $processos[] = $labelsEtapas[$etapaFluxo] ?? ucfirst($etapaFluxo);
 }
 
+// Setores condicionais desta O.S. (bolinha colorida na OP):
+// mobiliário = verde, cocção = amarelo, refrigeração = azul
+$coresSetores = [
+    'mobiliario'   => ['cor' => '#16a34a', 'label' => 'Mobiliário'],
+    'coccao'       => ['cor' => '#d9a406', 'label' => 'Cocção'],
+    'refrigeracao' => ['cor' => '#0284c7', 'label' => 'Refrigeração'],
+];
+$stmtPlan = $db->prepare("SELECT DISTINCT etapa FROM os_etapas_producao WHERE os_id = ? AND etapa IN ('mobiliario', 'coccao', 'refrigeracao')");
+$stmtPlan->execute([$osId]);
+$setoresCondicionais = $stmtPlan->fetchAll(PDO::FETCH_COLUMN);
+usort($setoresCondicionais, fn($a, $b) => array_search($a, array_keys($coresSetores)) <=> array_search($b, array_keys($coresSetores)));
+
 $totalPaginas = count($itens);
 
 // Data/hora de impressão em pt-BR (ex.: Qua, 4 fev 2026 09:51:53)
@@ -149,12 +161,20 @@ header('Content-Type: text/html; charset=UTF-8');
         .hd-num .lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .hd-num .num{font-size:15px;font-weight:bold;margin-top:1.5mm}
 
-        /* Descrição + barcode */
+        /* Descrição + barcode + QR */
         .desc-cell{flex:1;min-height:16mm}
         .desc-cell .texto{font-size:12px;font-weight:bold;text-transform:uppercase;margin-top:1mm;line-height:1.3}
         .bc-cell{width:44mm;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1mm}
         .bc-cell svg{width:38mm;height:9mm}
         .bc-cell .bc-num{font-size:8px;margin-top:.5mm}
+        .qr-cell{width:20mm;display:flex;align-items:center;justify-content:center;padding:1mm}
+        .qr-cell .qr-box{width:17mm;height:17mm}
+        .qr-cell .qr-box img, .qr-cell .qr-box canvas{width:100%!important;height:100%!important}
+
+        /* Bolinhas de setor condicional (mobiliário/cocção/refrigeração) */
+        .setores-dots{display:flex;align-items:center;gap:2.5mm;margin-top:1.5mm}
+        .setores-dots .dot{display:inline-flex;align-items:center;gap:1.2mm;font-size:8px;font-weight:bold}
+        .setores-dots .dot i{width:4mm;height:4mm;border-radius:50%;display:inline-block;border:.3mm solid #000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 
         /* Linha de campos: código / ns / liberação / prazo / qtde */
         .c-codigo{width:34mm}
@@ -226,6 +246,7 @@ header('Content-Type: text/html; charset=UTF-8');
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
     <div class="printbar">
@@ -253,15 +274,25 @@ header('Content-Type: text/html; charset=UTF-8');
                 </div>
             </div>
 
-            <!-- Descrição do produto + barcode -->
+            <!-- Descrição do produto + setores + barcode + QR -->
             <div class="row">
                 <div class="cell desc-cell">
                     <div class="lbl">Descrição do produto</div>
                     <div class="texto"><?= htmlspecialchars($descricaoItem !== '' ? $descricaoItem : '-') ?></div>
+                    <?php if (!empty($setoresCondicionais)): ?>
+                    <div class="setores-dots">
+                        <?php foreach ($setoresCondicionais as $sc): $info = $coresSetores[$sc]; ?>
+                        <span class="dot"><i style="background:<?= $info['cor'] ?>"></i> <?= $info['label'] ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
                 </div>
                 <div class="cell bc-cell">
                     <svg class="barcode" data-code="<?= htmlspecialchars($numOpItem) ?>"></svg>
                     <div class="bc-num"><?= htmlspecialchars($numOpItem) ?></div>
+                </div>
+                <div class="cell qr-cell">
+                    <div class="qr-box" data-qr="<?= htmlspecialchars(SITE_URL . '/modules/os/scan.php?code=' . urlencode($numOpItem)) ?>"></div>
                 </div>
             </div>
 
@@ -395,7 +426,14 @@ header('Content-Type: text/html; charset=UTF-8');
                     } catch (e) {}
                 });
             }
-            setTimeout(function () { try { window.print(); } catch (e) {} }, 600);
+            if (typeof QRCode !== 'undefined') {
+                document.querySelectorAll('.qr-box').forEach(function (el) {
+                    try {
+                        new QRCode(el, { text: el.dataset.qr, width: 96, height: 96, correctLevel: QRCode.CorrectLevel.M });
+                    } catch (e) {}
+                });
+            }
+            setTimeout(function () { try { window.print(); } catch (e) {} }, 700);
         });
     </script>
 </body>

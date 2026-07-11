@@ -15,3 +15,10 @@
 /img/
 /.kilo/
 /testsprite_tests/
+/TESTSPRITE_IDE_SETUP.md
+/testsprite-config.json
+/ruvector.db
+/package.json
+/package-lock.json
+/applications.html
+/bitnami.css

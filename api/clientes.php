@@ -41,6 +41,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $db = getDB();
         ensureClientesCamposRapidos($db);
+
+        // Cliente já existente: devolve o cadastro atual em vez de duplicar
+        $existente = encontrarClienteDuplicado($db, $razao_social, $cnpj_cpf);
+        if ($existente) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'ja_existia' => true,
+                'message' => 'Cliente já cadastrado — usando o cadastro existente: ' . $existente['razao_social'] . ' (#' . $existente['id'] . ').',
+                'cliente_id' => $existente['id'],
+                'razao_social' => $existente['razao_social'],
+                'cliente' => ['id' => $existente['id'], 'razao_social' => $existente['razao_social']],
+            ]);
+            exit;
+        }
+
         $stmt = $db->prepare("INSERT INTO clientes (razao_social, nome_fantasia, responsavel, cnpj_cpf, inscricao_estadual, telefone, email, cep, endereco, cidade, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$razao_social, $nome_fantasia, $responsavel, $cnpj_cpf, $inscricao_estadual, $telefone, $email, $cep, $endereco, $cidade, $estado]);
         $id = $db->lastInsertId();

@@ -119,10 +119,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $margemLucro = parseMoneyValue($_POST['margem_lucro'] ?? 0);
         $componentes = buildComponentesPayload($_POST);
 
+        // Evita produto duplicado: código já usado por outro produto
+        $dupStmt = $db->prepare('SELECT id, nome FROM produtos WHERE codigo = ? AND id <> ? LIMIT 1');
+        $dupStmt->execute([$codigo, (int)($id ?: 0)]);
+        $produtoDuplicado = $dupStmt->fetch(PDO::FETCH_ASSOC);
+
         if ($codigo === '' || $nome === '') {
             setError('Informe codigo e nome do produto.');
         } elseif ($categoriaId <= 0) {
             setError('Selecione a categoria do produto.');
+        } elseif ($produtoDuplicado) {
+            setError('Já existe um produto com o código ' . $codigo . ': ' . $produtoDuplicado['nome'] . ' (#' . $produtoDuplicado['id'] . '). Edite o produto existente em vez de cadastrar de novo.');
         } else {
             try {
                 $db->beginTransaction();

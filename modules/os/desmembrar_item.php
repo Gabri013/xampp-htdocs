@@ -1,13 +1,15 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/workflow.php';
 
 header('Content-Type: application/json');
 
 $item_id = (int)($_POST['item_id'] ?? 0);
 $setor = $_POST['setor'] ?? '';
 
-$setores_validos = ['corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'montagem'];
+// Liberação parcial: item pode ser liberado para qualquer setor de bancada
+$setores_validos = getEtapasBancada();
 
 if ($item_id <= 0 || !in_array($setor, $setores_validos)) {
     echo json_encode(['success' => false, 'error' => 'Dados inválidos.']);
