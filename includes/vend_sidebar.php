@@ -11,7 +11,7 @@ $ve_dashboard      = in_array($tipo_usuario, ['master', 'vendedor']);
 $ve_gerente        = in_array($tipo_usuario, ['master', 'gerente']);
 $ve_projetista     = in_array($tipo_usuario, ['master', 'projetista']);
 $ve_os_lista       = in_array($tipo_usuario, ['master', 'vendedor', 'projetista', 'gerente']);
-$ve_producao_geral = in_array($tipo_usuario, ['master', 'gerente', 'producao']);
+$ve_producao_gestao = in_array($tipo_usuario, ['master', 'gerente', 'producao']);
 $ve_dash_producao  = in_array($tipo_usuario, ['master', 'dashboard_producao', 'gerente', 'producao']);
 $ve_vendas         = in_array($tipo_usuario, ['master', 'vendedor']);
 $ve_nova_os        = in_array($tipo_usuario, ['master', 'vendedor', 'projetista', 'gerente']);
@@ -40,11 +40,23 @@ $setores_sidebar = [
     'embalagem'    => ['label' => 'Embalagem',    'icon' => 'fa-box-open',      'page' => 'embalagem.php'],
     'finalizacao'  => ['label' => 'Finalização',  'icon' => 'fa-flag-checkered', 'page' => 'finalizacao.php'],
 ];
-$ve_todos_setores = in_array($tipo_usuario, ['master', 'gerente', 'producao', 'projetista']);
+// Só a gestão vê a lista completa de setores na sidebar. O projetista
+// acompanha a produção pelo Kanban e pela lista de O.S. (mantém permissão
+// de leitura dos painéis se navegar direto), e sua engenharia já está no
+// grupo Principal — não precisa da lista de setores poluindo o menu.
+$ve_todos_setores = in_array($tipo_usuario, ['master', 'gerente', 'producao']);
+// Projetista e engenharia são a mesma função: para eles o painel de
+// engenharia aparece junto de "Projetista" no grupo Principal, não como
+// um setor separado na lista "Setores".
+$projetista_engenharia = in_array($tipo_usuario, ['projetista', 'engenharia'], true);
 $setores_visiveis = [];
 foreach ($setores_sidebar as $setor_key => $setor_info) {
     // finalizacao.php não aceita projetista/producao (requirePermission da página)
     if ($setor_key === 'finalizacao' && !in_array($tipo_usuario, ['master', 'gerente', 'producao', 'finalizacao'], true)) {
+        continue;
+    }
+    // engenharia não é um "setor" à parte para o projetista — some da lista
+    if ($setor_key === 'engenharia' && $projetista_engenharia) {
         continue;
     }
     if ($ve_todos_setores || $tipo_usuario === $setor_key) {
@@ -95,7 +107,10 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
         <a href="<?php echo SITE_URL; ?>/modules/os/gerente.php" class="vend-nav-item <?php echo czNavActive('gerente.php'); ?>"><i class="fas fa-user-tie"></i> Painel do Gerente</a>
         <?php endif; ?>
         <?php if ($ve_projetista): ?>
-        <a href="<?php echo SITE_URL; ?>/modules/projetista/index.php" class="vend-nav-item <?php echo czNavActive('index.php', 'projetista'); ?>"><i class="fas fa-drafting-compass"></i> Projetista</a>
+        <a href="<?php echo SITE_URL; ?>/modules/projetista/index.php" class="vend-nav-item <?php echo czNavActive('index.php', 'projetista'); ?>"><i class="fas fa-drafting-compass"></i> Projetista / Engenharia</a>
+        <?php endif; ?>
+        <?php if ($projetista_engenharia): ?>
+        <a href="<?php echo SITE_URL; ?>/modules/os/engenharia_setor.php" class="vend-nav-item <?php echo czNavActive('engenharia_setor.php'); ?>"><i class="fas fa-cogs"></i> Apontar Engenharia</a>
         <?php endif; ?>
         <?php if ($ve_os_lista): ?>
         <a href="<?php echo SITE_URL; ?>/modules/os/vendedor.php" class="vend-nav-item <?php echo czNavActive('vendedor.php'); ?>"><i class="fas fa-clipboard-list"></i> O.S.</a>
@@ -103,7 +118,7 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
         <?php if (in_array($tipo_usuario, ['master', 'gerente', 'producao', 'vendedor', 'projetista'])): ?>
         <a href="<?php echo SITE_URL; ?>/modules/os/kanban.php" class="vend-nav-item <?php echo czNavActive('kanban.php'); ?>"><i class="fas fa-columns"></i> Kanban</a>
         <?php endif; ?>
-        <?php if ($ve_producao_geral): ?>
+        <?php if ($ve_producao_gestao): ?>
         <a href="<?php echo SITE_URL; ?>/modules/os/producao.php" class="vend-nav-item <?php echo czNavActive('producao.php', 'os'); ?>"><i class="fas fa-industry"></i> Produção</a>
         <a href="<?php echo SITE_URL; ?>/modules/os/estatisticas.php" class="vend-nav-item <?php echo czNavActive('estatisticas.php'); ?>"><i class="fas fa-chart-line"></i> Estatísticas</a>
         <?php endif; ?>
@@ -151,7 +166,7 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
         <a href="<?php echo SITE_URL; ?>/modules/os/nova_os_independente.php" class="vend-nav-item <?php echo czNavActive('nova_os_independente.php'); ?>"><i class="fas fa-plus-square"></i> Lançar O.S.</a>
         <?php endif; ?>
         <?php if ($ve_engenharia): ?>
-        <a href="<?php echo SITE_URL; ?>/modules/engenharia/index.php" class="vend-nav-item <?php echo czNavActive('index.php', 'engenharia'); ?>"><i class="fas fa-cogs"></i> Engenharia</a>
+        <a href="<?php echo SITE_URL; ?>/modules/engenharia/index.php" class="vend-nav-item <?php echo czNavActive('index.php', 'engenharia'); ?>"><i class="fas fa-cogs"></i> Engenharia de Produto</a>
         <?php endif; ?>
         <?php if ($ve_expediente): ?>
         <a href="<?php echo SITE_URL; ?>/modules/os/controle_expediente.php" class="vend-nav-item <?php echo czNavActive('controle_expediente.php'); ?>"><i class="fas fa-user-clock"></i> Expediente</a>

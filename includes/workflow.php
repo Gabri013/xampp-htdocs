@@ -71,9 +71,9 @@ function getPermittedEtapasByProfile(string $userType): array {
         'master' => $todas,
         'gerente' => $todas,
         'producao' => $todas,
-        'producao_geral' => $todas,
-        // Engenharia e projetista andam juntos: a mesma conta desenha o
-        // projeto e opera a etapa de engenharia da produção.
+        // Projetista e engenharia são a MESMA função: a conta do projetista
+        // desenha o projeto e opera a etapa de engenharia da produção. O tipo
+        // 'engenharia' é apenas um alias com o mesmo escopo.
         'projetista' => ['engenharia'],
         'engenharia' => ['engenharia'],
         'programacao' => ['programacao'],

@@ -210,16 +210,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'anexar_
             }
         }
 
+        // A tabela os_itens_arquivos referencia os_itens(id). Em O.S. vinda de
+        // venda, o item está em vendas_itens — então só gravamos o vínculo
+        // por item quando o id existe mesmo em os_itens (O.S. independente).
+        $itemExisteEmOsItens = false;
+        if ($itemId > 0) {
+            $chkItem = $db->prepare("SELECT 1 FROM os_itens WHERE id = ? AND os_id = ?");
+            $chkItem->execute([$itemId, $osId]);
+            $itemExisteEmOsItens = (bool) $chkItem->fetchColumn();
+        }
+
         $ok = 0; $erros = [];
         foreach ($arquivos as $arq) {
             if (($arq['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) continue;
             $tipoArquivo = getTipoArquivoProducao($arq['name']);
             $up = uploadFile($arq, 'projetos');
             if ($up['success'] ?? false) {
-                $db->prepare("INSERT INTO os_itens_arquivos (os_id, os_item_id, tipo, nome_original, nome_arquivo, usuario_id) VALUES (?, ?, ?, ?, ?, ?)")
-                   ->execute([$osId, $itemId, $tipoArquivo, $arq['name'], $up['filename'], $_SESSION['usuario_id']]);
+                // Anexo da O.S. (tabela lida por qualidade, impressão, 3D, avanço)
                 $db->prepare("INSERT INTO os_arquivos (os_id, tipo, nome_original, nome_arquivo, usuario_id) VALUES (?, ?, ?, ?, ?)")
                    ->execute([$osId, $tipoArquivo, $arq['name'], $up['filename'], $_SESSION['usuario_id']]);
+                // Vínculo por item apenas quando o item existe em os_itens
+                if ($itemExisteEmOsItens) {
+                    $db->prepare("INSERT INTO os_itens_arquivos (os_id, os_item_id, tipo, nome_original, nome_arquivo, usuario_id) VALUES (?, ?, ?, ?, ?, ?)")
+                       ->execute([$osId, $itemId, $tipoArquivo, $arq['name'], $up['filename'], $_SESSION['usuario_id']]);
+                }
                 $ok++;
             } else {
                 $erros[] = $arq['name'] . ': ' . ($up['message'] ?? 'arquivo inválido');
