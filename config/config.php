@@ -90,10 +90,5 @@ require_once BASE_PATH . '/config/database.php';
 require_once BASE_PATH . '/includes/functions.php';
 require_once BASE_PATH . '/includes/notificacoes.php';
 
-// PONTE LARAVEL: autenticação compartilhada
-if (file_exists(BASE_PATH . '/legado/ponte_auth.php')) {
-    require_once BASE_PATH . '/legado/ponte_auth.php';
-}
-
 // Verificação de autenticação
 require_once BASE_PATH . '/includes/auth.php';

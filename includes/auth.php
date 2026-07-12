@@ -71,11 +71,6 @@ function login($email, $senha) {
             $stmt = $db->prepare("UPDATE usuarios SET updated_at = NOW() WHERE id = ?");
             $stmt->execute([$usuario['id']]);
             
-            // PONTE LARAVEL: gerar cookie para autenticação no módulo novo
-            if (function_exists('gerarTokenPonte')) {
-                gerarTokenPonte($usuario['id'], $usuario['tipo']);
-            }
-            
             return true;
         }
         
@@ -90,11 +85,6 @@ function login($email, $senha) {
  * Realiza o logout do usuário
  */
 function logout() {
-    // PONTE LARAVEL: destruir cookie de autenticação no módulo novo
-    if (function_exists('destruirTokenPonte')) {
-        destruirTokenPonte();
-    }
-    
     // Limpar todas as variáveis de sessão
     $_SESSION = array();
     

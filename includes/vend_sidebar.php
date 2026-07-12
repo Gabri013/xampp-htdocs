@@ -112,6 +112,15 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
         <?php endif; ?>
     </div>
 
+    <?php if (in_array($tipo_usuario, ['master', 'vendedor', 'gerente'])): ?>
+    <hr class="vend-nav-divider">
+    <div class="vend-nav-group">
+        <span class="vend-nav-label">CRM</span>
+        <a href="<?php echo SITE_URL; ?>/modules/crm/index.php" class="vend-nav-item <?php echo czNavActive('index.php', 'crm'); ?>"><i class="fas fa-filter"></i> Pipeline</a>
+        <a href="<?php echo SITE_URL; ?>/modules/crm/contatos.php" class="vend-nav-item <?php echo czNavActive('contatos.php'); ?>"><i class="fas fa-address-book"></i> Contatos</a>
+    </div>
+    <?php endif; ?>
+
     <?php if ($ve_vendas): ?>
     <hr class="vend-nav-divider">
     <div class="vend-nav-group">
