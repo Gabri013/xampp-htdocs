@@ -25,6 +25,32 @@ bash tools/healthcheck.sh
 
 No fim aparece `TUDO OK` ou a lista de falhas com a página e o erro.
 
+## Simulação de fluxo completo (`simulacao_fluxo.sh`)
+
+```bash
+bash tools/simulacao_fluxo.sh
+```
+
+Simula **todas as áreas em sequência, exercitando todas as possibilidades**,
+como um funcionário faria de ponta a ponta:
+
+1. **Vendas/Comercial** — cadastrar cliente (+ duplicado bloqueado), produto
+   (+ código duplicado bloqueado), orçamento (com desconto / sem cliente),
+   converter orçamento em venda, nova venda direta, editar venda
+2. **CRM** — contato (+ duplicado), oportunidade, atividades (nota/tarefa),
+   mover pipeline, perder sem/com motivo
+3. **Projetista/Engenharia** — anexar DXF+PDF+3D, enviar proposta, gerente
+   devolve, reenviar, aprovar
+4. **Produção** — projetista opera engenharia (com tempo), corte (com tempo),
+   bloqueio de etapa alheia, retorno sem/com justificativa, avanço entre setores
+5. **Qualidade/Finalização** — checkup reprovado (retorno), finalizar sem
+   aprovação (bloqueado), checkup aprovado, finalizar O.S.
+6. **Financeiro** — faturar, baixa parcial, baixa total, tipo de caixa,
+   conta a pagar criar/baixar
+
+Diferente do healthcheck, **este cria dados de teste** — mas remove tudo no
+fim (verifica resíduo = 0). Última execução: **39 verificações, 0 falha**.
+
 ## Contas de teste (senha `teste123`)
 
 `<perfil>@teste.cozinca.com.br` — uma para cada perfil
