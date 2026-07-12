@@ -91,7 +91,7 @@ Regras adicionais do fluxo:
 - Só avança para etapa **posterior**; voltar exige "retornar etapa" com justificativa
 - Iniciar etapa exige **expediente aberto** do operador
 - Aprovação de proposta: `master`, `gerente`, `vendedor`, `projetista`
-- Liberação parcial (desmembrar O.S./item): `master`, `projetista`, `gerente`
+- Liberação parcial (desmembrar O.S./item): `master`, `projetista`, `gerente` — **somente O.S. que ainda não entrou em produção** (pendente/em projeto/proposta/em revisão) e com registro no histórico; O.S. em produção só volta pelo retorno de etapa com justificativa
 
 ## 4. Endpoints (api/)
 
