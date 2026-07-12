@@ -1,7 +1,7 @@
 <?php
 require_once '../../config/config.php';
 require_once '../../includes/notificacao_atrasos.php';
-requirePermission(['master', 'gerente', 'producao', 'producao_geral']);
+requirePermission(['master', 'gerente', 'producao']);
 
 $page_title = 'Estatísticas de Produção';
 

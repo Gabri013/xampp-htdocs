@@ -1,7 +1,7 @@
 <?php
 require_once '../../config/config.php';
 require_once '../../includes/auth.php';
-requirePermission(['master', 'vendedor', 'projetista']);
+requirePermission(['master', 'vendedor', 'projetista', 'gerente']);
 require_once '../../includes/components/kanban.component.php';
 
 $page_title = 'Ordens de Serviço — Vendedor';

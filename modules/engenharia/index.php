@@ -2,7 +2,7 @@
 require_once '../../config/config.php';
 require_once '../../includes/engenharia.php';
 
-requirePermission(['master', 'gerente', 'producao', 'producao_geral']);
+requirePermission(['master', 'gerente', 'producao', 'projetista', 'engenharia']);
 
 $page_title = 'Engenharia de Produto';
 $db = getDB();

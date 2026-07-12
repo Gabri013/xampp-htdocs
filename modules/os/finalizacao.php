@@ -1,7 +1,7 @@
 <?php
 require_once '../../config/config.php';
 
-requirePermission(['master', 'gerente', 'finalizacao', 'vendedor']);
+requirePermission(['master', 'gerente', 'producao', 'finalizacao']);
 $db = getDB();
 $page_title = 'Finalizacao - Controle de Qualidade';
 

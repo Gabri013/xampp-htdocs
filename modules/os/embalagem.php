@@ -6,7 +6,7 @@ require_once '../../includes/expediente.php';
 $setor_atual = 'embalagem';
 $setor_label = 'Embalagem';
 
-requirePermission(['master', 'gerente', 'projetista', 'producao', 'vendedor', $setor_atual]);
+requirePermission(['master', 'gerente', 'projetista', 'producao', $setor_atual]);
 
 $page_title = "Painel do Setor: $setor_label";
 

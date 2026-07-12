@@ -1,7 +1,8 @@
 # Mapa de Permissões — ERP Cozinca Inox
 
-> Gerado em 11/07/2026 a partir de varredura do código **e validação prática**
-> (login real com as 18 contas de teste × 43 páginas = 774 acessos verificados).
+> Gerado em 11/07/2026 e REORGANIZADO na mesma data a partir de varredura do código
+> **e validação prática** (login real com as 18 contas de teste × 43 páginas,
+> duas rodadas de 774 acessos verificados).
 > Regra geral: quem não está na lista de uma página é redirecionado; quem não
 > está autorizado em um endpoint recebe erro/401.
 
@@ -45,25 +46,25 @@
 ### Produção
 | Página | master | gerente | producao | projetista | vendedor | setor X | TV |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| Painéis dos 13 setores | ✅ | ✅ | ✅ | ✅¹ | ✅¹ | só o seu | — |
-| Painel Produção (os/producao) | ✅ | ✅ | ✅ | — | ✅ | ✅ (leitura) | — |
+| Painéis dos 13 setores | ✅ | ✅ | ✅ | ✅¹ | — | só o seu | — |
+| Painel Produção (os/producao) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (leitura) | — |
 | Painel do Gerente (aprovação/liberação) | ✅ | ✅ | — | — | — | — | — |
 | Painel do Projetista (os/projetista) | ✅ | — | — | ✅ | — | — | — |
 | Projetista/Setores (projetista/index) | ✅ | ✅ | ✅ | ✅ | — | — | — |
-| Lista de O.S. (os/vendedor) | ✅ | — | — | ✅ | ✅ | — | — |
+| Lista de O.S. (os/vendedor) | ✅ | ✅ | — | ✅ | ✅ | — | — |
 | Kanban de O.S. | ✅ | ✅ | ✅ | ✅ | ✅ (só as suas) | — | — |
 | Detalhe da O.S. (leitura) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
 | Nova O.S. independente | ✅ | ✅ | — | ✅ | ✅ | — | — |
-| Engenharia de Produto | ✅ | ✅ | ✅ | — | — | — | — |
+| Engenharia de Produto | ✅ | ✅ | ✅ | ✅ | — | só engenharia | — |
 | Importar CSV de engenharia | ✅ | ✅ | ✅ | ✅ | — | — | — |
 | Estatísticas / gráficos | ✅ | ✅ | ✅ | — | — | — | — |
 | Dashboard Produção (TV) | ✅ | ✅ | ✅ | — | — | — | ✅ |
-| Checkup de qualidade / Finalização | ✅ | ✅ | — | — | ✅ | só `finalizacao` | — |
-| Imprimir O.P. | ✅ | ✅ | ✅ | ✅ | — | — | — |
-| Imprimir etiqueta | ✅ | ✅ | — | — | — | só `finalizacao` | — |
+| Checkup de qualidade / Finalização | ✅ | ✅ | ✅ | — | — | só `finalizacao` | — |
+| Imprimir O.P. | ✅ | ✅ | ✅ | ✅ | — | `programacao`/`engenharia` | — |
+| Imprimir etiqueta | ✅ | ✅ | ✅ | — | — | só `finalizacao` | — |
 | Controle de Expediente | ✅ | ✅ | — | — | — | — | — |
 
-¹ Projetista/vendedor têm acesso de leitura aos painéis de setor, **exceto Finalização** (só master/gerente/finalizacao/vendedor).
+¹ Projetista tem acesso de leitura aos painéis de setor, **exceto Finalização** (master/gerente/producao/finalizacao). Vendedor acompanha pelo Kanban, lista de O.S., painel Produção e detalhe da O.S. — não pelos painéis operacionais.
 
 ### Administração e utilidades
 | Página | master | demais |
@@ -97,13 +98,14 @@ Regras adicionais do fluxo:
 | Endpoint | Quem usa |
 |---|---|
 | `producao.php` (iniciar/finalizar/retornar etapa) | logado + regra de etapa acima |
-| `os_update_status.php` (kanban de O.S.) | logado + transição validada |
+| `os_update_status.php` (kanban de O.S.) | master, gerente, producao, vendedor, projetista + transição validada |
 | `crm_move.php` (pipeline CRM) | master, vendedor (só as suas), gerente |
 | `clientes.php` (cadastro rápido) | master, vendedor |
 | `excluir_venda.php` | master, vendedor |
 | `notificacoes_worker.php` (motor) | master, gerente |
 | `export.php` | logado; não-master exporta só as próprias vendas |
-| `os.php`, `os_arquivos.php`, `dashboard_data.php`, `realtime.php` | qualquer logado |
+| `os.php` (gerar OP) | master, vendedor, projetista, gerente, producao |
+| `os_arquivos.php`, `dashboard_data.php`, `realtime.php` | qualquer logado |
 
 ## 5. Ações internas com guarda extra (além da página)
 

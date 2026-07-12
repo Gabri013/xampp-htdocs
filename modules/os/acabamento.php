@@ -12,7 +12,7 @@ $setor_atual = 'acabamento';
 $setor_label = ucfirst($setor_atual);
 
 // Verificar permissão (master, gerente ou o próprio setor)
-requirePermission(['master', 'gerente', 'projetista', 'producao', 'vendedor', $setor_atual]);
+requirePermission(['master', 'gerente', 'projetista', 'producao', $setor_atual]);
 
 $page_title = "Painel do Setor: $setor_label";
 

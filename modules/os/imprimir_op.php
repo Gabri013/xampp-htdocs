@@ -3,7 +3,7 @@ require_once '../../config/config.php';
 require_once '../../includes/engenharia.php';
 require_once '../../includes/workflow.php';
 
-requirePermission(['master', 'projetista', 'gerente', 'producao']);
+requirePermission(['master', 'projetista', 'gerente', 'producao', 'programacao', 'engenharia']);
 
 $db = getDB();
 ensureOrdensServicoIndependentesSchema($db);

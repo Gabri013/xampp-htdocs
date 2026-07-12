@@ -10,6 +10,13 @@ if (!isLoggedIn()) {
     exit;
 }
 
+// Gerar/gerenciar OP é função de gestão, comercial e projeto — setores não
+if (!hasPermission(['master', 'vendedor', 'projetista', 'gerente', 'producao'])) {
+    http_response_code(403);
+    echo json_encode(["success" => false, "error" => "Sem permissão para esta ação."]);
+    exit;
+}
+
 // ── POST: gerar OP individual ─────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'gerar_op_individual') {
     $os_id = (int)($_POST['os_id'] ?? 0);

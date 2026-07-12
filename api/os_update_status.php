@@ -12,6 +12,13 @@ if (!isLoggedIn()) {
     exit;
 }
 
+// Mudança de status (kanban de O.S.) é dos perfis que gerenciam o fluxo
+if (!hasPermission(['master', 'gerente', 'producao', 'vendedor', 'projetista'])) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Sem permissão para mudar status de O.S.']);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Method not allowed']);

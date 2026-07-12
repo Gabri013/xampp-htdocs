@@ -10,12 +10,12 @@ $tipo_usuario = $_SESSION['usuario_tipo'] ?? 'vendedor';
 $ve_dashboard      = in_array($tipo_usuario, ['master', 'vendedor']);
 $ve_gerente        = in_array($tipo_usuario, ['master', 'gerente']);
 $ve_projetista     = in_array($tipo_usuario, ['master', 'projetista']);
-$ve_os_lista       = in_array($tipo_usuario, ['master', 'vendedor', 'projetista']);
+$ve_os_lista       = in_array($tipo_usuario, ['master', 'vendedor', 'projetista', 'gerente']);
 $ve_producao_geral = in_array($tipo_usuario, ['master', 'gerente', 'producao']);
 $ve_dash_producao  = in_array($tipo_usuario, ['master', 'dashboard_producao', 'gerente', 'producao']);
 $ve_vendas         = in_array($tipo_usuario, ['master', 'vendedor']);
 $ve_nova_os        = in_array($tipo_usuario, ['master', 'vendedor', 'projetista', 'gerente']);
-$ve_engenharia     = in_array($tipo_usuario, ['master', 'gerente', 'producao']);
+$ve_engenharia     = in_array($tipo_usuario, ['master', 'gerente', 'producao', 'projetista', 'engenharia']);
 $ve_cadastros      = in_array($tipo_usuario, ['master', 'vendedor']);
 $ve_usuarios       = ($tipo_usuario === 'master');
 $ve_faturamento    = in_array($tipo_usuario, ['master', 'vendedor']);
@@ -44,7 +44,7 @@ $ve_todos_setores = in_array($tipo_usuario, ['master', 'gerente', 'producao', 'p
 $setores_visiveis = [];
 foreach ($setores_sidebar as $setor_key => $setor_info) {
     // finalizacao.php não aceita projetista/producao (requirePermission da página)
-    if ($setor_key === 'finalizacao' && !in_array($tipo_usuario, ['master', 'gerente', 'finalizacao'], true)) {
+    if ($setor_key === 'finalizacao' && !in_array($tipo_usuario, ['master', 'gerente', 'producao', 'finalizacao'], true)) {
         continue;
     }
     if ($ve_todos_setores || $tipo_usuario === $setor_key) {

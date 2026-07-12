@@ -2,7 +2,7 @@
 require_once '../../config/config.php';
 require_once '../../includes/engenharia.php';
 
-requirePermission(['master', 'gerente', 'finalizacao', 'vendedor']);
+requirePermission(['master', 'gerente', 'producao', 'finalizacao']);
 $db = getDB();
 ensureEngenhariaSchema($db);
 $page_title = 'Checkup de Qualidade';

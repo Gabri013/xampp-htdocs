@@ -1,7 +1,7 @@
 <?php
 require_once '../../config/config.php';
 require_once '../../includes/workflow.php';
-requirePermission(['master', 'gerente', 'producao', 'corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem', 'programacao', 'mobiliario', 'coccao', 'embalagem', 'tubo', 'engenharia', 'vendedor']);
+requirePermission(['master', 'gerente', 'producao', 'projetista', 'corte', 'dobra', 'solda', 'refrigeracao', 'acabamento', 'finalizacao', 'montagem', 'programacao', 'mobiliario', 'coccao', 'embalagem', 'tubo', 'engenharia', 'vendedor']);
 
 $page_title = 'Painel de Produção - Fluxo de Etapas';
 

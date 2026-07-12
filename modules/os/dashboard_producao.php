@@ -2,7 +2,7 @@
 require_once '../../config/config.php';
 require_once '../../includes/os_atrasadas.php';
 require_once '../../includes/notificacao_atrasos.php';
-requirePermission(['master', 'dashboard_producao', 'gerente', 'producao', 'producao_geral']);
+requirePermission(['master', 'dashboard_producao', 'gerente', 'producao']);
 
 $page_title = 'Panorama Geral da Produção';
 $db = getDB();
