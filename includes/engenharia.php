@@ -335,6 +335,28 @@ function normalizarTextoComercial(?string $texto): string
     return mb_strtolower(trim((string) $texto));
 }
 
+/**
+ * Gera o próximo código interno de insumo no formato CZ##### para materiais
+ * que não têm código do SolidWorks. O prefixo "CZ" evita colisão com os
+ * códigos numéricos da matéria-prima.
+ */
+function gerarCodigoInsumo(PDO $db): string
+{
+    $stmt = $db->query("SELECT codigo FROM insumos WHERE codigo LIKE 'CZ%' AND codigo REGEXP '^CZ[0-9]+$' ORDER BY CAST(SUBSTRING(codigo, 3) AS UNSIGNED) DESC LIMIT 1");
+    $ultimo = (string) ($stmt->fetchColumn() ?: '');
+    $n = 0;
+    if ($ultimo !== '' && preg_match('/^CZ0*(\d+)$/', $ultimo, $m)) {
+        $n = (int) $m[1];
+    }
+    $chk = $db->prepare("SELECT 1 FROM insumos WHERE codigo = ?");
+    do {
+        $n++;
+        $codigo = 'CZ' . str_pad((string) $n, 5, '0', STR_PAD_LEFT);
+        $chk->execute([$codigo]);
+    } while ($chk->fetchColumn());
+    return $codigo;
+}
+
 function upsertInsumo(PDO $db, array $dados): int
 {
     $insumoId = (int) ($dados['id'] ?? 0);

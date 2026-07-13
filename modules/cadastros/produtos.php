@@ -229,19 +229,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $db->beginTransaction();
                     $novos = 0;
                     $atualizados = 0;
+                    $codigosGerados = 0;
                     $stmtBuscaCod = $db->prepare("SELECT id FROM insumos WHERE codigo = ? LIMIT 1");
+                    $stmtBuscaNome = $db->prepare("SELECT id, codigo FROM insumos WHERE LOWER(nome) = LOWER(?) LIMIT 1");
                     foreach ($materiais as $mat) {
                         $existe = 0;
-                        if ($mat['codigo'] !== '') {
-                            $stmtBuscaCod->execute([$mat['codigo']]);
+                        $codigoFinal = $mat['codigo'];
+                        if ($codigoFinal !== '') {
+                            // já tem código do SolidWorks: usa como está
+                            $stmtBuscaCod->execute([$codigoFinal]);
                             $existe = (int) ($stmtBuscaCod->fetchColumn() ?: 0);
+                        } else {
+                            // não tem código: reaproveita o do insumo já existente (por nome)
+                            // ou gera um código interno CZ##### novo
+                            $stmtBuscaNome->execute([$mat['nome']]);
+                            $achado = $stmtBuscaNome->fetch(PDO::FETCH_ASSOC);
+                            if ($achado) {
+                                $existe = (int) $achado['id'];
+                                $codigoFinal = $achado['codigo'] !== null && $achado['codigo'] !== '' ? $achado['codigo'] : gerarCodigoInsumo($db);
+                                if ($achado['codigo'] === null || $achado['codigo'] === '') {
+                                    $codigosGerados++;
+                                }
+                            } else {
+                                $codigoFinal = gerarCodigoInsumo($db);
+                                $codigosGerados++;
+                            }
                         }
                         // observação guarda material + espessura para consulta de compra
                         $obs = trim(($mat['material'] !== '' ? 'Material: ' . $mat['material'] : '')
                             . ($mat['espessura'] !== '' ? ' | Espessura: ' . $mat['espessura'] . 'mm' : ''));
                         upsertInsumo($db, [
                             'id' => $existe,
-                            'codigo' => $mat['codigo'],
+                            'codigo' => $codigoFinal,
                             'nome' => $mat['nome'],
                             'unidade' => $mat['unidade'],
                             'custo_unitario' => 0,
@@ -254,7 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
                     $db->commit();
-                    setSuccess("Tabela de materiais importada: $novos novo(s), $atualizados atualizado(s). Preencha o custo de compra de cada material no catálogo.");
+                    setSuccess("Tabela de materiais importada: $novos novo(s), $atualizados atualizado(s). $codigosGerados código(s) interno(s) gerado(s) para materiais sem código. Preencha o custo de compra de cada material no catálogo.");
                     header('Location: produtos.php#insumos');
                     exit;
                 } catch (Exception $e) {

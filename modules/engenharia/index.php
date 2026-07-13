@@ -254,7 +254,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $insumoId = (int) ($stmtBuscaCod->fetchColumn() ?: 0) ?: null;
                 }
                 if ($insumoId === null) {
-                    // cria/reutiliza pelo nome; grava o código do SolidWorks
+                    // material sem código no BOM: reaproveita por nome se já existir,
+                    // senão gera um código interno CZ##### (regra: todo insumo tem código)
+                    if ($codigo === '') {
+                        $stmtNome = $db->prepare("SELECT id, codigo FROM insumos WHERE LOWER(nome) = LOWER(?) LIMIT 1");
+                        $stmtNome->execute([$it['descricao']]);
+                        $achado = $stmtNome->fetch(PDO::FETCH_ASSOC);
+                        if ($achado && $achado['codigo'] !== null && $achado['codigo'] !== '') {
+                            $codigo = $achado['codigo'];
+                        } else {
+                            $codigo = gerarCodigoInsumo($db);
+                        }
+                    }
                     $insumoId = upsertInsumo($db, [
                         'codigo' => $codigo,
                         'nome' => $it['descricao'],
