@@ -77,9 +77,28 @@ include '../../includes/header_vendedor.php';
     <?php include '../../includes/vend_sidebar.php'; ?>
     <div class="vend-main">
         <div class="vend-page-head">
-            <div><h1 class="vend-page-title">Engenharia - Setor de Projetos</h1></div>
+            <div><h1 class="vend-page-title">Projetista / Engenharia</h1></div>
             <div>Total: <?= count($ordens_aguardando_projeto) ?> OS | Itens: <?= count($itens_pendentes) ?></div>
         </div>
+
+        <?php
+        // Apontamento da etapa de engenharia — unificado aqui (projetista = engenharia).
+        // Mostra as O.S. que estão na etapa de engenharia da produção para apontar tempo.
+        $osEngenharia = $db->query("
+            SELECT COUNT(*) FROM ordens_servico
+            WHERE status = 'em_producao' AND etapa_atual = 'engenharia'
+        ")->fetchColumn();
+        if ((int) $osEngenharia > 0):
+        ?>
+        <a href="<?= SITE_URL ?>/modules/os/engenharia_setor.php" class="vend-alert" style="display:flex;align-items:center;gap:10px;text-decoration:none;background:#FEF0EA;border-left:4px solid #D85A30;margin-bottom:16px">
+            <i class="fas fa-cogs" style="color:#D85A30;font-size:18px"></i>
+            <div style="flex:1">
+                <strong style="color:#1a1a1a"><?= (int) $osEngenharia ?> O.S. na etapa de Engenharia</strong>
+                <div style="font-size:12px;color:#666">Clique para apontar o tempo de engenharia dessas ordens.</div>
+            </div>
+            <span class="vbtn-sm vbtn-brand"><i class="fas fa-stopwatch"></i> Apontar Engenharia</span>
+        </a>
+        <?php endif; ?>
 
         <?php if (!empty($ordens)): ?>
         <div class="vend-table-wrap">

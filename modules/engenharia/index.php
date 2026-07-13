@@ -221,6 +221,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$estrutura['id'], $componente, $quantidade, $unidade !== '' ? $unidade : 'un']);
 
             setSuccess('Componente adicionado à estrutura.');
+        } elseif ($acao === 'importar_bom') {
+            require_once '../../includes/planilha.php';
+            if (!isset($_FILES['planilha_bom']) || $_FILES['planilha_bom']['error'] !== UPLOAD_ERR_OK) {
+                throw new RuntimeException('Envie um arquivo CSV ou Excel válido.');
+            }
+            $ext = strtolower(pathinfo($_FILES['planilha_bom']['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, ['csv', 'xlsx', 'xlsm'], true)) {
+                throw new RuntimeException('Formato não suportado. Use CSV ou XLSX.');
+            }
+            $modo = ($_POST['modo_import'] ?? 'substituir'); // substituir | acrescentar
+            $itens = lerPlanilhaMateriais($_FILES['planilha_bom']['tmp_name'], $ext);
+            if (empty($itens)) {
+                throw new RuntimeException('Não encontrei materiais na planilha. Confira se há colunas de descrição/código e quantidade.');
+            }
+
+            $estrutura = getOrCreateEstruturaProduto($db, $produtoId);
+            $db->beginTransaction();
+            if ($modo === 'substituir') {
+                $db->prepare("DELETE FROM componentes_produto WHERE estrutura_id = ?")->execute([$estrutura['id']]);
+            }
+
+            $novosInsumos = 0;
+            $importados = 0;
+            $stmtBuscaCod = $db->prepare("SELECT id FROM insumos WHERE codigo = ? LIMIT 1");
+            $stmtIns = $db->prepare("INSERT INTO componentes_produto (estrutura_id, insumo_id, componente_nome, quantidade, unidade, custo_unitario) VALUES (?, ?, ?, ?, ?, ?)");
+            foreach ($itens as $it) {
+                $codigo = $it['codigo'];
+                $insumoId = null;
+                if ($codigo !== '') {
+                    $stmtBuscaCod->execute([$codigo]);
+                    $insumoId = (int) ($stmtBuscaCod->fetchColumn() ?: 0) ?: null;
+                }
+                if ($insumoId === null) {
+                    // cria/reutiliza pelo nome; grava o código do SolidWorks
+                    $insumoId = upsertInsumo($db, [
+                        'codigo' => $codigo,
+                        'nome' => $it['descricao'],
+                        'unidade' => $it['unidade'],
+                        'custo_unitario' => $it['custo_unitario'],
+                    ]);
+                    $novosInsumos++;
+                }
+                $stmtIns->execute([$estrutura['id'], $insumoId, $it['descricao'], $it['quantidade'], $it['unidade'], $it['custo_unitario']]);
+                $importados++;
+            }
+            $db->commit();
+
+            $custos = atualizarCustosProduto($db, $produtoId);
+            setSuccess("Esqueleto importado: $importados materiais (" . $novosInsumos . " insumo(s) novo(s)). Custo de materiais: " . formatMoney($custos['custo_materiais'] ?? 0) . ".");
         } elseif ($acao === 'excluir_componente') {
             $componenteId = (int) ($_POST['componente_id'] ?? 0);
             $stmt = $db->prepare("
@@ -259,7 +308,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: index.php?produto_id=' . $produtoId);
         exit;
     } catch (Exception $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
         setError('Erro na engenharia: ' . $e->getMessage());
+        header('Location: index.php?produto_id=' . $produtoId);
+        exit;
     }
 }
 
@@ -619,6 +673,41 @@ include '../../includes/header_vendedor.php';
             </div>
 
             <div class="engenharia-grid">
+                <div class="vend-card">
+                    <div class="vend-card-head">
+                        <h3><i class="fas fa-file-import"></i> Importar esqueleto (Excel/CSV do SolidWorks)</h3>
+                    </div>
+                    <div class="vend-card-body">
+                        <p style="font-size:13px;color:#666;margin-bottom:10px">
+                            Suba a planilha de materiais do produto (a "Ordem de Produção" exportada do SolidWorks, ou um CSV).
+                            O sistema lê <strong>código, descrição, quantidade e material</strong>, casa os códigos já existentes no
+                            catálogo de insumos e cadastra os novos — montando o BOM automaticamente.
+                        </p>
+                        <form method="POST" enctype="multipart/form-data" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+                            <input type="hidden" name="acao" value="importar_bom">
+                            <input type="hidden" name="produto_id" value="<?php echo (int) $produtoAtual['id']; ?>">
+                            <div class="form-group" style="flex:1;min-width:220px">
+                                <label>Arquivo (.xlsx ou .csv)</label>
+                                <input type="file" name="planilha_bom" accept=".xlsx,.xlsm,.csv" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Modo</label>
+                                <select name="modo_import" class="form-control">
+                                    <option value="substituir">Substituir o BOM atual</option>
+                                    <option value="acrescentar">Acrescentar ao existente</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="vbtn-sm vbtn-brand"><i class="fas fa-upload"></i> Importar materiais</button>
+                            </div>
+                        </form>
+                        <p style="font-size:11px;color:#999;margin-top:8px">
+                            <a href="<?php echo SITE_URL; ?>/modules/engenharia/modelo_bom.php" download><i class="fas fa-download"></i> Baixar modelo de CSV</a>
+                            &nbsp;•&nbsp; Colunas aceitas: Código, Descrição, Material, QTD, Unidade, Custo (nessa ordem ou com cabeçalho).
+                        </p>
+                    </div>
+                </div>
+
                 <div class="vend-card">
                     <div class="vend-card-head">
                         <h3>BOM / Componentes</h3>

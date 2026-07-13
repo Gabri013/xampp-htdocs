@@ -107,10 +107,7 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
         <a href="<?php echo SITE_URL; ?>/modules/os/gerente.php" class="vend-nav-item <?php echo czNavActive('gerente.php'); ?>"><i class="fas fa-user-tie"></i> Painel do Gerente</a>
         <?php endif; ?>
         <?php if ($ve_projetista): ?>
-        <a href="<?php echo SITE_URL; ?>/modules/projetista/index.php" class="vend-nav-item <?php echo czNavActive('index.php', 'projetista'); ?>"><i class="fas fa-drafting-compass"></i> Projetista / Engenharia</a>
-        <?php endif; ?>
-        <?php if ($projetista_engenharia): ?>
-        <a href="<?php echo SITE_URL; ?>/modules/os/engenharia_setor.php" class="vend-nav-item <?php echo czNavActive('engenharia_setor.php'); ?>"><i class="fas fa-cogs"></i> Apontar Engenharia</a>
+        <a href="<?php echo SITE_URL; ?>/modules/projetista/index.php" class="vend-nav-item <?php echo czNavActive('index.php', 'projetista') ?: czNavActive('engenharia_setor.php'); ?>"><i class="fas fa-drafting-compass"></i> Projetista / Engenharia</a>
         <?php endif; ?>
         <?php if ($ve_os_lista): ?>
         <a href="<?php echo SITE_URL; ?>/modules/os/vendedor.php" class="vend-nav-item <?php echo czNavActive('vendedor.php'); ?>"><i class="fas fa-clipboard-list"></i> O.S.</a>
