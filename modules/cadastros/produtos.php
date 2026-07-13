@@ -212,6 +212,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 setError('Erro ao salvar insumo: ' . $e->getMessage());
             }
         }
+    } elseif ($acao === 'importar_sldmat') {
+        require_once '../../includes/planilha.php';
+        if (!isset($_FILES['arquivo_sldmat']) || $_FILES['arquivo_sldmat']['error'] !== UPLOAD_ERR_OK) {
+            setError('Envie o arquivo .sldmat da tabela de materiais do SolidWorks.');
+        } else {
+            $ext = strtolower(pathinfo($_FILES['arquivo_sldmat']['name'], PATHINFO_EXTENSION));
+            if ($ext !== 'sldmat') {
+                setError('O arquivo precisa ser um .sldmat do SolidWorks.');
+            } else {
+                try {
+                    $materiais = lerMateriaisSldmat($_FILES['arquivo_sldmat']['tmp_name']);
+                    if (empty($materiais)) {
+                        throw new RuntimeException('Nenhum material encontrado no arquivo.');
+                    }
+                    $db->beginTransaction();
+                    $novos = 0;
+                    $atualizados = 0;
+                    $stmtBuscaCod = $db->prepare("SELECT id FROM insumos WHERE codigo = ? LIMIT 1");
+                    foreach ($materiais as $mat) {
+                        $existe = 0;
+                        if ($mat['codigo'] !== '') {
+                            $stmtBuscaCod->execute([$mat['codigo']]);
+                            $existe = (int) ($stmtBuscaCod->fetchColumn() ?: 0);
+                        }
+                        // observação guarda material + espessura para consulta de compra
+                        $obs = trim(($mat['material'] !== '' ? 'Material: ' . $mat['material'] : '')
+                            . ($mat['espessura'] !== '' ? ' | Espessura: ' . $mat['espessura'] . 'mm' : ''));
+                        upsertInsumo($db, [
+                            'id' => $existe,
+                            'codigo' => $mat['codigo'],
+                            'nome' => $mat['nome'],
+                            'unidade' => $mat['unidade'],
+                            'custo_unitario' => 0,
+                            'observacoes' => $obs,
+                        ]);
+                        if ($existe > 0) {
+                            $atualizados++;
+                        } else {
+                            $novos++;
+                        }
+                    }
+                    $db->commit();
+                    setSuccess("Tabela de materiais importada: $novos novo(s), $atualizados atualizado(s). Preencha o custo de compra de cada material no catálogo.");
+                    header('Location: produtos.php#insumos');
+                    exit;
+                } catch (Exception $e) {
+                    if ($db->inTransaction()) {
+                        $db->rollBack();
+                    }
+                    setError('Erro ao importar materiais: ' . $e->getMessage());
+                }
+            }
+        }
     } elseif ($acao === 'salvar_categoria') {
         $categoriaId = (int) ($_POST['categoria_id'] ?? 0);
         $categoriaNome = sanitize($_POST['categoria_nome'] ?? '');
@@ -891,10 +944,22 @@ include '../../includes/header_vendedor.php';
                 <h3>Catalogo de Insumos</h3>
                 <p style="margin-top:6px;color:#667085;">Atualize o custo do fornecedor uma unica vez para refletir automaticamente nos produtos que usam o mesmo componente.</p>
             </div>
-            <button class="vbtn-sm btn-primary" type="button" onclick="abrirModalInsumo()">
-                <i class="fas fa-boxes"></i> Novo Insumo
-            </button>
+            <div style="display:flex;gap:8px;align-items:center">
+                <form method="POST" enctype="multipart/form-data" id="formSldmat" style="display:flex;gap:6px;align-items:center">
+                    <input type="hidden" name="acao" value="importar_sldmat">
+                    <input type="file" name="arquivo_sldmat" accept=".sldmat" id="inputSldmat" style="display:none" onchange="document.getElementById('formSldmat').submit()">
+                    <label for="inputSldmat" class="vbtn-sm" title="Importar a tabela de materiais do SolidWorks (.sldmat)" style="cursor:pointer">
+                        <i class="fas fa-file-import"></i> Importar .sldmat
+                    </label>
+                </form>
+                <button class="vbtn-sm btn-primary" type="button" onclick="abrirModalInsumo()">
+                    <i class="fas fa-boxes"></i> Novo Insumo
+                </button>
+            </div>
         </div>
+        <p style="margin:4px 0 0;font-size:12px;color:#98a2b3">
+            <i class="fas fa-info-circle"></i> O <strong>.sldmat</strong> é a tabela de materiais do SolidWorks (matéria-prima): traz material, espessura e código de compra. O custo você preenche em cada insumo.
+        </p>
 
         <div class="summary-cards" style="margin-bottom:0;">
             <div class="summary-card">

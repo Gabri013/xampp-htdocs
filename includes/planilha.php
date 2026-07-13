@@ -5,6 +5,88 @@
  */
 
 /**
+ * Lê a tabela de materiais do SolidWorks (.sldmat, XML UTF-16) e devolve
+ * os insumos/matéria-prima no padrão da Cozinca:
+ * nome "#<material>-<espessura>-<código>" -> [codigo, material, espessura,
+ * nome, unidade]. O código é a referência de compra da matéria-prima.
+ */
+function lerMateriaisSldmat(string $caminho): array
+{
+    $raw = file_get_contents($caminho);
+    if ($raw === false) {
+        return [];
+    }
+    // .sldmat é XML UTF-16
+    if (strncmp($raw, "\xFF\xFE", 2) === 0 || strncmp($raw, "\xFE\xFF", 2) === 0) {
+        $raw = mb_convert_encoding($raw, 'UTF-8', 'UTF-16');
+    }
+
+    if (!preg_match_all('/<material\s+name="([^"]+)"/', $raw, $m)) {
+        return [];
+    }
+
+    $itens = [];
+    $vistos = [];
+    foreach ($m[1] as $nomeBruto) {
+        $nome = html_entity_decode(trim($nomeBruto), ENT_QUOTES, 'UTF-8');
+        if ($nome === '') {
+            continue;
+        }
+
+        // código de compra: 5-8 dígitos no fim (após "-") OU no começo do nome
+        $codigo = '';
+        $semCod = $nome;
+        if (preg_match('/-\s*(\d{5,8})\s*$/', $nome, $mc)) {
+            $codigo = $mc[1];
+            $semCod = preg_replace('/-\s*' . preg_quote($codigo, '/') . '\s*$/', '', $nome);
+        } elseif (preg_match('/^\s*(\d{5,8})\b\s*(.*)$/', $nome, $mc)) {
+            $codigo = $mc[1];
+            $semCod = trim($mc[2]) !== '' ? trim($mc[2]) : $nome;
+        }
+
+        // espessura: número com vírgula/ponto (0,5 / 1,0 / 4,8)
+        $espessura = '';
+        if (preg_match('/(\d+[.,]\d+)/', $semCod, $me)) {
+            $espessura = str_replace('.', ',', $me[1]);
+        }
+
+        // material: primeiro trecho, sem '#', sem CÓDIGO (5-8 díg.) no início
+        $material = ltrim($semCod, '# ');
+        $material = trim(preg_replace('/^\d{5,8}[\s\-]*/', '', $material)); // tira só código inicial
+        $material = trim(preg_replace('/[-].*$/', '', $material));          // até o primeiro '-'
+        if ($material === '') {
+            $material = trim(preg_replace('/^\d{5,8}[\s\-]*/', '', ltrim($nome, '# ')));
+        }
+
+        // nome limpo para o insumo
+        $nomeLimpo = ltrim($semCod, '# ');
+        $nomeLimpo = trim(str_replace('-', ' ', $nomeLimpo));
+        if ($espessura !== '' && stripos($nomeLimpo, 'mm') === false) {
+            $nomeLimpo .= 'mm';
+        }
+        if ($nomeLimpo === '') {
+            $nomeLimpo = $material;
+        }
+
+        // evita duplicar (por código quando houver, senão por nome)
+        $chave = $codigo !== '' ? 'c:' . $codigo : 'n:' . mb_strtolower($nomeLimpo);
+        if (isset($vistos[$chave])) {
+            continue;
+        }
+        $vistos[$chave] = true;
+
+        $itens[] = [
+            'codigo' => $codigo,
+            'material' => $material,
+            'espessura' => $espessura,
+            'nome' => $nomeLimpo,
+            'unidade' => 'un',
+        ];
+    }
+    return $itens;
+}
+
+/**
  * Lê CSV ou XLSX e devolve linhas normalizadas como componentes:
  * [codigo, descricao, quantidade, unidade, custo_unitario, dimensoes].
  * Detecta a linha de cabeçalho pelos nomes das colunas.
