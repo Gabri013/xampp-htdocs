@@ -410,7 +410,11 @@ include '../../includes/header_vendedor.php';
                                 </select>
                             </div>
                             <div id="div_manual" style="flex: 1; display:none;">
-                                <textarea id="inp_manual" class="form-control" placeholder="Descrição..." rows="2" style="min-height: 44px; resize: vertical;"></textarea>
+                                <textarea id="inp_manual" class="form-control" placeholder="Descrição..." rows="2" style="min-height: 44px; resize: vertical;" oninput="vnBuscarParecidos(this.value)"></textarea>
+                                <div id="vn_aviso_dup" style="display:none;margin-top:6px;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:8px 10px;font-size:13px">
+                                    <strong style="color:#b45309"><i class="fas fa-exclamation-triangle"></i> Produto parecido já cadastrado — clique para usar o existente:</strong>
+                                    <div id="vn_lista_dup" style="margin-top:4px"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -551,6 +555,35 @@ include '../../includes/header_vendedor.php';
         const descPorc = document.getElementById('desc_porc');
         const descValor = document.getElementById('desc_valor');
         const selCaixa = document.getElementById('caixa_tipo_id');
+        // Antiduplicidade: sugere produtos já cadastrados enquanto o
+        // vendedor digita a descrição manual; clicar usa o existente.
+        let vnTimerDup = null;
+        window.vnBuscarParecidos = function(q) {
+            clearTimeout(vnTimerDup);
+            const aviso = document.getElementById('vn_aviso_dup');
+            if (!q || q.trim().length < 3) { aviso.style.display = 'none'; return; }
+            vnTimerDup = setTimeout(async () => {
+                try {
+                    const r = await fetch('<?= SITE_URL ?>/modules/cadastros/produtos.php?ajax=buscar_produtos&q=' + encodeURIComponent(q.trim()));
+                    const lista = await r.json();
+                    if (!lista.length) { aviso.style.display = 'none'; return; }
+                    document.getElementById('vn_lista_dup').innerHTML = lista.map(p =>
+                        `<div style="padding:3px 0;cursor:pointer;text-decoration:underline" onclick="vnUsarExistente(${p.id})"><strong>${p.codigo || 's/ código'}</strong> — ${p.nome}</div>`
+                    ).join('');
+                    aviso.style.display = 'block';
+                } catch (e) { aviso.style.display = 'none'; }
+            }, 350);
+        };
+        window.vnUsarExistente = function(produtoId) {
+            const selTipoEl = document.getElementById('sel_tipo');
+            if (selTipoEl) { selTipoEl.value = 'P'; selTipoEl.dispatchEvent(new Event('change')); }
+            const selProdEl = document.getElementById('sel_prod');
+            selProdEl.value = String(produtoId);
+            selProdEl.dispatchEvent(new Event('change'));
+            document.getElementById('inp_manual').value = '';
+            document.getElementById('vn_aviso_dup').style.display = 'none';
+        };
+
         const blocoCartao = document.getElementById('bloco_cartao_credito');
         const blocoBoleto = document.getElementById('bloco_boleto');
         const taxaAntecipacao = document.getElementById('taxa_antecipacao_percent');

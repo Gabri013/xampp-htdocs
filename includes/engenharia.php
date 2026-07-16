@@ -356,6 +356,32 @@ function gerarCodigoInsumo(PDO $db): string
     return $codigo;
 }
 
+/**
+ * Gera o próximo código de PRODUTO no padrão Cozinca:
+ *   - padrão:   CZI-15101, CZI-15102, ...
+ *   - especial: CZI-32101, CZI-32102, ...
+ * Sequencial por família para evitar duplicidade; quem define se o produto
+ * é padrão ou especial é o vendedor — o sistema só gera o código.
+ */
+function gerarCodigoProdutoCZI(PDO $db, string $tipo): string
+{
+    $prefixo = ($tipo === 'especial') ? 'CZI-32' : 'CZI-15';
+    // dígitos após "CZI-15"/"CZI-32" (posição 7 em diante, 1-indexado)
+    $stmt = $db->prepare("SELECT MAX(CAST(SUBSTRING(codigo, 7) AS UNSIGNED)) FROM produtos WHERE codigo LIKE ? AND SUBSTRING(codigo, 7) REGEXP '^[0-9]+$'");
+    $stmt->execute([$prefixo . '%']);
+    $max = (int) ($stmt->fetchColumn() ?: 0);
+    if ($max < 100) {
+        $max = 100; // primeira sequência: 101
+    }
+    $chk = $db->prepare("SELECT 1 FROM produtos WHERE codigo = ?");
+    do {
+        $max++;
+        $codigo = $prefixo . $max;
+        $chk->execute([$codigo]);
+    } while ($chk->fetchColumn());
+    return $codigo;
+}
+
 function upsertInsumo(PDO $db, array $dados): int
 {
     $insumoId = (int) ($dados['id'] ?? 0);

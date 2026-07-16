@@ -8,6 +8,24 @@ $page_title = 'Cadastro de Produtos';
 $db = getDB();
 ensureEngenhariaSchema($db);
 
+// AJAX: busca de produtos parecidos (validação de duplicidade na hora de
+// registrar — usada aqui e na tela de venda)
+if (($_GET['ajax'] ?? '') === 'buscar_produtos') {
+    header('Content-Type: application/json');
+    $q = trim((string) ($_GET['q'] ?? ''));
+    if (mb_strlen($q) < 3) {
+        echo json_encode([]);
+        exit;
+    }
+    $stmt = $db->prepare("SELECT id, codigo, nome, valor FROM produtos
+        WHERE status = 'ativo' AND (nome LIKE ? OR codigo LIKE ?)
+        ORDER BY nome LIMIT 8");
+    $like = '%' . $q . '%';
+    $stmt->execute([$like, $like]);
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+    exit;
+}
+
 function parseMoneyValue($value): float
 {
     $value = preg_replace('/[^0-9,.-]/', '', (string) $value);
@@ -118,6 +136,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $custoIndireto = parseMoneyValue($_POST['custo_indireto'] ?? 0);
         $margemLucro = parseMoneyValue($_POST['margem_lucro'] ?? 0);
         $componentes = buildComponentesPayload($_POST);
+
+        // Código automático CZI: o vendedor escolhe padrão/especial e o
+        // sistema gera o próximo da sequência (CZI-15xxx / CZI-32xxx).
+        $tipoCodigo = $_POST['tipo_codigo'] ?? 'manual';
+        if ($codigo === '' && in_array($tipoCodigo, ['padrao', 'especial'], true)) {
+            $codigo = gerarCodigoProdutoCZI($db, $tipoCodigo);
+        }
 
         // Evita produto duplicado: código já usado por outro produto
         $dupStmt = $db->prepare('SELECT id, nome FROM produtos WHERE codigo = ? AND id <> ? LIMIT 1');
@@ -1119,10 +1144,24 @@ include '../../includes/header_vendedor.php';
 
                 <div class="bom-grid">
                     <div>
+                        <div class="form-group">
+                            <label>Código do Produto *</label>
+                            <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px">
+                                <label style="display:flex;align-items:center;gap:5px;font-weight:normal;cursor:pointer;margin:0">
+                                    <input type="radio" name="tipo_codigo" value="padrao" checked onchange="atualizarTipoCodigo()"> Padrão <span style="color:#666;font-size:12px">(gera CZI-15…)</span>
+                                </label>
+                                <label style="display:flex;align-items:center;gap:5px;font-weight:normal;cursor:pointer;margin:0">
+                                    <input type="radio" name="tipo_codigo" value="especial" onchange="atualizarTipoCodigo()"> Especial <span style="color:#666;font-size:12px">(gera CZI-32…)</span>
+                                </label>
+                                <label style="display:flex;align-items:center;gap:5px;font-weight:normal;cursor:pointer;margin:0">
+                                    <input type="radio" name="tipo_codigo" value="manual" onchange="atualizarTipoCodigo()"> Código manual
+                                </label>
+                            </div>
+                        </div>
                         <div class="form-grid-2">
                             <div class="form-group">
-                                <label>Codigo *</label>
-                                <input type="text" id="codigo" name="codigo" class="form-control" required>
+                                <label>Codigo</label>
+                                <input type="text" id="codigo" name="codigo" class="form-control" placeholder="gerado automaticamente ao salvar" readonly>
                             </div>
                             <div class="form-group">
                                 <label>Unidade</label>
@@ -1149,7 +1188,11 @@ include '../../includes/header_vendedor.php';
 
                         <div class="form-group">
                             <label>Nome *</label>
-                            <input type="text" id="nome" name="nome" class="form-control" required>
+                            <input type="text" id="nome" name="nome" class="form-control" required autocomplete="off" oninput="buscarProdutosParecidos(this.value)">
+                            <div id="avisoDuplicados" style="display:none;margin-top:6px;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:8px 10px;font-size:13px">
+                                <strong style="color:#b45309"><i class="fas fa-exclamation-triangle"></i> Produtos parecidos já cadastrados — confira antes de criar um novo:</strong>
+                                <div id="listaDuplicados" style="margin-top:4px"></div>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -1655,6 +1698,10 @@ function limparFormularioProduto() {
     document.getElementById('modalTitulo').textContent = 'Novo Produto';
     document.getElementById('produtoId').value = '';
     document.getElementById('formProduto').reset();
+    const radioPadrao = document.querySelector('input[name="tipo_codigo"][value="padrao"]');
+    if (radioPadrao) { radioPadrao.checked = true; atualizarTipoCodigo(); }
+    const avisoDup = document.getElementById('avisoDuplicados');
+    if (avisoDup) avisoDup.style.display = 'none';
     document.getElementById('unidade_medida').value = 'un';
     document.getElementById('categoria_id').value = '';
     document.getElementById('medidas_preco').value = '';
@@ -1783,10 +1830,49 @@ function editarInsumo(insumo) {
     document.getElementById('modalInsumo').style.display = 'block';
 }
 
+function atualizarTipoCodigo() {
+    const tipo = document.querySelector('input[name="tipo_codigo"]:checked')?.value || 'padrao';
+    const campo = document.getElementById('codigo');
+    if (tipo === 'manual') {
+        campo.readOnly = false;
+        campo.placeholder = 'Digite o código';
+        campo.required = true;
+    } else {
+        // padrão/especial: o sistema gera CZI-15xxx / CZI-32xxx ao salvar
+        if (!document.getElementById('produtoId').value) campo.value = '';
+        campo.readOnly = true;
+        campo.required = false;
+        campo.placeholder = tipo === 'especial' ? 'gerado automaticamente (CZI-32…)' : 'gerado automaticamente (CZI-15…)';
+    }
+}
+
+let timerBuscaDup = null;
+function buscarProdutosParecidos(q) {
+    clearTimeout(timerBuscaDup);
+    const aviso = document.getElementById('avisoDuplicados');
+    if (!q || q.trim().length < 3) { aviso.style.display = 'none'; return; }
+    timerBuscaDup = setTimeout(async () => {
+        try {
+            const r = await fetch('produtos.php?ajax=buscar_produtos&q=' + encodeURIComponent(q.trim()));
+            const lista = await r.json();
+            const idAtual = document.getElementById('produtoId').value;
+            const filtrada = lista.filter(p => String(p.id) !== String(idAtual));
+            if (!filtrada.length) { aviso.style.display = 'none'; return; }
+            document.getElementById('listaDuplicados').innerHTML = filtrada.map(p =>
+                `<div style="padding:2px 0"><strong>${p.codigo || 's/ código'}</strong> — ${p.nome}</div>`
+            ).join('');
+            aviso.style.display = 'block';
+        } catch (e) { aviso.style.display = 'none'; }
+    }, 350);
+}
+
 function editarProduto(produto) {
     limparFormularioProduto();
     document.getElementById('modalTitulo').textContent = 'Editar Produto';
     document.getElementById('produtoId').value = produto.id || '';
+    // Edição: mantém o código existente (modo manual)
+    const radioManual = document.querySelector('input[name="tipo_codigo"][value="manual"]');
+    if (radioManual) { radioManual.checked = true; atualizarTipoCodigo(); }
     document.getElementById('codigo').value = produto.codigo || '';
     document.getElementById('nome').value = produto.nome || '';
     document.getElementById('descricao').value = produto.descricao || '';
