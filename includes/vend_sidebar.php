@@ -9,7 +9,7 @@ $tipo_usuario = $_SESSION['usuario_tipo'] ?? 'vendedor';
 // Grupos de visibilidade (espelham o requirePermission de cada página)
 $ve_dashboard      = in_array($tipo_usuario, ['master', 'vendedor']);
 $ve_gerente        = in_array($tipo_usuario, ['master', 'gerente']);
-$ve_projetista     = in_array($tipo_usuario, ['master', 'projetista']);
+$ve_projetista     = in_array($tipo_usuario, ['master', 'projetista', 'engenharia']);
 $ve_os_lista       = in_array($tipo_usuario, ['master', 'vendedor', 'projetista', 'gerente']);
 $ve_producao_gestao = in_array($tipo_usuario, ['master', 'gerente', 'producao']);
 $ve_dash_producao  = in_array($tipo_usuario, ['master', 'dashboard_producao', 'gerente', 'producao']);
@@ -25,8 +25,9 @@ $ve_expediente     = in_array($tipo_usuario, ['master', 'gerente']);
 $ve_admin          = ($tipo_usuario === 'master');
 
 // Setores de produção (ordem do fluxo): gestão vê todos; cada setor vê o seu.
+// O setor de engenharia foi unificado no Projetista — a etapa é operada no
+// Painel do Projetista (modules/projetista/index.php), não em painel próprio.
 $setores_sidebar = [
-    'engenharia'   => ['label' => 'Engenharia',   'icon' => 'fa-cogs',          'page' => 'engenharia_setor.php'],
     'programacao'  => ['label' => 'Programação',  'icon' => 'fa-calendar-alt',  'page' => 'programacao.php'],
     'corte'        => ['label' => 'Corte',        'icon' => 'fa-cut',           'page' => 'corte.php'],
     'dobra'        => ['label' => 'Dobra',        'icon' => 'fa-dharmachakra',  'page' => 'dobra.php'],
@@ -45,18 +46,10 @@ $setores_sidebar = [
 // de leitura dos painéis se navegar direto), e sua engenharia já está no
 // grupo Principal — não precisa da lista de setores poluindo o menu.
 $ve_todos_setores = in_array($tipo_usuario, ['master', 'gerente', 'producao']);
-// Projetista e engenharia são a mesma função: para eles o painel de
-// engenharia aparece junto de "Projetista" no grupo Principal, não como
-// um setor separado na lista "Setores".
-$projetista_engenharia = in_array($tipo_usuario, ['projetista', 'engenharia'], true);
 $setores_visiveis = [];
 foreach ($setores_sidebar as $setor_key => $setor_info) {
     // finalizacao.php não aceita projetista/producao (requirePermission da página)
     if ($setor_key === 'finalizacao' && !in_array($tipo_usuario, ['master', 'gerente', 'producao', 'finalizacao'], true)) {
-        continue;
-    }
-    // engenharia não é um "setor" à parte para o projetista — some da lista
-    if ($setor_key === 'engenharia' && $projetista_engenharia) {
         continue;
     }
     if ($ve_todos_setores || $tipo_usuario === $setor_key) {
@@ -107,7 +100,7 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
         <a href="<?php echo SITE_URL; ?>/modules/os/gerente.php" class="vend-nav-item <?php echo czNavActive('gerente.php'); ?>"><i class="fas fa-user-tie"></i> Painel do Gerente</a>
         <?php endif; ?>
         <?php if ($ve_projetista): ?>
-        <a href="<?php echo SITE_URL; ?>/modules/projetista/index.php" class="vend-nav-item <?php echo czNavActive('index.php', 'projetista') ?: czNavActive('engenharia_setor.php'); ?>"><i class="fas fa-drafting-compass"></i> Projetista / Engenharia</a>
+        <a href="<?php echo SITE_URL; ?>/modules/projetista/index.php" class="vend-nav-item <?php echo czNavActive('index.php', 'projetista') ?: czNavActive('engenharia_setor.php'); ?>"><i class="fas fa-drafting-compass"></i> Projetista</a>
         <?php endif; ?>
         <?php if ($ve_os_lista): ?>
         <a href="<?php echo SITE_URL; ?>/modules/os/vendedor.php" class="vend-nav-item <?php echo czNavActive('vendedor.php'); ?>"><i class="fas fa-clipboard-list"></i> O.S.</a>

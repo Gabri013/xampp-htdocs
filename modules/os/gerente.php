@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['ac
             
             // Registrar histórico
             $stmt = $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, 'em_revisao', 'em_producao', ?, ?)");
-            $obs_hist = "Pedido liberado para produção na etapa: " . ucfirst($etapa_inicial);
+            $obs_hist = "Pedido liberado para produção na etapa: " . getEtapaLabel($etapa_inicial);
             $stmt->execute([$os_id, $_SESSION['usuario_id'], $obs_hist]);
             
             // Registrar observação se houver
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['ac
             }
             
             $db->commit();
-            setSuccess('Pedido liberado para produção na etapa ' . ucfirst($etapa_inicial) . '!');
+            setSuccess('Pedido liberado para produção na etapa ' . getEtapaLabel($etapa_inicial) . '!');
             header('Location: gerente.php');
             exit;
         } catch (Exception $e) {
@@ -411,7 +411,7 @@ include '../../includes/header_vendedor.php';
                         <div class="agenda-item-info">
                             <strong><?php echo htmlspecialchars($ordemAgenda['numero']); ?> · <?php echo htmlspecialchars($ordemAgenda['razao_social']); ?></strong>
                             <small>
-                                Etapa atual: <?php echo htmlspecialchars(ucfirst((string) ($ordemAgenda['etapa_atual'] ?? '-'))); ?>
+                                Etapa atual: <?php echo htmlspecialchars(getEtapaLabel((string) ($ordemAgenda['etapa_atual'] ?? '-'))); ?>
                                 <?php if (!empty($ordemAgenda['data_termino'])): ?>
                                     | Entrega: <?php echo formatDate($ordemAgenda['data_termino']); ?>
                                 <?php endif; ?>
@@ -517,7 +517,7 @@ include '../../includes/header_vendedor.php';
                             <tr>
                                 <td><strong><?= htmlspecialchars($os['numero']); ?></strong></td>
                                 <td><?= htmlspecialchars($os['razao_social']); ?></td>
-                                <td><span class="vbadge-info"><?= ucfirst($os['etapa_atual']); ?></span></td>
+                                <td><span class="vbadge-info"><?= getEtapaLabel($os['etapa_atual'] ?? ''); ?></span></td>
                                 <td>
                                     <?php
                                     $cores = ['verde' => '#28a745', 'amarelo' => '#ffc107', 'vermelho' => '#dc3545'];

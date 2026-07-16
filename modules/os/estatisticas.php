@@ -1,6 +1,7 @@
 <?php
 require_once '../../config/config.php';
 require_once '../../includes/notificacao_atrasos.php';
+require_once '../../includes/workflow.php';
 requirePermission(['master', 'gerente', 'producao']);
 
 $page_title = 'Estatísticas de Produção';
@@ -161,7 +162,7 @@ foreach ($estatisticas_etapas as $est) {
 }
 
 foreach ($estatisticas_etapas as $est) {
-    $labels[] = ucfirst($est['etapa']);
+    $labels[] = getEtapaLabel($est['etapa']);
     $tempos_medios[] = round($est['tempo_medio'] / 3600, 2);
     $cores_grafico[] = ($est['tempo_medio'] == $maior_tempo && $maior_tempo > 0) ? 'rgba(220, 53, 69, 0.8)' : 'rgba(0, 123, 255, 0.6)';
 }
@@ -345,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <?php else: ?>
                         <?php foreach ($estatisticas_etapas as $est): ?>
                             <tr>
-                                <td><strong><?php echo ucfirst($est['etapa']); ?></strong></td>
+                                <td><strong><?php echo getEtapaLabel($est['etapa']); ?></strong></td>
                                 <td class="text-center"><?php echo $est['total_concluidas']; ?></td>
                                 <td style="color: var(--primary-color); font-weight: bold;"><?php echo formatarTempo($est['tempo_medio']); ?></td>
                                 <td style="color: var(--success-color);"><?php echo formatarTempo($est['tempo_minimo']); ?></td>

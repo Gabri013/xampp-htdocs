@@ -130,7 +130,7 @@ function abrirModalRetorno(os) {
     if (pos_atual > 0) {
         for (let i = 1; i < pos_atual; i++) {
             const etapa = fluxo_etapas[i];
-            opcoesRetorno.push({valor:etapa,label:etapa.charAt(0).toUpperCase()+etapa.slice(1)});
+            opcoesRetorno.push({valor:etapa,label:rotuloEtapa(etapa)});
         }
     }
     opcoesRetorno.forEach((opcao,index) => {
@@ -149,7 +149,8 @@ document.getElementById('formRetorno').onsubmit = async function(e) {
     const data = await res.json();
     if (data.success) location.reload(); else alert('Erro: ' + data.error);
 };
-const rotuloEtapa = e => e === 'concluida' ? 'Concluir O.S. (última etapa)' : e.charAt(0).toUpperCase() + e.slice(1);
+const etapaLabels = <?php echo json_encode(getEtapasLabels(), JSON_UNESCAPED_UNICODE); ?>;
+const rotuloEtapa = e => e === 'concluida' ? 'Concluir O.S. (última etapa)' : (etapaLabels[e] || e.charAt(0).toUpperCase() + e.slice(1));
 
 function abrirModalEnviar(os_id, etapa, proximas, osNum) {
     document.getElementById('enviar_os_num').textContent = osNum;

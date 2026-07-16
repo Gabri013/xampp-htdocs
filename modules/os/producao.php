@@ -59,7 +59,7 @@ include '../../includes/header_vendedor.php';
             <?php foreach ($fluxo_etapas as $etapa): ?>
                 <div class="kanban-column">
                     <div class="kanban-column-header">
-                        <h4><?php echo ucfirst($etapa); ?></h4>
+                        <h4><?php echo getEtapaLabel($etapa); ?></h4>
                         <span class="kanban-count"><?php echo count($ordens_por_etapa[$etapa]); ?></span>
                     </div>
                     <div class="kanban-cards">

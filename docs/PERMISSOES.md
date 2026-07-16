@@ -16,7 +16,7 @@
 | `gerente` | Gestão da produção: aprovação, liberação, estatísticas, expediente, CRM |
 | `producao` | Produção geral: painéis e todos os setores |
 | `programacao, corte, dobra, tubo, solda, mobiliario, coccao, refrigeracao, acabamento, montagem, embalagem, finalizacao` | Cada setor: **apenas o próprio painel** |
-| `engenharia` | Setor de engenharia (equivalente ao projetista na produção) |
+| `engenharia` | Legado — equivalente ao projetista; o painel próprio virou redirect para o Painel do Projetista |
 | `dashboard_producao` | TV do chão de fábrica: apenas o panorama |
 
 ## 2. Acesso às páginas (validado na prática)

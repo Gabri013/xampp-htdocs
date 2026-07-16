@@ -91,7 +91,7 @@ if (empty($itens)) {
 
 // Processos na ordem canônica do fluxo (workflow.php), sem autorização/conclusão
 $labelsEtapas = [
-    'engenharia'   => 'Engenharia',
+    'engenharia'   => 'Projetista',
     'programacao'  => 'Programação',
     'corte'        => 'Corte',
     'dobra'        => 'Dobra',

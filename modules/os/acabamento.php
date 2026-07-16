@@ -252,6 +252,8 @@ include '../../includes/header_vendedor.php';
 
 const fluxo_etapas = <?php echo json_encode(getValidOSEtapas()); ?>;
 const etapasDestinoDisponiveis = <?php echo json_encode(array_values(array_diff(getValidOSEtapas(), ['autorizacao']))); ?>;
+const etapaLabels = <?php echo json_encode(getEtapasLabels(), JSON_UNESCAPED_UNICODE); ?>;
+const rotuloEtapa = e => etapaLabels[e] || e.charAt(0).toUpperCase() + e.slice(1);
 
 function isImagemArquivo(nomeArquivo) {
     if (!nomeArquivo) return false;
@@ -307,7 +309,7 @@ function abrirModalRetorno(os) {
             const etapa = fluxo_etapas[i];
             opcoesRetorno.push({
                 valor: etapa,
-                label: etapa.charAt(0).toUpperCase() + etapa.slice(1)
+                label: rotuloEtapa(etapa)
             });
         }
     }
@@ -373,7 +375,7 @@ function selecionarEtapaDestino(etapaAtual) {
         card.innerHTML = `
             <h4 style="margin:0 0 12px 0;">Enviar O.S para qual etapa?</h4>
             <select id="etapaDestinoSelect" class="form-control">
-                ${opcoes.map(op => `<option value="${op}">${op.toUpperCase()}</option>`).join('')}
+                ${opcoes.map(op => `<option value="${op}">${rotuloEtapa(op)}</option>`).join('')}
             </select>
             <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
                 <button type="button" id="etapaDestinoCancelar" class="vbtn-sm btn-sm">Cancelar</button>

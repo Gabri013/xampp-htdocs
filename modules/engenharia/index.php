@@ -8,7 +8,7 @@ $page_title = 'Engenharia de Produto';
 $db = getDB();
 ensureEngenhariaSchema($db);
 
-$etapasPadrao = ['Engenharia', 'Programacao', 'Corte', 'Dobra', 'Tubo', 'Solda', 'Mobiliario', 'Coccao', 'Refrigeracao', 'Acabamento', 'Montagem', 'Embalagem', 'Finalizacao'];
+$etapasPadrao = ['Projetista', 'Programacao', 'Corte', 'Dobra', 'Tubo', 'Solda', 'Mobiliario', 'Coccao', 'Refrigeracao', 'Acabamento', 'Montagem', 'Embalagem', 'Finalizacao'];
 
 // Variáveis para o modal de importação CSV
 $importErros = [];

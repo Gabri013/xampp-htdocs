@@ -33,6 +33,12 @@ $cores_etapas = [
 
 $labels_nomes = [
     'autorizacao' => 'Aguardando Autorização',
+    'engenharia' => 'Projetista',
+    'programacao' => 'Programação',
+    'tubo' => 'Tubo',
+    'mobiliario' => 'Mobiliário',
+    'coccao' => 'Cocção',
+    'embalagem' => 'Embalagem',
     'corte' => 'Corte',
     'dobra' => 'Dobra',
     'solda' => 'Solda',

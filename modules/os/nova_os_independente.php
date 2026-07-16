@@ -128,7 +128,7 @@ $numero_os = getNextNumber('ordens_servico', 'OS-I');
                 $stmtHistorico->execute([
                     $os_id,
                     $_SESSION['usuario_id'],
-                    'O.S. independente criada com início direto na etapa: ' . ucfirst($etapa_inicial),
+                    'O.S. independente criada com início direto na etapa: ' . getEtapaLabel($etapa_inicial),
                 ]);
             }
 

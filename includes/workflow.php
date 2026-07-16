@@ -7,6 +7,43 @@
  */
 
 /**
+ * Nome de exibição de uma etapa. A etapa "engenharia" aparece como
+ * "Projetista" — o setor foi unificado (projetista e engenharia são um só);
+ * a chave interna continua "engenharia" no banco por compatibilidade.
+ */
+function getEtapaLabel(string $etapa): string {
+    $labels = [
+        'autorizacao'  => 'Autorização',
+        'engenharia'   => 'Projetista',
+        'programacao'  => 'Programação',
+        'corte'        => 'Corte',
+        'dobra'        => 'Dobra',
+        'tubo'         => 'Tubo',
+        'solda'        => 'Solda',
+        'mobiliario'   => 'Mobiliário',
+        'coccao'       => 'Cocção',
+        'refrigeracao' => 'Refrigeração',
+        'acabamento'   => 'Acabamento',
+        'montagem'     => 'Montagem',
+        'embalagem'    => 'Embalagem',
+        'finalizacao'  => 'Finalização',
+        'concluida'    => 'Concluída',
+    ];
+    return $labels[$etapa] ?? ucfirst($etapa);
+}
+
+/**
+ * Mapa etapa => label para uso em JS (json_encode).
+ */
+function getEtapasLabels(): array {
+    $mapa = [];
+    foreach (array_merge(getValidOSEtapas(), ['autorizacao', 'concluida']) as $e) {
+        $mapa[$e] = getEtapaLabel($e);
+    }
+    return $mapa;
+}
+
+/**
  * Estágios do ciclo de vida da Ordem de Produção (modelo enxuto, sem PCP
  * pesado). Cancelada é tratada à parte.
  */

@@ -94,7 +94,7 @@ include '../../includes/header_vendedor.php';
                             <div class="vend-kanban-card-title"><?php echo htmlspecialchars($o['razao_social']); ?></div>
                             <div class="kb-card-meta">
                                 <?php if ($o['status'] === 'em_producao' && !empty($o['etapa_atual'])): ?>
-                                    <span class="kb-etapa"><i class="fas fa-industry"></i> <?php echo htmlspecialchars(ucfirst($o['etapa_atual'])); ?></span>
+                                    <span class="kb-etapa"><i class="fas fa-industry"></i> <?php echo htmlspecialchars(getEtapaLabel($o['etapa_atual'] ?? '')); ?></span>
                                 <?php endif; ?>
                                 <?php if ($prazoTxt !== ''): ?>
                                     <span class="kb-prazo <?php echo $prazoClass; ?>"><i class="far fa-calendar"></i> <?php echo $prazoTxt; ?></span>

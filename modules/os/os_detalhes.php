@@ -509,7 +509,7 @@ include '../../includes/header_vendedor.php';
                                             <option value="montagem">Montagem</option>
                                         </select>
                                     <?php else: ?>
-                                        <span class="vbadge vbadge-info"><?= ucfirst($os['etapa_atual'] ?? 'N/A') ?></span>
+                                        <span class="vbadge vbadge-info"><?= getEtapaLabel($os['etapa_atual'] ?? '') ?></span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
