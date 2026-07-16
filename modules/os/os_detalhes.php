@@ -347,6 +347,11 @@ if (!empty($itens)) {
     }
 }
 
+require_once __DIR__ . '/../../includes/workflow.php';
+$cicloOP = getCicloVidaOP($db, $os);
+sincronizarStatusOP($db, $os); // mantém ordens_producao.status atualizado
+$estagiosOP = getEstagiosCicloOP();
+$ordemAtual = (int) ($cicloOP['ordem'] ?? 0);
 include '../../includes/header_vendedor.php';
 ?>
 <div class="vend-layout">
@@ -356,7 +361,44 @@ include '../../includes/header_vendedor.php';
             <div><h1 class="vend-page-title"><?= htmlspecialchars($os['numero']) ?></h1></div>
             <a href="imprimir_op.php?os_id=<?= $os_id ?>" target="_blank" class="vbtn-sm" title="Imprimir O.S."><i class="fas fa-print"></i> Imprimir</a>
         </div>
-        
+
+        <!-- Ciclo de vida da Ordem de Produção -->
+        <div class="vend-card" style="margin-bottom:16px">
+            <div style="padding:16px 20px">
+                <?php if ($cicloOP['estagio'] === 'cancelada'): ?>
+                    <div style="display:flex;align-items:center;gap:10px;color:#dc2626;font-weight:700">
+                        <i class="fas fa-ban" style="font-size:18px"></i> Ordem de Produção Cancelada
+                    </div>
+                <?php else: ?>
+                    <div style="display:flex;align-items:center;gap:0;flex-wrap:wrap">
+                        <?php $i = 0; $nEst = count($estagiosOP); foreach ($estagiosOP as $chave => $est): $i++;
+                            $ordemEst = $i;
+                            $ativo = $ordemAtual >= $ordemEst;
+                            $atual = ($cicloOP['estagio'] === $chave);
+                        ?>
+                            <div style="display:flex;align-items:center;gap:8px">
+                                <div title="<?= $est['label'] ?>" style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;<?= $ativo ? 'background:' . $est['cor'] . ';color:#fff' : 'background:#e9ecef;color:#98a2b3' ?>;<?= $atual ? 'box-shadow:0 0 0 4px ' . $est['cor'] . '33' : '' ?>">
+                                    <i class="fas <?= $est['icon'] ?>" style="font-size:14px"></i>
+                                </div>
+                                <span style="font-size:13px;font-weight:<?= $atual ? '700' : '500' ?>;color:<?= $ativo ? '#1a1a1a' : '#98a2b3' ?>"><?= $est['label'] ?></span>
+                            </div>
+                            <?php if ($ordemEst < $nEst): ?>
+                                <div style="flex:1;min-width:24px;height:3px;margin:0 8px;border-radius:2px;background:<?= $ordemAtual > $ordemEst ? $est['cor'] : '#e9ecef' ?>"></div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php if ($cicloOP['estagio'] === 'em_producao' && ($cicloOP['total'] ?? 0) > 0): ?>
+                        <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
+                            <div style="flex:1;height:8px;background:#e9ecef;border-radius:4px;overflow:hidden">
+                                <div style="height:100%;width:<?= (int) $cicloOP['progresso'] ?>%;background:#D85A30;border-radius:4px"></div>
+                            </div>
+                            <span style="font-size:12px;color:#666;white-space:nowrap"><?= (int) $cicloOP['concluidas'] ?>/<?= (int) $cicloOP['total'] ?> etapas • <?= (int) $cicloOP['progresso'] ?>%</span>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+
         <div class="vend-card">
             <div class="vend-card-head"><span class="vend-card-title">Detalhes da Ordem</span></div>
             <div class="vend-metrics">

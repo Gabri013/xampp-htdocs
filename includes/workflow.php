@@ -7,6 +7,68 @@
  */
 
 /**
+ * Estágios do ciclo de vida da Ordem de Produção (modelo enxuto, sem PCP
+ * pesado). Cancelada é tratada à parte.
+ */
+function getEstagiosCicloOP(): array {
+    return [
+        'planejada'   => ['label' => 'Planejada',   'cor' => '#64748b', 'icon' => 'fa-clipboard-list'],
+        'liberada'    => ['label' => 'Liberada',    'cor' => '#0284c7', 'icon' => 'fa-unlock'],
+        'em_producao' => ['label' => 'Em Produção', 'cor' => '#D85A30', 'icon' => 'fa-industry'],
+        'encerrada'   => ['label' => 'Encerrada',   'cor' => '#16a34a', 'icon' => 'fa-flag-checkered'],
+    ];
+}
+
+/**
+ * Deriva o estágio do ciclo de vida da OP a partir do estado real da O.S. e
+ * das etapas de produção (fonte única — nunca fica desatualizado).
+ * $os precisa de: id, status, etapa_atual.
+ */
+function getCicloVidaOP(PDO $db, array $os): array {
+    $statusOS = (string) ($os['status'] ?? '');
+
+    if ($statusOS === 'cancelada') {
+        return ['estagio' => 'cancelada', 'label' => 'Cancelada', 'cor' => '#dc2626', 'ordem' => 0, 'progresso' => 0, 'concluidas' => 0, 'total' => 0];
+    }
+
+    $stmt = $db->prepare("SELECT status FROM os_etapas_producao WHERE os_id = ?");
+    $stmt->execute([(int) ($os['id'] ?? 0)]);
+    $etapas = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $total = count($etapas);
+    $concluidas = 0;
+    $iniciadas = 0;
+    foreach ($etapas as $st) {
+        if ($st === 'concluida') { $concluidas++; $iniciadas++; }
+        elseif ($st !== 'pendente') { $iniciadas++; }
+    }
+    $progresso = $total > 0 ? (int) round($concluidas / $total * 100) : 0;
+
+    if ($statusOS === 'concluida') {
+        return ['estagio' => 'encerrada', 'label' => 'Encerrada', 'cor' => '#16a34a', 'ordem' => 4, 'progresso' => 100, 'concluidas' => $concluidas, 'total' => $total];
+    }
+    if ($statusOS === 'em_producao') {
+        if ($iniciadas > 0) {
+            return ['estagio' => 'em_producao', 'label' => 'Em Produção', 'cor' => '#D85A30', 'ordem' => 3, 'progresso' => $progresso, 'concluidas' => $concluidas, 'total' => $total];
+        }
+        return ['estagio' => 'liberada', 'label' => 'Liberada', 'cor' => '#0284c7', 'ordem' => 2, 'progresso' => 0, 'concluidas' => 0, 'total' => $total];
+    }
+    // pendente, em_projeto, proposta, em_revisao = ainda não liberada
+    return ['estagio' => 'planejada', 'label' => 'Planejada', 'cor' => '#64748b', 'ordem' => 1, 'progresso' => 0, 'concluidas' => 0, 'total' => $total];
+}
+
+/**
+ * Sincroniza o campo ordens_producao.status com o estágio derivado (para
+ * relatórios/consultas). Silencioso — não quebra se a OP não existir.
+ */
+function sincronizarStatusOP(PDO $db, array $os): void {
+    $ciclo = getCicloVidaOP($db, $os);
+    try {
+        $db->prepare("UPDATE ordens_producao SET status = ? WHERE os_id = ?")
+           ->execute([$ciclo['estagio'], (int) ($os['id'] ?? 0)]);
+    } catch (Exception $e) { /* OP pode não existir ainda */ }
+}
+
+/**
  * Retorna a lista de status válidos da O.S.
  */
 function getValidOSStatuses(): array {
