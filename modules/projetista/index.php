@@ -176,13 +176,13 @@ function ucfirst(str) {
 
 function confirmarEncaminhar(osId, setor) {
     if (confirm('Encaminhar O.S. para ' + ucfirst(setor) + '?')) {
-        fetch('desmembrar_os.php', {
+        fetch('<?= SITE_URL ?>/modules/os/desmembrar_os.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: 'os_id=' + osId + '&setor=' + setor
         }).then(r => r.json()).then(d => {
             if (d.success) location.reload(); else alert(d.error || 'Erro ao encaminhar.');
-        });
+        }).catch(() => alert('Erro de comunicação ao encaminhar a O.S.'));
     }
 }
 </script>

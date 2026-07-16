@@ -72,6 +72,35 @@ if (!isset($qtd_notificacoes_nao_lidas)) $qtd_notificacoes_nao_lidas = 0;
         <i class="fas fa-bars"></i>
     </button>
     <div style="flex:1"></div>
+    <?php
+    // Ponto (expediente): quem opera etapas de produção precisa de expediente
+    // aberto para apontar — o chip mostra o estado e permite bater o ponto.
+    $tiposComPonto = ['master', 'gerente', 'producao', 'projetista', 'engenharia', 'programacao', 'corte', 'dobra', 'tubo', 'solda', 'mobiliario', 'coccao', 'refrigeracao', 'acabamento', 'montagem', 'embalagem', 'finalizacao'];
+    if (in_array($_SESSION['usuario_tipo'] ?? '', $tiposComPonto, true)):
+        require_once BASE_PATH . '/includes/expediente.php';
+        try {
+            $expChip = getStatusExpedienteHoje(getDB(), (int) ($_SESSION['usuario_id'] ?? 0));
+        } catch (Throwable $e) { $expChip = ['status' => 'nao_iniciado']; }
+        $expStatus = $expChip['status'] ?? 'nao_iniciado';
+    ?>
+        <?php if ($expStatus === 'em_trabalho'): ?>
+            <button type="button" class="vbtn-sm" onclick="baterPonto('encerrar')" title="Expediente aberto desde <?php echo !empty($expChip['expediente']['iniciado_em']) ? date('H:i', strtotime($expChip['expediente']['iniciado_em'])) : ''; ?> — clique para encerrar" style="background:#e7f6ec;color:#16a34a;border:1px solid #b7e4c7"><i class="fas fa-user-clock"></i> Expediente aberto</button>
+        <?php elseif ($expStatus === 'encerrado'): ?>
+            <span class="vbtn-sm" style="background:#f1f5f9;color:#64748b;cursor:default" title="Expediente de hoje já encerrado"><i class="fas fa-user-clock"></i> Expediente encerrado</span>
+        <?php else: ?>
+            <button type="button" class="vbtn-sm" onclick="baterPonto('iniciar')" title="Você precisa iniciar o expediente para apontar produção" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a"><i class="fas fa-user-clock"></i> Iniciar expediente</button>
+        <?php endif; ?>
+        <script>
+        async function baterPonto(acao) {
+            if (acao === 'encerrar' && !confirm('Encerrar seu expediente de hoje?')) return;
+            const fd = new FormData();
+            fd.append('acao', acao);
+            const r = await fetch('<?php echo SITE_URL; ?>/api/expediente.php', {method: 'POST', body: fd});
+            const d = await r.json();
+            if (d.success) location.reload(); else alert(d.error || d.message || 'Erro ao registrar o ponto.');
+        }
+        </script>
+    <?php endif; ?>
     <?php if ($qtd_notificacoes_nao_lidas > 0): ?>
         <a href="<?php echo SITE_URL; ?>/modules/notificacoes/index.php" class="vbtn-sm vbtn-brand"><i class="fas fa-bell"></i> <?php echo $qtd_notificacoes_nao_lidas; ?></a>
     <?php endif; ?>

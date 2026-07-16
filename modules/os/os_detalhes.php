@@ -347,6 +347,19 @@ if (!empty($itens)) {
     }
 }
 
+// Itens já despachados por envio parcial (desmembramento)
+$despachosPorItem = [];
+try {
+    $origemItens = !empty($os['venda_id']) ? 'vendas_itens' : 'os_itens';
+    $stmtDesp = $db->prepare("SELECT d.item_id, d.setor, f.numero AS filho_numero, f.id AS filho_id
+        FROM os_desmembramentos d LEFT JOIN ordens_servico f ON f.id = d.os_filho_id
+        WHERE d.os_pai_id = ? AND d.origem = ?");
+    $stmtDesp->execute([$os_id, $origemItens]);
+    foreach ($stmtDesp->fetchAll(PDO::FETCH_ASSOC) as $desp) {
+        $despachosPorItem[(int) $desp['item_id']] = $desp;
+    }
+} catch (Exception $e) { /* tabela ainda não existe = nenhum despacho */ }
+
 require_once __DIR__ . '/../../includes/workflow.php';
 $cicloOP = getCicloVidaOP($db, $os);
 sincronizarStatusOP($db, $os); // mantém ordens_producao.status atualizado
@@ -476,7 +489,16 @@ include '../../includes/header_vendedor.php';
                                 <td><?= htmlspecialchars($item['descricao']) ?></td>
                                 <td><?= $item['quantidade'] ?></td>
 <td>
-                                    <?php if ($os['status'] === 'pendente' || $os['status'] === 'em_projeto' || $os['status'] === 'proposta'): ?>
+                                    <?php $podeEnviarItem = in_array($os['status'], ['pendente', 'em_projeto', 'proposta'], true)
+                                        || ($os['status'] === 'em_producao' && ($os['etapa_atual'] ?? '') === 'engenharia'); ?>
+                                    <?php if (!empty($despachosPorItem[(int) $item['id']])): $desp = $despachosPorItem[(int) $item['id']]; ?>
+                                        <span class="vbadge vbadge-ok" title="Item já enviado por desmembramento">
+                                            <i class="fas fa-share"></i> <?= ucfirst($desp['setor']) ?>
+                                            <?php if (!empty($desp['filho_numero'])): ?>
+                                                — <a href="os_detalhes.php?os_id=<?= (int) $desp['filho_id'] ?>" style="color:inherit;text-decoration:underline"><?= htmlspecialchars($desp['filho_numero']) ?></a>
+                                            <?php endif; ?>
+                                        </span>
+                                    <?php elseif ($podeEnviarItem): ?>
                                         <select onchange="enviarItemSetor(<?= $item['id'] ?>, this.value)">
                                             <option value="">-- Setor --</option>
                                             <option value="corte">Corte</option>
@@ -501,7 +523,7 @@ include '../../includes/header_vendedor.php';
                                             </form>
                                         <?php endif; ?>
 
-                                        <?php if ($os['status'] === 'pendente' || $os['status'] === 'em_projeto' || $os['status'] === 'proposta' || $os['status'] === 'em_revisao'): ?>
+                                        <?php if (in_array($os['status'], ['pendente', 'em_projeto', 'proposta', 'em_revisao', 'em_producao'], true)): ?>
                                             <form method="POST" enctype="multipart/form-data" style="display:inline" id="form-pdf-<?= $item['id'] ?>">
                                                 <input type="hidden" name="acao" value="anexar_arquivo_item">
                                                 <input type="hidden" name="os_id" value="<?= $os_id ?>">
@@ -575,14 +597,17 @@ include '../../includes/header_vendedor.php';
 <script>
 function enviarItemSetor(itemId, setor) {
     if (!setor) return;
-    if (confirm('Enviar item #' + itemId + ' para ' + setor + '?')) {
+    if (confirm('Enviar este item para ' + setor + '? Os demais itens continuam na O.S.')) {
         fetch('desmembrar_item.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'item_id=' + itemId + '&setor=' + setor
+            body: 'item_id=' + itemId + '&setor=' + setor + '&os_id=<?= (int) $os_id ?>'
         }).then(r => r.json()).then(d => {
-            if (d.success) location.reload();
-        });
+            if (d.success) { if (d.message) alert(d.message); location.reload(); }
+            else alert(d.error || 'Erro ao enviar o item.');
+        }).catch(() => alert('Erro de comunicação ao enviar o item.'));
+    } else {
+        event.target.value = '';
     }
 }
 </script>
