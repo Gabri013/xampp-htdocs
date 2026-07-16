@@ -207,17 +207,17 @@ include '../../includes/header_vendedor.php';
                                 </td>
                                 <td>
                                     <?php $isProjetista = ($_SESSION['usuario_tipo'] ?? '') === 'projetista'; ?>
-                                    <?php if (!$isProjetista && $os['etapa_status'] !== 'em_andamento'): ?>
+                                    <?php if (validateUserCanOperateEtapa($setor_atual, $_SESSION['usuario_tipo'] ?? '')['valid'] && $os['etapa_status'] !== 'em_andamento'): ?>
                                         <button class="vbtn-sm btn-success" onclick="gerenciarEtapa(<?php echo $os['id']; ?>, '<?php echo $setor_atual; ?>', 'iniciar')">
                                             <i class="fas fa-play"></i> Iniciar Trabalho
                                         </button>
-                                    <?php elseif (!$isProjetista && $os['etapa_status'] === 'em_andamento'): ?>
+                                    <?php elseif (validateUserCanOperateEtapa($setor_atual, $_SESSION['usuario_tipo'] ?? '')['valid'] && $os['etapa_status'] === 'em_andamento'): ?>
                                         <button class="vbtn-sm btn-danger" onclick="gerenciarEtapa(<?php echo $os['id']; ?>, '<?php echo $setor_atual; ?>', 'finalizar')">
                                             <i class="fas fa-stop"></i> Finalizar e Enviar
                                         </button>
                                     <?php endif; ?>
                                     
-                                    <?php if (!$isProjetista && $os['etapa_atual'] !== 'autorizacao'): ?>
+                                    <?php if (validateUserCanOperateEtapa($setor_atual, $_SESSION['usuario_tipo'] ?? '')['valid'] && $os['etapa_atual'] !== 'autorizacao'): ?>
                                         <button class="vbtn-sm btn-warning" onclick='abrirModalRetorno(<?php echo json_encode($os); ?>)' title="Retornar etapa">
                                             <i class="fas fa-undo"></i> Retornar
                                         </button>

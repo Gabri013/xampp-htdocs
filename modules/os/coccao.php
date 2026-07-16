@@ -56,9 +56,9 @@ include '../../includes/header_vendedor.php';
                                     <td><?php if ($os['etapa_status'] === 'em_andamento'): ?><span class="vbadge-warning"><i class="fas fa-clock"></i> Em Andamento</span><?php else: ?><span class="vbadge-secondary">Aguardando Início</span><?php endif; ?></td>
                                     <td class="timer" data-segundos="0" data-ativo="0"><?php echo ($os['etapa_status'] ?? '') === 'em_andamento' ? '--:--:--' : '--:--:--'; ?></td>
                                     <td>
-                                        <?php if ($_SESSION['usuario_tipo'] !== 'projetista' && $os['etapa_status'] !== 'em_andamento'): ?>
+                                        <?php if (validateUserCanOperateEtapa($setor_atual, $_SESSION['usuario_tipo'] ?? '')['valid'] && $os['etapa_status'] !== 'em_andamento'): ?>
                                             <button class="vbtn-sm btn-success" onclick="gerenciarEtapa(<?php echo $os['id']; ?>, '<?php echo $setor_atual; ?>', 'iniciar')"><i class="fas fa-play"></i> Iniciar Trabalho</button>
-                                        <?php elseif ($_SESSION['usuario_tipo'] !== 'projetista' && $os['etapa_status'] === 'em_andamento'): ?>
+                                        <?php elseif (validateUserCanOperateEtapa($setor_atual, $_SESSION['usuario_tipo'] ?? '')['valid'] && $os['etapa_status'] === 'em_andamento'): ?>
                                             <button class="vbtn-sm btn-danger" onclick="gerenciarEtapa(<?php echo $os['id']; ?>, '<?php echo $setor_atual; ?>', 'finalizar')"><i class="fas fa-stop"></i> Finalizar e Enviar</button>
                                         <?php endif; ?>
                                         <button class="vbtn-sm btn-warning" onclick='abrirModalRetorno(<?php echo json_encode($os); ?>)' title="Retornar etapa"><i class="fas fa-undo"></i> Retornar</button>
