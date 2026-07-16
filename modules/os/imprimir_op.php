@@ -70,7 +70,8 @@ $stmtOp = $db->prepare("SELECT numero, status, criado_em FROM ordens_producao WH
 $stmtOp->execute([$osId]);
 $op = $stmtOp->fetch(PDO::FETCH_ASSOC);
 
-$numeroOp = $op['numero'] ?? 'OP-' . date('Y') . '-' . str_pad((string)$osId, 5, '0', STR_PAD_LEFT);
+// Nº da Ordem de Produção = nº da O.S.
+$numeroOp = $op['numero'] ?? $os['numero'];
 $dataEmissaoOp = !empty($op['criado_em']) ? formatDate($op['criado_em']) : date('d/m/Y');
 $dataEmissaoPedido = !empty($os['data_venda']) ? formatDate($os['data_venda']) : formatDate($os['data_inicio']);
 
@@ -122,6 +123,37 @@ $stmtPlan = $db->prepare("SELECT DISTINCT etapa FROM os_etapas_producao WHERE os
 $stmtPlan->execute([$osId]);
 $setoresCondicionais = $stmtPlan->fetchAll(PDO::FETCH_COLUMN);
 usort($setoresCondicionais, fn($a, $b) => array_search($a, array_keys($coresSetores)) <=> array_search($b, array_keys($coresSetores)));
+
+// Bolinhas da OP: urgência (rosa) + setores condicionais + cor da linha
+$dotsOP = [];
+if (($os['prioridade'] ?? '') === 'vermelho') {
+    $dotsOP[] = ['cor' => '#ec4899', 'label' => 'URGÊNCIA'];
+}
+foreach ($setoresCondicionais as $sc) {
+    $dotsOP[] = $coresSetores[$sc];
+}
+try {
+    if (!empty($os['venda_id'])) {
+        $stmtLinha = $db->prepare("SELECT DISTINCT pc.cor, pc.nome FROM vendas_itens vi
+            INNER JOIN produtos p ON p.id = vi.produto_id
+            INNER JOIN produto_categorias pc ON pc.id = p.categoria_id
+            WHERE vi.venda_id = ? AND pc.cor IS NOT NULL AND pc.cor != ''");
+        $stmtLinha->execute([(int) $os['venda_id']]);
+    } else {
+        $stmtLinha = $db->prepare("SELECT DISTINCT pc.cor, pc.nome FROM os_itens oi
+            INNER JOIN produtos p ON p.id = oi.produto_id
+            INNER JOIN produto_categorias pc ON pc.id = p.categoria_id
+            WHERE oi.os_id = ? AND pc.cor IS NOT NULL AND pc.cor != ''");
+        $stmtLinha->execute([$osId]);
+    }
+    $coresJa = array_column($dotsOP, 'cor');
+    foreach ($stmtLinha->fetchAll(PDO::FETCH_ASSOC) as $linhaCat) {
+        if (!in_array($linhaCat['cor'], $coresJa, true)) {
+            $dotsOP[] = ['cor' => $linhaCat['cor'], 'label' => 'Linha ' . $linhaCat['nome']];
+            $coresJa[] = $linhaCat['cor'];
+        }
+    }
+} catch (Exception $e) { /* coluna cor pode não existir */ }
 
 $totalPaginas = count($itens);
 
@@ -279,9 +311,9 @@ header('Content-Type: text/html; charset=UTF-8');
                 <div class="cell desc-cell">
                     <div class="lbl">Descrição do produto</div>
                     <div class="texto"><?= htmlspecialchars($descricaoItem !== '' ? $descricaoItem : '-') ?></div>
-                    <?php if (!empty($setoresCondicionais)): ?>
+                    <?php if (!empty($dotsOP)): ?>
                     <div class="setores-dots">
-                        <?php foreach ($setoresCondicionais as $sc): $info = $coresSetores[$sc]; ?>
+                        <?php foreach ($dotsOP as $info): ?>
                         <span class="dot"><i style="background:<?= $info['cor'] ?>"></i> <?= $info['label'] ?></span>
                         <?php endforeach; ?>
                     </div>

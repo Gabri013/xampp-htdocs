@@ -44,6 +44,68 @@ function getEtapasLabels(): array {
 }
 
 /**
+ * Bolinhas (indicadores coloridos) da O.S./O.P.:
+ *   mobiliário = verde, refrigeração = azul, cocção = amarelo,
+ *   urgência (prioridade vermelha) = rosa, + cor da linha do produto
+ *   (produto_categorias.cor). $os precisa de: id, prioridade, venda_id.
+ */
+function getBolinhasOS(PDO $db, array $os): array {
+    $bolinhas = [];
+    if (($os['prioridade'] ?? '') === 'vermelho') {
+        $bolinhas[] = ['cor' => '#ec4899', 'titulo' => 'Urgência'];
+    }
+    try {
+        $stmt = $db->prepare("SELECT DISTINCT etapa FROM os_etapas_producao WHERE os_id = ? AND etapa IN ('mobiliario', 'coccao', 'refrigeracao')");
+        $stmt->execute([(int) ($os['id'] ?? 0)]);
+        $mapa = [
+            'mobiliario'   => ['#16a34a', 'Mobiliário'],
+            'refrigeracao' => ['#2563eb', 'Refrigeração'],
+            'coccao'       => ['#eab308', 'Cocção'],
+        ];
+        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $e) {
+            if (isset($mapa[$e])) {
+                $bolinhas[] = ['cor' => $mapa[$e][0], 'titulo' => $mapa[$e][1]];
+            }
+        }
+    } catch (Exception $e) { /* sem etapas */ }
+    // Cor da linha: categoria dos produtos da O.S. (produto_categorias.cor)
+    try {
+        if (!empty($os['venda_id'])) {
+            $stmt = $db->prepare("SELECT DISTINCT pc.cor, pc.nome FROM vendas_itens vi
+                INNER JOIN produtos p ON p.id = vi.produto_id
+                INNER JOIN produto_categorias pc ON pc.id = p.categoria_id
+                WHERE vi.venda_id = ? AND pc.cor IS NOT NULL AND pc.cor != ''");
+            $stmt->execute([(int) $os['venda_id']]);
+        } else {
+            $stmt = $db->prepare("SELECT DISTINCT pc.cor, pc.nome FROM os_itens oi
+                INNER JOIN produtos p ON p.id = oi.produto_id
+                INNER JOIN produto_categorias pc ON pc.id = p.categoria_id
+                WHERE oi.os_id = ? AND pc.cor IS NOT NULL AND pc.cor != ''");
+            $stmt->execute([(int) ($os['id'] ?? 0)]);
+        }
+        $coresJa = array_column($bolinhas, 'cor');
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $linha) {
+            if (!in_array($linha['cor'], $coresJa, true)) {
+                $bolinhas[] = ['cor' => $linha['cor'], 'titulo' => 'Linha: ' . $linha['nome']];
+                $coresJa[] = $linha['cor'];
+            }
+        }
+    } catch (Exception $e) { /* coluna cor pode não existir ainda */ }
+    return $bolinhas;
+}
+
+/**
+ * HTML das bolinhas (12px, com tooltip). Use ao lado do nº da O.S./O.P.
+ */
+function renderBolinhasOS(array $bolinhas, int $tamanho = 12): string {
+    $html = '';
+    foreach ($bolinhas as $b) {
+        $html .= '<span title="' . htmlspecialchars($b['titulo']) . '" style="display:inline-block;width:' . $tamanho . 'px;height:' . $tamanho . 'px;border-radius:50%;background:' . htmlspecialchars($b['cor']) . ';border:1px solid rgba(0,0,0,.25);margin-right:3px;vertical-align:middle"></span>';
+    }
+    return $html;
+}
+
+/**
  * Estágios do ciclo de vida da Ordem de Produção (modelo enxuto, sem PCP
  * pesado). Cancelada é tratada à parte.
  */

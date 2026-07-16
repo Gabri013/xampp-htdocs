@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'gerar_o
         $itens = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // Gerar número da OP
-        $numero_op = 'OP-' . date('Y') . '-' . str_pad($os_id, 6, '0', STR_PAD_LEFT);
+        $numero_op = $os['numero']; // nº da OP = nº da O.S.
 
         // Inserir OP
         if ($opExistente) {
@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'gerar_o
             $itens = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             // Gerar número da OP
-            $numero_op = 'OP-' . date('Y') . '-' . str_pad($os_id, 6, '0', STR_PAD_LEFT);
+            $numero_op = $os['numero']; // nº da OP = nº da O.S.
 
             // Inserir OP
             if ($opExistente) {

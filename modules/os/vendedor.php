@@ -1,6 +1,7 @@
 <?php
 require_once '../../config/config.php';
 require_once '../../includes/auth.php';
+require_once '../../includes/workflow.php';
 requirePermission(['master', 'vendedor', 'projetista', 'gerente']);
 require_once '../../includes/components/kanban.component.php';
 
@@ -241,7 +242,7 @@ include '../../includes/header_vendedor.php';
             $s = $statusMap[$status] ?? ['vbadge-warn', ucfirst($status)];
           ?>
           <tr>
-            <td class="td-num"><?php echo htmlspecialchars($os['numero']); ?></td>
+            <td class="td-num"><?php echo htmlspecialchars($os['numero']); ?> <?php echo renderBolinhasOS(getBolinhasOS($db, $os), 10); ?></td>
             <td>
               <div class="td-client"><?php echo htmlspecialchars($os['razao_social']); ?></div>
             </td>

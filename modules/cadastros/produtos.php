@@ -314,18 +314,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $categoriaNome = sanitize($_POST['categoria_nome'] ?? '');
         $categoriaDescricao = sanitize($_POST['categoria_descricao'] ?? '');
         $categoriaStatus = sanitize($_POST['categoria_status'] ?? 'ativo');
+        $categoriaCor = sanitize($_POST['categoria_cor'] ?? '');
+        if (!preg_match('/^#[0-9a-fA-F]{6}$/', $categoriaCor)) {
+            $categoriaCor = null; // sem cor definida
+        }
 
         if ($categoriaNome === '') {
             setError('Informe o nome da categoria.');
         } else {
             try {
                 if ($categoriaId > 0) {
-                    $stmt = $db->prepare('UPDATE produto_categorias SET nome = ?, descricao = ?, status = ? WHERE id = ?');
-                    $stmt->execute([$categoriaNome, $categoriaDescricao, $categoriaStatus, $categoriaId]);
+                    $stmt = $db->prepare('UPDATE produto_categorias SET nome = ?, descricao = ?, status = ?, cor = ? WHERE id = ?');
+                    $stmt->execute([$categoriaNome, $categoriaDescricao, $categoriaStatus, $categoriaCor, $categoriaId]);
                     setSuccess('Categoria atualizada com sucesso!');
                 } else {
-                    $stmt = $db->prepare('INSERT INTO produto_categorias (nome, descricao, status) VALUES (?, ?, ?)');
-                    $stmt->execute([$categoriaNome, $categoriaDescricao, $categoriaStatus]);
+                    $stmt = $db->prepare('INSERT INTO produto_categorias (nome, descricao, status, cor) VALUES (?, ?, ?, ?)');
+                    $stmt->execute([$categoriaNome, $categoriaDescricao, $categoriaStatus, $categoriaCor]);
                     setSuccess('Categoria cadastrada com sucesso!');
                 }
 
@@ -1457,6 +1461,14 @@ include '../../includes/header_vendedor.php';
                         <option value="ativo">Ativo</option>
                         <option value="inativo">Inativo</option>
                     </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Cor da Linha (bolinha na O.S./O.P.)</label>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <input type="color" name="categoria_cor" id="categoria_cor" value="#94a3b8" style="width:48px;height:32px;padding:2px;border:1px solid #e9ecef;border-radius:6px;cursor:pointer">
+                        <span style="font-size:12px;color:#666">Essa cor aparece como bolinha ao lado do nº da O.S. nos painéis e na O.P. impressa.</span>
+                    </div>
                 </div>
 
                 <div class="alerta-bom">

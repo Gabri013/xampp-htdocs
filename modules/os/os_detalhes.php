@@ -68,7 +68,10 @@ function garantirOrdemProducao(PDO $db, int $osId, int $usuarioId): array
         return ['created' => false, 'op' => $op];
     }
 
-    $numeroOp = 'OP-' . date('Y') . '-' . str_pad((string) $osId, 6, '0', STR_PAD_LEFT);
+    // Nº da OP = nº da O.S.
+    $stmtNum = $db->prepare("SELECT numero FROM ordens_servico WHERE id = ? LIMIT 1");
+    $stmtNum->execute([$osId]);
+    $numeroOp = (string) $stmtNum->fetchColumn();
     $stmt = $db->prepare("INSERT INTO ordens_producao (os_id, numero, status, criado_em) VALUES (?, ?, 'pendente', NOW())");
     $stmt->execute([$osId, $numeroOp]);
 
@@ -371,7 +374,7 @@ include '../../includes/header_vendedor.php';
     <?php $GLOBALS['modulo_tipo'] = 'projetista'; include '../../includes/vend_sidebar.php'; ?>
     <div class="vend-main">
         <div class="vend-page-head">
-            <div><h1 class="vend-page-title"><?= htmlspecialchars($os['numero']) ?></h1></div>
+            <div><h1 class="vend-page-title"><?= htmlspecialchars($os['numero']) ?> <?= renderBolinhasOS(getBolinhasOS($db, $os), 14) ?></h1></div>
             <a href="imprimir_op.php?os_id=<?= $os_id ?>" target="_blank" class="vbtn-sm" title="Imprimir O.S."><i class="fas fa-print"></i> Imprimir</a>
         </div>
 

@@ -131,7 +131,7 @@ include '../../includes/header_vendedor.php';
                         <tbody>
                         <?php foreach ($ordens_apontamento as $os): ?>
                             <tr>
-                                <td><strong><?= htmlspecialchars($os['numero']) ?></strong></td>
+                                <td><strong><?= htmlspecialchars($os['numero']) ?></strong> <?= renderBolinhasOS(getBolinhasOS($db, $os), 10) ?></td>
                                 <td><?= htmlspecialchars($os['razao_social']) ?></td>
                                 <td><?= formatDate($os['data_termino'] ?? null) ?></td>
                                 <td><?= getPrioridadeBadge($os['prioridade']) ?></td>
@@ -170,7 +170,7 @@ include '../../includes/header_vendedor.php';
                         <tbody>
                             <?php foreach ($ordens as $os): ?>
                                 <tr>
-                                    <td><strong><?= htmlspecialchars($os['numero']) ?></strong></td>
+                                    <td><strong><?= htmlspecialchars($os['numero']) ?></strong> <?= renderBolinhasOS(getBolinhasOS($db, $os), 10) ?></td>
                                     <td><?= htmlspecialchars($os['razao_social']) ?></td>
                                     <td><?= htmlspecialchars($os['venda_numero']) ?></td>
                                     <td>

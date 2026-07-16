@@ -19,7 +19,7 @@ $colunas = [
 
 // Vendedor vê apenas as próprias O.S.; gestão vê todas
 $sqlBase = "
-    SELECT os.id, os.numero, os.status, os.etapa_atual, os.prioridade, os.data_termino,
+    SELECT os.id, os.numero, os.status, os.etapa_atual, os.prioridade, os.data_termino, os.venda_id,
            c.razao_social,
            COALESCE(v.numero, 'Independente') AS venda_numero,
            v.usuario_id AS vendedor_id
@@ -88,7 +88,7 @@ include '../../includes/header_vendedor.php';
                         ?>
                         <div class="vend-kanban-card" draggable="true" data-id="<?php echo (int)$o['id']; ?>">
                             <div class="kb-card-top">
-                                <span class="kb-num"><?php echo htmlspecialchars($o['numero']); ?></span>
+                                <span class="kb-num"><?php echo htmlspecialchars($o['numero']); ?></span> <?php echo renderBolinhasOS(getBolinhasOS($db, $o), 10); ?>
                                 <span class="kb-prio kb-prio-<?php echo htmlspecialchars($o['prioridade'] ?: 'verde'); ?>" title="Prioridade <?php echo htmlspecialchars($o['prioridade'] ?: 'verde'); ?>"></span>
                             </div>
                             <div class="vend-kanban-card-title"><?php echo htmlspecialchars($o['razao_social']); ?></div>
