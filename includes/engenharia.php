@@ -412,6 +412,20 @@ function upsertInsumo(PDO $db, array $dados): int
             $insumoId,
         ]);
 
+        // Campos de estoque: só atualiza quando vierem no payload (os
+        // importadores .sldmat/BOM não mandam — preserva o que existe).
+        if (array_key_exists('estoque_atual', $dados) || array_key_exists('estoque_minimo', $dados) || array_key_exists('localizacao', $dados)) {
+            try {
+                $db->prepare("UPDATE insumos SET estoque_atual = ?, estoque_minimo = ?, localizacao = ? WHERE id = ?")
+                   ->execute([
+                       $dados['estoque_atual'] !== null && $dados['estoque_atual'] !== '' ? (float) $dados['estoque_atual'] : null,
+                       $dados['estoque_minimo'] !== null && $dados['estoque_minimo'] !== '' ? (float) $dados['estoque_minimo'] : null,
+                       trim((string) ($dados['localizacao'] ?? '')) !== '' ? trim((string) $dados['localizacao']) : null,
+                       $insumoId,
+                   ]);
+            } catch (Exception $e) { /* colunas podem não existir em banco antigo */ }
+        }
+
         return $insumoId;
     }
 
@@ -466,8 +480,21 @@ function upsertInsumo(PDO $db, array $dados): int
         $custoUnitario,
         $observacoes !== '' ? $observacoes : null,
     ]);
+    $novoInsumoId = (int) $db->lastInsertId();
 
-    return (int) $db->lastInsertId();
+    if (array_key_exists('estoque_atual', $dados) || array_key_exists('estoque_minimo', $dados) || array_key_exists('localizacao', $dados)) {
+        try {
+            $db->prepare("UPDATE insumos SET estoque_atual = ?, estoque_minimo = ?, localizacao = ? WHERE id = ?")
+               ->execute([
+                   ($dados['estoque_atual'] ?? '') !== '' && $dados['estoque_atual'] !== null ? (float) $dados['estoque_atual'] : null,
+                   ($dados['estoque_minimo'] ?? '') !== '' && $dados['estoque_minimo'] !== null ? (float) $dados['estoque_minimo'] : null,
+                   trim((string) ($dados['localizacao'] ?? '')) !== '' ? trim((string) $dados['localizacao']) : null,
+                   $novoInsumoId,
+               ]);
+        } catch (Exception $e) { /* colunas podem não existir */ }
+    }
+
+    return $novoInsumoId;
 }
 
 function salvarComponentesProduto(PDO $db, int $produtoId, array $componentes): void

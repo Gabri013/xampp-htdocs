@@ -416,6 +416,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'solicit
     exit;
 }
 
+// POST: cadastrar insumo novo NA HORA (não existe no catálogo) e já
+// solicitar para esta O.S. — código gerado automaticamente
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'cadastrar_insumo_rapido') {
+    $uid = (int)$_SESSION['usuario_id'];
+    if (!hasPermission(['master', 'projetista', 'gerente'])) {
+        setError('Somente Projetista/gestão podem cadastrar insumos.');
+    } else {
+        $niNome = trim($_POST['ni_nome'] ?? '');
+        $niUnidade = trim($_POST['ni_unidade'] ?? 'un') ?: 'un';
+        $niFornecedor = trim($_POST['ni_fornecedor'] ?? '');
+        $niCusto = (float) str_replace(['.', ','], ['', '.'], (string) ($_POST['ni_custo'] ?? '0'));
+        $niQtd = (float) str_replace(',', '.', (string) ($_POST['ni_quantidade'] ?? 1));
+        $niObs = trim($_POST['ni_observacao'] ?? '');
+        if ($niNome === '' || $niQtd <= 0) {
+            setError('Informe o nome do insumo e a quantidade.');
+        } else {
+            try {
+                $db->beginTransaction();
+                $niCodigo = gerarCodigoInsumo($db);
+                $niId = upsertInsumo($db, [
+                    'codigo' => $niCodigo,
+                    'nome' => $niNome,
+                    'fornecedor' => $niFornecedor,
+                    'unidade' => $niUnidade,
+                    'custo_unitario' => $niCusto,
+                    'observacoes' => 'Cadastrado na ' . ($os['numero'] ?? 'O.S.'),
+                ]);
+                $db->prepare("INSERT INTO os_materiais_solicitados (os_id, insumo_id, descricao, quantidade, unidade, observacao, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?)")
+                   ->execute([$os_id, $niId, $niCodigo . ' — ' . $niNome, $niQtd, $niUnidade, $niObs ?: null, $uid]);
+                $db->commit();
+                setSuccess('Insumo cadastrado no catálogo com o código ' . $niCodigo . ' e solicitado para esta O.S.!');
+            } catch (Exception $e) {
+                if ($db->inTransaction()) $db->rollBack();
+                setError('Erro ao cadastrar o insumo: ' . $e->getMessage());
+            }
+        }
+    }
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit;
+}
+
 // POST: remover/atender solicitação de material
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['acao'] ?? '', ['remover_material', 'atender_material'], true)) {
     $matId = (int) ($_POST['material_id'] ?? 0);
@@ -724,6 +765,7 @@ include '../../includes/header_vendedor.php';
                     <div style="width:80px"><label style="font-size:12px">Un</label><input type="text" name="mat_unidade" class="form-control" value="un"></div>
                     <div style="flex:2;min-width:200px"><label style="font-size:12px">Observação / Medida (melhor aproveitamento)</label><input type="text" name="mat_observacao" class="form-control" placeholder="Ex.: cortar em 2000x1250 para melhor aproveitamento"></div>
                     <button type="submit" class="vbtn-sm btn-success"><i class="fas fa-plus"></i> Solicitar</button>
+                    <button type="button" class="vbtn-sm" onclick="document.getElementById('modalNovoInsumo').style.display='block'" title="O material não está no catálogo? Cadastre na hora — o código sai automático"><i class="fas fa-box-open"></i> Cadastrar novo insumo</button>
                 </form>
                 <?php endif; ?>
             </div>
@@ -852,6 +894,21 @@ include '../../includes/header_vendedor.php';
         </div>
     </div>
 </div>
+
+<!-- Modal Cadastrar Insumo Novo (na hora, direto da O.S.) -->
+<div id="modalNovoInsumo" class="modal"><div class="modal-content" style="max-width:560px"><div class="modal-header"><h3><i class="fas fa-box-open"></i> Cadastrar Novo Insumo</h3><button class="close" onclick="document.getElementById('modalNovoInsumo').style.display='none'">&times;</button></div><form method="POST"><div class="modal-body"><input type="hidden" name="acao" value="cadastrar_insumo_rapido">
+<div style="font-size:12px;color:#666;margin-bottom:10px"><i class="fas fa-info-circle"></i> O insumo entra no <strong>catálogo de matéria-prima</strong> com código automático (padrão 7 dígitos) e já fica <strong>solicitado para esta O.S.</strong></div>
+<div class="form-group"><label><strong>Nome do insumo *</strong></label><input type="text" name="ni_nome" class="form-control" required placeholder="Ex.: Rodízio 5'' giratório com trava"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<div class="form-group" style="flex:1;min-width:100px"><label>Unidade</label><input type="text" name="ni_unidade" class="form-control" value="un"></div>
+<div class="form-group" style="flex:2;min-width:160px"><label>Fornecedor</label><input type="text" name="ni_fornecedor" class="form-control" placeholder="opcional"></div>
+<div class="form-group" style="flex:1;min-width:110px"><label>Custo unit. (R$)</label><input type="text" name="ni_custo" class="form-control" placeholder="0,00"></div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<div class="form-group" style="width:110px"><label><strong>Qtd solicitada *</strong></label><input type="text" name="ni_quantidade" class="form-control" value="1" required></div>
+<div class="form-group" style="flex:1;min-width:200px"><label>Observação / Medida</label><input type="text" name="ni_observacao" class="form-control" placeholder="Ex.: melhor aproveitamento 2000x1250"></div>
+</div>
+</div><div class="modal-footer"><button type="button" class="vbtn-sm" onclick="document.getElementById('modalNovoInsumo').style.display='none'">Cancelar</button><button type="submit" class="vbtn-sm btn-success"><i class="fas fa-save"></i> Cadastrar e Solicitar</button></div></form></div></div>
 
 <!-- Modal Editar Item (alteração de medidas/descrição pelo vendedor) -->
 <div id="modalEditarItem" class="modal"><div class="modal-content" style="max-width:520px"><div class="modal-header"><h3><i class="fas fa-pencil-alt"></i> Alterar Item</h3><button class="close" onclick="document.getElementById('modalEditarItem').style.display='none'">&times;</button></div><form method="POST"><div class="modal-body"><input type="hidden" name="acao" value="editar_item"><input type="hidden" name="item_id" id="edit_item_id"><div class="form-group"><label><strong>Descrição / Medidas *</strong></label><textarea name="nova_descricao" id="edit_item_desc" class="form-control" rows="4" required placeholder="Descrição completa com as medidas atualizadas..."></textarea></div><div class="form-group"><label><strong>Quantidade *</strong></label><input type="text" name="nova_quantidade" id="edit_item_qtd" class="form-control" required style="max-width:120px"></div><div style="font-size:12px;color:#666"><i class="fas fa-info-circle"></i> Depois de salvar, se a alteração afetar o desenho, use <strong>Solicitar Alteração</strong> para a O.S. voltar ao Projetista.</div></div><div class="modal-footer"><button type="button" class="vbtn-sm" onclick="document.getElementById('modalEditarItem').style.display='none'">Cancelar</button><button type="submit" class="vbtn-sm btn-success"><i class="fas fa-save"></i> Salvar Alteração</button></div></form></div></div>

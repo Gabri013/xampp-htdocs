@@ -83,6 +83,9 @@ function buildInsumoPayload(array $post): array
         'unidade' => sanitize($post['insumo_unidade'] ?? 'un'),
         'custo_unitario' => parseMoneyValue($post['insumo_custo_unitario'] ?? 0),
         'observacoes' => sanitize($post['insumo_observacoes'] ?? ''),
+        'estoque_atual' => trim((string) ($post['insumo_estoque_atual'] ?? '')) !== '' ? (float) str_replace(',', '.', $post['insumo_estoque_atual']) : null,
+        'estoque_minimo' => trim((string) ($post['insumo_estoque_minimo'] ?? '')) !== '' ? (float) str_replace(',', '.', $post['insumo_estoque_minimo']) : null,
+        'localizacao' => sanitize($post['insumo_localizacao'] ?? ''),
     ];
 }
 
@@ -236,6 +239,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif ($acao === 'salvar_insumo') {
         $dadosInsumo = buildInsumoPayload($_POST);
+
+        // Código vazio em insumo NOVO = gera automático no padrão de 7
+        // dígitos da matéria-prima (mesma sequência do SolidWorks)
+        if ($dadosInsumo['id'] <= 0 && $dadosInsumo['codigo'] === '') {
+            $dadosInsumo['codigo'] = gerarCodigoInsumo($db);
+        }
 
         if ($dadosInsumo['nome'] === '') {
             setError('Informe o nome do insumo.');
@@ -596,6 +605,12 @@ if ($insumosResumo['total'] > 0) {
         return (float) ($insumo['custo_unitario'] ?? 0);
     }, $insumos)) / $insumosResumo['total'];
 }
+// Insumos abaixo do estoque mínimo (alerta estilo painel de estoque)
+$insumosResumo['abaixo_minimo'] = count(array_filter($insumos, static function (array $i): bool {
+    return $i['estoque_minimo'] !== null && (float) $i['estoque_minimo'] > 0
+        && (float) ($i['estoque_atual'] ?? 0) < (float) $i['estoque_minimo'];
+}));
+$insumosResumo['sem_custo'] = count(array_filter($insumos, static fn(array $i): bool => (float) ($i['custo_unitario'] ?? 0) <= 0));
 
 include '../../includes/header_vendedor.php';
 ?>
@@ -1042,9 +1057,30 @@ include '../../includes/header_vendedor.php';
                 <span class="label">Custo Medio</span>
                 <span class="value"><?php echo formatMoney($insumosResumo['custo_medio']); ?></span>
             </div>
+            <div class="summary-card" <?php if ($insumosResumo['abaixo_minimo'] > 0): ?>style="border-left:4px solid #dc2626"<?php endif; ?>>
+                <span class="label">Abaixo do Mínimo</span>
+                <span class="value" <?php if ($insumosResumo['abaixo_minimo'] > 0): ?>style="color:#dc2626"<?php endif; ?>><?php echo $insumosResumo['abaixo_minimo']; ?></span>
+            </div>
+            <div class="summary-card" <?php if ($insumosResumo['sem_custo'] > 0): ?>style="border-left:4px solid #f59e0b"<?php endif; ?>>
+                <span class="label">Sem Custo Preenchido</span>
+                <span class="value" <?php if ($insumosResumo['sem_custo'] > 0): ?>style="color:#b45309"<?php endif; ?>><?php echo $insumosResumo['sem_custo']; ?></span>
+            </div>
         </div>
     </div>
     <div class="vend-card-body">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+            <div style="position:relative;flex:1;min-width:240px;max-width:420px">
+                <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#98a2b3;font-size:12px"></i>
+                <input type="text" id="buscaInsumos" class="form-control" placeholder="Buscar por código, nome, fornecedor ou localização..." style="padding-left:30px" oninput="filtrarInsumos()">
+            </div>
+            <label style="display:flex;align-items:center;gap:5px;font-weight:normal;margin:0;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="filtroEstoqueBaixo" onchange="filtrarInsumos()"> Só estoque baixo
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-weight:normal;margin:0;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="filtroSemCusto" onchange="filtrarInsumos()"> Só sem custo
+            </label>
+            <span id="contadorFiltroInsumos" style="font-size:12px;color:#667085"></span>
+        </div>
         <div class="table-responsive">
             <div class="acoes-lote">
                 <div class="selecionados-info">
@@ -1070,16 +1106,23 @@ include '../../includes/header_vendedor.php';
                         <th>Fornecedor</th>
                         <th>Unidade</th>
                         <th>Custo Atual</th>
+                        <th>Estoque</th>
+                        <th>Localização</th>
                         <th>Uso na BOM</th>
                         <th>Acoes</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tbodyInsumos">
                     <?php if (empty($insumos)): ?>
-                        <tr><td colspan="8" class="text-center">Nenhum insumo cadastrado ainda.</td></tr>
+                        <tr><td colspan="10" class="text-center">Nenhum insumo cadastrado ainda.</td></tr>
                     <?php else: ?>
-                        <?php foreach ($insumos as $insumo): ?>
-                            <tr>
+                        <?php foreach ($insumos as $insumo):
+                            $temMinimo = $insumo['estoque_minimo'] !== null && (float) $insumo['estoque_minimo'] > 0;
+                            $estoqueBaixo = $temMinimo && (float) ($insumo['estoque_atual'] ?? 0) < (float) $insumo['estoque_minimo'];
+                            $semCusto = (float) ($insumo['custo_unitario'] ?? 0) <= 0;
+                            $fmtQtd = static fn($v) => $v === null ? '—' : rtrim(rtrim(number_format((float) $v, 2, ',', '.'), '0'), ',');
+                        ?>
+                            <tr class="linha-insumo" data-busca="<?php echo htmlspecialchars(mb_strtolower(($insumo['codigo'] ?? '') . ' ' . $insumo['nome'] . ' ' . ($insumo['fornecedor'] ?? '') . ' ' . ($insumo['localizacao'] ?? ''), 'UTF-8')); ?>" data-baixo="<?php echo $estoqueBaixo ? 1 : 0; ?>" data-semcusto="<?php echo $semCusto ? 1 : 0; ?>">
                                 <td style="text-align:center;">
                                     <input type="checkbox" name="ids_insumos[]" value="<?php echo (int) $insumo['id']; ?>" class="insumo-checkbox" onchange="atualizarSelecaoInsumos()">
                                 </td>
@@ -1092,7 +1135,17 @@ include '../../includes/header_vendedor.php';
                                 </td>
                                 <td><?php echo htmlspecialchars($insumo['fornecedor'] ?: '-'); ?></td>
                                 <td><?php echo htmlspecialchars($insumo['unidade'] ?: 'un'); ?></td>
-                                <td><?php echo formatMoney($insumo['custo_unitario'] ?? 0); ?></td>
+                                <td><?php echo $semCusto ? '<span class="vbadge vbadge-warn" title="Preencha o custo para o cálculo de preço dos produtos">R$ 0,00</span>' : formatMoney($insumo['custo_unitario'] ?? 0); ?></td>
+                                <td>
+                                    <?php if ($estoqueBaixo): ?>
+                                        <span class="vbadge" style="background:#fee2e2;color:#dc2626" title="Estoque abaixo do mínimo (<?php echo $fmtQtd($insumo['estoque_minimo']); ?>)"><i class="fas fa-exclamation-triangle"></i> <?php echo $fmtQtd($insumo['estoque_atual'] ?? 0); ?> / mín <?php echo $fmtQtd($insumo['estoque_minimo']); ?></span>
+                                    <?php elseif ($insumo['estoque_atual'] !== null || $temMinimo): ?>
+                                        <?php echo $fmtQtd($insumo['estoque_atual']); ?><?php if ($temMinimo): ?> <small style="color:#98a2b3">/ mín <?php echo $fmtQtd($insumo['estoque_minimo']); ?></small><?php endif; ?>
+                                    <?php else: ?>
+                                        <span style="color:#cbd5e1">—</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo htmlspecialchars($insumo['localizacao'] ?: '—'); ?></td>
                                 <td><?php echo (int) ($insumo['total_produtos'] ?? 0); ?> produto(s)</td>
                                 <td>
                                     <button class="vbtn-sm btn-sm btn-primary" type="button" onclick='editarInsumo(<?php echo json_encode($insumo, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>)'>
@@ -1568,22 +1621,25 @@ include '../../includes/header_vendedor.php';
                 <input type="hidden" name="acao" value="salvar_insumo">
                 <input type="hidden" name="insumo_id" id="insumo_id">
 
+                <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#D85A30;border-bottom:1px solid #f1d9cd;padding-bottom:4px;margin-bottom:10px"><i class="fas fa-tag"></i> Identificação</div>
+                <div class="form-grid-2">
+                    <div class="form-group" style="grid-column:span 2">
+                        <label>Nome *</label>
+                        <input type="text" name="insumo_nome" id="insumo_nome" class="form-control" required placeholder="Ex.: Chapa inox 304 1,2mm — 2000x1250">
+                    </div>
+                </div>
                 <div class="form-grid-2">
                     <div class="form-group">
                         <label>Codigo</label>
-                        <input type="text" name="insumo_codigo" id="insumo_codigo" class="form-control">
+                        <input type="text" name="insumo_codigo" id="insumo_codigo" class="form-control" placeholder="vazio = gera automático (7 dígitos)">
                     </div>
                     <div class="form-group">
                         <label>Unidade</label>
-                        <input type="text" name="insumo_unidade" id="insumo_unidade" class="form-control" value="un">
+                        <input type="text" name="insumo_unidade" id="insumo_unidade" class="form-control" value="un" placeholder="un, kg, m, chapa...">
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Nome *</label>
-                    <input type="text" name="insumo_nome" id="insumo_nome" class="form-control" required>
-                </div>
-
+                <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#D85A30;border-bottom:1px solid #f1d9cd;padding-bottom:4px;margin:14px 0 10px"><i class="fas fa-truck"></i> Fornecimento e Custo</div>
                 <div class="form-grid-2">
                     <div class="form-group">
                         <label>Fornecedor</label>
@@ -1595,9 +1651,25 @@ include '../../includes/header_vendedor.php';
                     </div>
                 </div>
 
+                <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#D85A30;border-bottom:1px solid #f1d9cd;padding-bottom:4px;margin:14px 0 10px"><i class="fas fa-warehouse"></i> Estoque (opcional)</div>
+                <div class="form-grid-2" style="grid-template-columns:repeat(3,1fr)">
+                    <div class="form-group">
+                        <label>Estoque Atual</label>
+                        <input type="text" name="insumo_estoque_atual" id="insumo_estoque_atual" class="form-control" placeholder="Ex.: 12">
+                    </div>
+                    <div class="form-group">
+                        <label>Estoque Mínimo</label>
+                        <input type="text" name="insumo_estoque_minimo" id="insumo_estoque_minimo" class="form-control" placeholder="alerta abaixo disso">
+                    </div>
+                    <div class="form-group">
+                        <label>Localização</label>
+                        <input type="text" name="insumo_localizacao" id="insumo_localizacao" class="form-control" placeholder="Ex.: Prateleira A3">
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label>Observacoes</label>
-                    <textarea name="insumo_observacoes" id="insumo_observacoes" class="form-control" rows="3"></textarea>
+                    <textarea name="insumo_observacoes" id="insumo_observacoes" class="form-control" rows="2"></textarea>
                 </div>
 
                 <div class="alerta-bom">
@@ -1908,8 +1980,28 @@ function editarInsumo(insumo) {
     document.getElementById('insumo_fornecedor').value = insumo.fornecedor || '';
     document.getElementById('insumo_unidade').value = insumo.unidade || 'un';
     document.getElementById('insumo_observacoes').value = insumo.observacoes || '';
+    document.getElementById('insumo_estoque_atual').value = insumo.estoque_atual !== null && insumo.estoque_atual !== undefined ? String(insumo.estoque_atual).replace('.', ',') : '';
+    document.getElementById('insumo_estoque_minimo').value = insumo.estoque_minimo !== null && insumo.estoque_minimo !== undefined ? String(insumo.estoque_minimo).replace('.', ',') : '';
+    document.getElementById('insumo_localizacao').value = insumo.localizacao || '';
     preencherMoeda(document.getElementById('insumo_custo_unitario'), insumo.custo_unitario || 0);
     document.getElementById('modalInsumo').style.display = 'block';
+}
+
+function filtrarInsumos() {
+    const q = (document.getElementById('buscaInsumos').value || '').toLowerCase().trim();
+    const soBaixo = document.getElementById('filtroEstoqueBaixo').checked;
+    const soSemCusto = document.getElementById('filtroSemCusto').checked;
+    let visiveis = 0, total = 0;
+    document.querySelectorAll('#tbodyInsumos tr.linha-insumo').forEach(tr => {
+        total++;
+        const busca = tr.dataset.busca || '';
+        let mostra = (!q || busca.includes(q));
+        if (mostra && soBaixo) mostra = tr.dataset.baixo === '1';
+        if (mostra && soSemCusto) mostra = tr.dataset.semcusto === '1';
+        tr.style.display = mostra ? '' : 'none';
+        if (mostra) visiveis++;
+    });
+    document.getElementById('contadorFiltroInsumos').textContent = (q || soBaixo || soSemCusto) ? ('Mostrando ' + visiveis + ' de ' + total) : '';
 }
 
 function atualizarTipoCodigo() {
