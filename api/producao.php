@@ -50,8 +50,14 @@ try {
         case 'iniciar_etapa':
             $statusExpediente = getStatusExpedienteHoje($db, (int) $_SESSION['usuario_id']);
             if (($statusExpediente['status'] ?? 'nao_iniciado') !== 'em_trabalho') {
-                echo json_encode(['error' => 'Inicie seu expediente antes de começar uma O.S.']);
-                exit;
+                // Sem fricção: abre (ou reabre) o expediente automaticamente
+                // ao iniciar o trabalho — o ponto começa a contar agora.
+                $usuarioPonto = getCurrentUser();
+                $resPonto = registrarInicioExpediente($db, $usuarioPonto ?: ['id' => (int) $_SESSION['usuario_id'], 'nome' => $_SESSION['usuario_nome'] ?? '']);
+                if (empty($resPonto['success'])) {
+                    echo json_encode(['error' => 'Não foi possível iniciar seu expediente: ' . ($resPonto['message'] ?? 'erro desconhecido')]);
+                    exit;
+                }
             }
 
             if ($os['etapa_atual'] !== $etapa) {

@@ -23,10 +23,19 @@ function ensureExpedienteSchema(PDO $db): void
             finalizado_em DATETIME NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            UNIQUE KEY uniq_usuario_data (usuario_id, data_referencia),
+            KEY idx_usuario_data (usuario_id, data_referencia),
             CONSTRAINT fk_expediente_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
         ) ENGINE=InnoDB
     ");
+
+    // Migração: o expediente aceita VÁRIOS períodos por dia (entrar, sair
+    // para almoço, voltar) — remove a chave única antiga se ainda existir.
+    try {
+        $chk = $db->query("SHOW INDEX FROM usuarios_expedientes WHERE Key_name = 'uniq_usuario_data'");
+        if ($chk && $chk->fetch()) {
+            $db->exec("ALTER TABLE usuarios_expedientes DROP INDEX uniq_usuario_data, ADD INDEX idx_usuario_data (usuario_id, data_referencia)");
+        }
+    } catch (Throwable $e) { /* índice pode já ter sido migrado */ }
 
     $db->exec("
         CREATE TABLE IF NOT EXISTS usuarios_expediente_logs (
@@ -49,11 +58,14 @@ function getExpedienteHoje(PDO $db, int $usuarioId): ?array
 {
     ensureExpedienteSchema($db);
 
+    // Pode haver vários períodos no dia (reabertura após encerrar) — o
+    // estado atual é o do período mais recente.
     $stmt = $db->prepare("
         SELECT *
         FROM usuarios_expedientes
         WHERE usuario_id = ?
           AND data_referencia = CURDATE()
+        ORDER BY id DESC
         LIMIT 1
     ");
     $stmt->execute([$usuarioId]);
@@ -98,9 +110,9 @@ function registrarInicioExpediente(PDO $db, array $usuario): array
         return ['success' => false, 'message' => 'Seu expediente de hoje já foi iniciado.'];
     }
 
-    if ($expediente && $expediente['status'] === 'encerrado') {
-        return ['success' => false, 'message' => 'Seu expediente de hoje já foi finalizado.'];
-    }
+    // Se o período anterior foi encerrado, reabrir cria um NOVO período —
+    // o intervalo parado (almoço, pausa) não conta como tempo trabalhado.
+    $reabertura = ($expediente && $expediente['status'] === 'encerrado');
 
     $db->beginTransaction();
 
@@ -116,16 +128,16 @@ function registrarInicioExpediente(PDO $db, array $usuario): array
 
         $payload = [
             'tipo' => 'expediente_inicio',
-            'titulo' => 'Expediente iniciado',
-            'mensagem' => ($usuario['nome'] ?? 'Usuário') . ' iniciou o expediente.',
-            'chave_evento' => 'expediente_inicio_' . $usuarioId . '_' . date('Ymd'),
+            'titulo' => $reabertura ? 'Expediente reaberto' : 'Expediente iniciado',
+            'mensagem' => ($usuario['nome'] ?? 'Usuário') . ($reabertura ? ' reabriu o expediente.' : ' iniciou o expediente.'),
+            'chave_evento' => 'expediente_inicio_' . $usuarioId . '_' . date('YmdHis'),
             'referencia_tipo' => 'usuario',
             'referencia_id' => $usuarioId,
         ];
         notificarPerfis($db, ['master'], $payload, ['interno']);
 
         $db->commit();
-        return ['success' => true, 'message' => 'Expediente iniciado com sucesso.'];
+        return ['success' => true, 'message' => $reabertura ? 'Expediente reaberto com sucesso.' : 'Expediente iniciado com sucesso.'];
     } catch (Throwable $e) {
         if ($db->inTransaction()) {
             $db->rollBack();
@@ -191,17 +203,24 @@ function formatarSegundosExpediente(int $segundos): string
 
 function getTempoExpedienteHoje(PDO $db, int $usuarioId): int
 {
-    $expediente = getExpedienteHoje($db, $usuarioId);
-    if (!$expediente || empty($expediente['iniciado_em'])) {
-        return 0;
+    // Soma TODOS os períodos do dia (reabertura cria períodos novos; a
+    // pausa entre eles não conta como tempo trabalhado).
+    ensureExpedienteSchema($db);
+    $stmt = $db->prepare("
+        SELECT iniciado_em, finalizado_em
+        FROM usuarios_expedientes
+        WHERE usuario_id = ? AND data_referencia = CURDATE()
+    ");
+    $stmt->execute([$usuarioId]);
+    $segundos = 0;
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $periodo) {
+        $inicio = new DateTimeImmutable($periodo['iniciado_em']);
+        $fim = !empty($periodo['finalizado_em'])
+            ? new DateTimeImmutable($periodo['finalizado_em'])
+            : new DateTimeImmutable();
+        $segundos += max(0, $fim->getTimestamp() - $inicio->getTimestamp());
     }
-
-    $inicio = new DateTimeImmutable($expediente['iniciado_em']);
-    $fim = !empty($expediente['finalizado_em'])
-        ? new DateTimeImmutable($expediente['finalizado_em'])
-        : new DateTimeImmutable();
-
-    return max(0, $fim->getTimestamp() - $inicio->getTimestamp());
+    return $segundos;
 }
 
 function calcularSegundosTrabalhadosNoPeriodo(PDO $db, int $usuarioId, string $inicio, string $fim): int
@@ -266,11 +285,14 @@ function resetarExpedienteHoje(PDO $db, int $usuarioId, array $executor = []): a
     $db->beginTransaction();
 
     try {
-        $stmtLogs = $db->prepare("DELETE FROM usuarios_expediente_logs WHERE expediente_id = ?");
-        $stmtLogs->execute([(int) $expediente['id']]);
+        // Remove TODOS os períodos de hoje (pode haver mais de um)
+        $stmtLogs = $db->prepare("DELETE l FROM usuarios_expediente_logs l
+            INNER JOIN usuarios_expedientes e ON e.id = l.expediente_id
+            WHERE e.usuario_id = ? AND e.data_referencia = CURDATE()");
+        $stmtLogs->execute([$usuarioId]);
 
-        $stmtExpediente = $db->prepare("DELETE FROM usuarios_expedientes WHERE id = ?");
-        $stmtExpediente->execute([(int) $expediente['id']]);
+        $stmtExpediente = $db->prepare("DELETE FROM usuarios_expedientes WHERE usuario_id = ? AND data_referencia = CURDATE()");
+        $stmtExpediente->execute([$usuarioId]);
 
         $db->commit();
 

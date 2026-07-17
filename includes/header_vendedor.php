@@ -86,7 +86,7 @@ if (!isset($qtd_notificacoes_nao_lidas)) $qtd_notificacoes_nao_lidas = 0;
         <?php if ($expStatus === 'em_trabalho'): ?>
             <button type="button" class="vbtn-sm" onclick="baterPonto('encerrar')" title="Expediente aberto desde <?php echo !empty($expChip['expediente']['iniciado_em']) ? date('H:i', strtotime($expChip['expediente']['iniciado_em'])) : ''; ?> — clique para encerrar" style="background:#e7f6ec;color:#16a34a;border:1px solid #b7e4c7"><i class="fas fa-user-clock"></i> Expediente aberto</button>
         <?php elseif ($expStatus === 'encerrado'): ?>
-            <span class="vbtn-sm" style="background:#f1f5f9;color:#64748b;cursor:default" title="Expediente de hoje já encerrado"><i class="fas fa-user-clock"></i> Expediente encerrado</span>
+            <button type="button" class="vbtn-sm" onclick="baterPonto('iniciar')" title="Expediente encerrado — clique para reabrir (a pausa não conta como tempo trabalhado)" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1"><i class="fas fa-user-clock"></i> Reabrir expediente</button>
         <?php else: ?>
             <button type="button" class="vbtn-sm" onclick="baterPonto('iniciar')" title="Você precisa iniciar o expediente para apontar produção" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a"><i class="fas fa-user-clock"></i> Iniciar expediente</button>
         <?php endif; ?>
