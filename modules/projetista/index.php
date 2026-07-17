@@ -236,9 +236,9 @@ function abrirModalSetor(osId, setores) {
         btn.onclick = () => confirmarEncaminhar(osId, setor);
         container.appendChild(btn);
     });
-    document.getElementById('modalSetor').classList.add('show');
+    document.getElementById('modalSetor').style.display = 'block';
 }
-function fecharModalSetor() { document.getElementById('modalSetor').classList.remove('show'); }
+function fecharModalSetor() { document.getElementById('modalSetor').style.display = 'none'; }
 function confirmarEncaminhar(osId, setor) {
     if (confirm('Encaminhar O.S. para ' + rotuloEtapa(setor) + '?')) {
         fetch('<?= SITE_URL ?>/modules/os/desmembrar_os.php', {

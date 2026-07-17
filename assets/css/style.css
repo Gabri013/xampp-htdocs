@@ -1615,6 +1615,9 @@ table tbody tr:last-child td {
   display: none;
   background-color: rgba(0,0,0,0.4);
 }
+.modal.show {
+  display: block;
+}
 .modal-content {
   margin-inline: auto;
   margin-top: 10%;
