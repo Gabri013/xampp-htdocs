@@ -237,11 +237,11 @@ include '../../includes/header_vendedor.php';
     .lightbox-content { max-width: 95vw; max-height: 90vh; border-radius: 6px; box-shadow: 0 8px 30px rgba(0,0,0,0.35); }
     .lightbox-close { position: absolute; top: 16px; right: 20px; color: #fff; font-size: 34px; border: 0; background: transparent; cursor: pointer; }
     .lightbox-caption { position: absolute; bottom: 16px; left: 0; right: 0; text-align: center; color: #fff; font-size: 14px; }
-    .alerta-entrega-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); z-index: 10001; align-items: center; justify-content: center; padding: 20px; }
+    .alerta-entrega-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); z-index: 10001; align-items: center; justify-content: center; padding: 20px; overflow: hidden; }
     .alerta-entrega-overlay.show { display: flex; }
-    .alerta-entrega-card { width: 100%; max-width: 720px; background: #fff; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); overflow: hidden; }
-    .alerta-entrega-header { background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; }
-    .alerta-entrega-body { padding: 20px 22px; }
+    .alerta-entrega-card { width: 100%; max-width: 720px; max-height: 90vh; background: #fff; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); overflow: hidden; display: flex; flex-direction: column; }
+    .alerta-entrega-header { background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    .alerta-entrega-body { padding: 20px 22px; overflow-y: auto; flex: 1; }
     .alerta-entrega-body ul { margin: 0; padding-left: 20px; }
     .alerta-entrega-body li + li { margin-top: 8px; }
     .alerta-entrega-close { border: 0; background: rgba(255,255,255,0.15); color: #fff; width: 36px; height: 36px; border-radius: 999px; cursor: pointer; font-size: 22px; line-height: 1; }
