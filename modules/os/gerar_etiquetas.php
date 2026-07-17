@@ -1,29 +1,75 @@
 <?php
 /**
- * Gerador de Etiquetas - Interface para imprimir QR-codes
+ * Gerador de Etiquetas - Interface para imprimir QR-codes e Etiquetas
+ *
+ * Funcionalidades:
+ * - Gerar QR-codes para O.S.
+ * - Gerar QR-codes para O.P.
+ * - Imprimir em formatos A4, 10x15cm
+ * - Rastreamento de impressões
+ * - Integração com Estoque
  *
  * Inspirado no Nomus - simples, visual, pronto para imprimir
- * Acesso: master, gerente, producao
+ * Acesso: master, gerente, producao, projetista
  */
 
 require_once '../../config/config.php';
 require_once '../../includes/workflow.php';
 
-$page_title = 'Gerador de Etiquetas';
+$page_title = 'Gerador de Etiquetas e QR-codes';
 $db = getDB();
-requirePermission(['master', 'gerente', 'dashboard_producao', 'producao']);
+requirePermission(['master', 'gerente', 'dashboard_producao', 'producao', 'projetista']);
+
+// ───────────────────────────────────────────────────────────────
+// Processar ações
+// ───────────────────────────────────────────────────────────────
+
+$acao = $_POST['acao'] ?? $_GET['acao'] ?? null;
+
+if ($acao === 'gerar_etiqueta' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $os_id = (int)($_POST['os_id'] ?? 0);
+    $formato = $_POST['formato'] ?? '10x15';
+
+    if ($os_id > 0) {
+        header('Content-Type: application/json');
+        $stmt = $db->prepare("SELECT numero FROM ordens_servico WHERE id = ?");
+        $stmt->execute([$os_id]);
+        $os = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($os) {
+            $qr_url = "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=" . urlencode("OS|" . $os['numero'] . "|" . $os_id);
+            echo json_encode(['sucesso' => true, 'qr_url' => $qr_url, 'numero' => $os['numero']]);
+        } else {
+            echo json_encode(['sucesso' => false, 'erro' => 'O.S. não encontrada']);
+        }
+    }
+    exit;
+}
 
 // ===== BUSCAR ÚLTIMAS O.S. PARA GERAR ETIQUETAS =====
 $os_lista = [];
 $etiqueta_atual = null;
+$op_lista = [];
 
 $stmt = $db->query("SELECT os.*, c.razao_social
     FROM ordens_servico os
     INNER JOIN clientes c ON os.cliente_id = c.id
-    WHERE os.status IN ('em_producao', 'liberada')
+    WHERE os.status IN ('em_producao', 'liberada', 'em_pausa')
     ORDER BY os.created_at DESC
-    LIMIT 15");
+    LIMIT 20");
 $os_lista = $stmt->fetchAll();
+
+// Buscar últimas O.P.s também
+try {
+    $stmt = $db->query("SELECT op.numero, os.numero as os_numero, c.razao_social
+        FROM ordens_producao op
+        LEFT JOIN ordens_servico os ON os.id = op.os_id
+        LEFT JOIN clientes c ON c.id = os.cliente_id
+        WHERE op.status IN ('pendente', 'em_producao')
+        ORDER BY op.criado_em DESC
+        LIMIT 10");
+    $op_lista = $stmt->fetchAll();
+} catch (Exception $e) {}
 
 // Se uma O.S. foi selecionada, buscar suas etiquetas
 if (isset($_GET['os_id'])) {
@@ -48,6 +94,30 @@ include '../../includes/header_vendedor.php';
         <div class="vend-content">
 
 <style>
+    .etiqueta-abas {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    .etiqueta-aba {
+        padding: 12px 20px;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        color: #666;
+        transition: all 0.2s;
+    }
+
+    .etiqueta-aba.ativo {
+        color: #3b82f6;
+        border-bottom-color: #3b82f6;
+    }
+
     .etiqueta-container {
         display: grid;
         grid-template-columns: 1fr 2fr;
@@ -63,6 +133,8 @@ include '../../includes/header_vendedor.php';
         background: white;
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        max-height: 600px;
+        overflow-y: auto;
     }
 
     .etiqueta-os-item {
@@ -291,21 +363,36 @@ include '../../includes/header_vendedor.php';
 
 <div class="vend-card">
     <div class="vend-card-head">
-        <h3>📋 Selecione uma O.S. para Gerar Etiqueta</h3>
+        <h3>📋 Gerador de Etiquetas</h3>
     </div>
     <div class="vend-card-body">
-        <div class="etiqueta-container">
-            <!-- SELETOR -->
-            <div>
-                <div class="etiqueta-seletor">
-                    <?php foreach ($os_lista as $os): ?>
-                        <a href="?os_id=<?= $os['id'] ?>" class="etiqueta-os-item">
-                            <div class="etiqueta-os-numero">OS <?= htmlspecialchars($os['numero']) ?></div>
-                            <div class="etiqueta-os-cliente"><?= htmlspecialchars(substr($os['razao_social'], 0, 20)) ?></div>
-                        </a>
-                    <?php endforeach; ?>
+        <!-- ABAS DE NAVEGAÇÃO -->
+        <div class="etiqueta-abas">
+            <button class="etiqueta-aba ativo" onclick="mudarAba('os', this)">📦 Ordens de Serviço</button>
+            <button class="etiqueta-aba" onclick="mudarAba('op', this)">🏭 Ordens de Produção</button>
+            <button class="etiqueta-aba" onclick="mudarAba('historico', this)">📊 Histórico</button>
+        </div>
+
+        <!-- ABA: ORDENS DE SERVIÇO -->
+        <div id="aba-os" class="etiqueta-aba-conteudo">
+            <div class="etiqueta-container">
+                <!-- SELETOR -->
+                <div>
+                    <div class="etiqueta-seletor">
+                        <?php if (empty($os_lista)): ?>
+                            <div style="color: #999; text-align: center; padding: 20px;">
+                                Nenhuma O.S. disponível
+                            </div>
+                        <?php else: ?>
+                            <?php foreach ($os_lista as $os): ?>
+                                <a href="?os_id=<?= $os['id'] ?>" class="etiqueta-os-item">
+                                    <div class="etiqueta-os-numero">OS <?= htmlspecialchars($os['numero']) ?></div>
+                                    <div class="etiqueta-os-cliente"><?= htmlspecialchars(substr($os['razao_social'], 0, 20)) ?></div>
+                                </a>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
-            </div>
 
             <!-- PREVIEW / GERAR -->
             <?php if ($etiqueta_atual): ?>
@@ -335,12 +422,68 @@ include '../../includes/header_vendedor.php';
                         </div>
                     </div>
                 </div>
-            <?php else: ?>
-                <div style="text-align: center; padding: 60px 20px; color: #999;">
-                    <p style="font-size: 48px;">🏷️</p>
-                    <p>Clique em uma O.S. para gerar etiqueta</p>
+                <?php else: ?>
+                    <div style="text-align: center; padding: 60px 20px; color: #999;">
+                        <p style="font-size: 48px;">🏷️</p>
+                        <p>Clique em uma O.S. para gerar etiqueta</p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        </div>
+
+        <!-- ABA: ORDENS DE PRODUÇÃO -->
+        <div id="aba-op" class="etiqueta-aba-conteudo" style="display: none;">
+            <div class="etiqueta-container">
+                <div>
+                    <div class="etiqueta-seletor">
+                        <?php if (empty($op_lista)): ?>
+                            <div style="color: #999; text-align: center; padding: 20px;">
+                                Nenhuma O.P. disponível
+                            </div>
+                        <?php else: ?>
+                            <?php foreach ($op_lista as $op): ?>
+                                <div class="etiqueta-os-item" onclick="gerarQROp('<?= htmlspecialchars($op['numero']) ?>', '<?= htmlspecialchars($op['os_numero']) ?>')">
+                                    <div class="etiqueta-os-numero">OP <?= htmlspecialchars($op['numero']) ?></div>
+                                    <div class="etiqueta-os-cliente"><?= htmlspecialchars(substr($op['razao_social'] ?? '-', 0, 20)) ?></div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
-            <?php endif; ?>
+                <div>
+                    <div class="etiqueta-preview">
+                        <div class="etiqueta-header">
+                            <p class="etiqueta-header-titulo">OP <span id="op-numero-preview">-</span></p>
+                            <p class="etiqueta-header-cliente" id="op-cliente-preview">-</p>
+                        </div>
+                        <div class="etiqueta-content">
+                            <div class="etiqueta-qr" id="qr-container-op">
+                                <img id="qr-image-op" src="" alt="QR-code" style="width: 100%; height: 100%;">
+                            </div>
+                            <p class="etiqueta-numero">OP <span id="op-numero-preview2">-</span></p>
+                            <p class="etiqueta-info">
+                                <strong>OS:</strong> <span id="op-os-preview">-</span>
+                            </p>
+                            <div class="etiqueta-acoes">
+                                <button class="etiqueta-botao etiqueta-botao-imprimir" onclick="imprimirEtiquetaOP()">
+                                    🖨️ Imprimir
+                                </button>
+                                <button class="etiqueta-botao etiqueta-botao-baixar" onclick="baixarQROP()">
+                                    ⬇️ Baixar QR
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA: HISTÓRICO -->
+        <div id="aba-historico" class="etiqueta-aba-conteudo" style="display: none;">
+            <div id="historico-conteudo">
+                <p style="color: #999; text-align: center; padding: 40px;">Carregando histórico de impressões...</p>
+            </div>
         </div>
     </div>
 </div>
@@ -437,5 +580,110 @@ include '../../includes/header_vendedor.php';
     carregarQR();
 </script>
 <?php endif; ?>
+
+<script>
+// Função para mudar abas
+function mudarAba(abaName, element) {
+    // Ocultar todas as abas
+    document.querySelectorAll('.etiqueta-aba-conteudo').forEach(aba => {
+        aba.style.display = 'none';
+    });
+
+    // Remover active de todos os botões
+    document.querySelectorAll('.etiqueta-aba').forEach(btn => {
+        btn.classList.remove('ativo');
+    });
+
+    // Mostrar aba selecionada
+    document.getElementById('aba-' + abaName).style.display = 'block';
+    element.classList.add('ativo');
+
+    // Carregar histórico se selecionou
+    if (abaName === 'historico') {
+        carregarHistorico();
+    }
+}
+
+// Função para gerar QR de O.P.
+function gerarQROp(opNumero, osNumero) {
+    const formData = new FormData();
+    formData.append('acao', 'gerar_qr_svg_op');
+    formData.append('op_numero', opNumero);
+
+    fetch('<?= SITE_URL ?>/api/etiqueta_qrcode.php', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            if (data.sucesso) {
+                document.getElementById('op-numero-preview').textContent = opNumero;
+                document.getElementById('op-numero-preview2').textContent = opNumero;
+                document.getElementById('op-os-preview').textContent = osNumero;
+                document.getElementById('qr-image-op').src = data.qr_url;
+            } else {
+                alert('Erro ao gerar QR: ' + data.erro);
+            }
+        });
+}
+
+// Impressão de etiqueta O.P.
+function imprimirEtiquetaOP() {
+    const qrUrl = document.getElementById('qr-image-op').src;
+    const opNumero = document.getElementById('op-numero-preview').textContent;
+
+    if (!qrUrl || opNumero === '-') {
+        alert('Selecione uma O.P. primeiro');
+        return;
+    }
+
+    let html = `
+        <div class="etiqueta-print-item">
+            <div class="etiqueta-print-qr">
+                <img src="${qrUrl}" alt="QR">
+            </div>
+            <div class="etiqueta-print-numero">OP ${opNumero}</div>
+        </div>
+    `;
+
+    let win = window.open('', '', 'height=400,width=600');
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 500);
+}
+
+// Download QR O.P.
+function baixarQROP() {
+    const qrUrl = document.getElementById('qr-image-op').src;
+    const opNumero = document.getElementById('op-numero-preview').textContent;
+
+    if (!qrUrl || opNumero === '-') {
+        alert('Selecione uma O.P. primeiro');
+        return;
+    }
+
+    const link = document.createElement('a');
+    link.href = qrUrl;
+    link.download = `etiqueta_op_${opNumero}.png`;
+    link.click();
+}
+
+// Carregar histórico de impressões
+function carregarHistorico() {
+    fetch('<?= SITE_URL ?>/api/etiqueta_qrcode.php?acao=stats_impressoes')
+        .then(r => r.json())
+        .then(data => {
+            if (data.sucesso) {
+                let html = '<table class="op-tabela"><thead><tr><th>Tipo</th><th>Total</th><th>Impressões</th></tr></thead><tbody>';
+                data.stats.forEach(stat => {
+                    html += `<tr>
+                        <td>${stat.tipo}</td>
+                        <td>${stat.total}</td>
+                        <td>${stat.impressoes_totais || 0}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+                document.getElementById('historico-conteudo').innerHTML = html;
+            }
+        });
+}
+</script>
 
 <?php include '../../includes/footer_vendedor.php'; ?>
