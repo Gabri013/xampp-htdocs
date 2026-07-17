@@ -137,6 +137,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $margemLucro = parseMoneyValue($_POST['margem_lucro'] ?? 0);
         $componentes = buildComponentesPayload($_POST);
 
+        // Folha técnica do produto (verso da O.P.)
+        $ftTipoProduto = sanitize($_POST['tipo_produto'] ?? '');
+        $ftMedidaA = sanitize($_POST['medida_a'] ?? '');
+        $ftMedidaB = sanitize($_POST['medida_b'] ?? '');
+        $ftMedidaC = sanitize($_POST['medida_c'] ?? '');
+        $ftMedidaD = sanitize($_POST['medida_d'] ?? '');
+        $ftCaracteristicas = trim($_POST['caracteristicas'] ?? '');
+        $ftCodificacao = trim($_POST['codificacao_legenda'] ?? '');
+        $ftOpcoes = trim($_POST['opcoes_folha'] ?? '');
+        $ftObservacoes = trim($_POST['observacoes_folha'] ?? '');
+        $ftGarantia = trim($_POST['garantia_folha'] ?? '');
+
         // Código automático CZI: o vendedor escolhe padrão/especial e o
         // sistema gera o próximo da sequência (CZI-15xxx / CZI-32xxx).
         $tipoCodigo = $_POST['tipo_codigo'] ?? 'manual';
@@ -191,6 +203,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ');
                     $stmt->execute([$codigo, $nome, $descricao, $unidadeMedida ?: 'un', $categoriaId, $medidasPreco, $observacoesPreco, $foto, $valorVenda, $precoEmbalagem, $estoque, $status, $custoMaoObra, $custoIndireto, $margemLucro]);
                     $id = (int) $db->lastInsertId();
+                }
+
+                // Folha técnica (verso da O.P.)
+                $db->prepare('UPDATE produtos SET tipo_produto = ?, medida_a = ?, medida_b = ?, medida_c = ?, medida_d = ?, caracteristicas = ?, codificacao_legenda = ?, opcoes_folha = ?, observacoes_folha = ?, garantia_folha = ? WHERE id = ?')
+                   ->execute([$ftTipoProduto, $ftMedidaA, $ftMedidaB, $ftMedidaC, $ftMedidaD, $ftCaracteristicas, $ftCodificacao, $ftOpcoes, $ftObservacoes, $ftGarantia, (int) $id]);
+
+                // Perspectiva com cotas (imagem feita pela engenharia)
+                if (isset($_FILES['perspectiva']) && $_FILES['perspectiva']['error'] === UPLOAD_ERR_OK) {
+                    $upPersp = uploadFile($_FILES['perspectiva'], 'produtos');
+                    if ($upPersp['success']) {
+                        $db->prepare('UPDATE produtos SET perspectiva = ? WHERE id = ?')->execute([$upPersp['filename'], (int) $id]);
+                    }
                 }
 
                 salvarComponentesProduto($db, (int) $id, $componentes);
@@ -1242,6 +1266,52 @@ include '../../includes/header_vendedor.php';
                             </div>
                         </div>
 
+                        <!-- ===== Folha Técnica (verso da O.P. impressa) ===== -->
+                        <div style="border:2px solid #D85A30;border-radius:8px;padding:12px;margin:14px 0;background:#FFFAF8">
+                            <div style="font-weight:700;color:#D85A30;margin-bottom:10px"><i class="fas fa-file-invoice"></i> Folha Técnica — impressa no VERSO da Ordem de Produção</div>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label>Tipo de Produto (subtítulo da folha)</label>
+                                    <input type="text" id="tipo_produto" name="tipo_produto" class="form-control" placeholder="Ex.: MESA LISA, BANCADA COM CUBA...">
+                                </div>
+                                <div class="form-group">
+                                    <label>Perspectiva com cotas (imagem — a engenharia anexa)</label>
+                                    <input type="file" name="perspectiva" class="form-control" accept="image/*">
+                                    <div id="perspectiva_atual" style="font-size:11px;color:#666;margin-top:2px"></div>
+                                </div>
+                            </div>
+                            <div class="form-grid-2" style="grid-template-columns:repeat(4,1fr);gap:8px">
+                                <div class="form-group"><label>Medida A (mm)</label><input type="text" id="medida_a" name="medida_a" class="form-control" placeholder="Ex.: 2800"></div>
+                                <div class="form-group"><label>Medida B (mm)</label><input type="text" id="medida_b" name="medida_b" class="form-control" placeholder="Ex.: 700"></div>
+                                <div class="form-group"><label>Medida C (mm)</label><input type="text" id="medida_c" name="medida_c" class="form-control" placeholder="Ex.: 900"></div>
+                                <div class="form-group"><label>Medida D (mm)</label><input type="text" id="medida_d" name="medida_d" class="form-control" placeholder="opcional"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>Características técnicas (uma por linha — viram os tópicos da folha)</label>
+                                <textarea id="caracteristicas" name="caracteristicas" class="form-control" rows="4" placeholder="Construção em aço inox;&#10;Estrutura e reforços do tampo em tubos de aço inox 40x20 mm;&#10;Sapatas com nivelamento de altura em nylon;"></textarea>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label>Codificação (legenda do código, uma por linha)</label>
+                                    <textarea id="codificacao_legenda" name="codificacao_legenda" class="form-control" rows="3" placeholder="P = Linha Premium&#10;C = Linha Comercial&#10;Comprimento / Largura..."></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Opções (uma por linha)</label>
+                                    <textarea id="opcoes_folha" name="opcoes_folha" class="form-control" rows="3" placeholder="(+R) - Com rodízios&#10;Prateleira inferior perfurada..."></textarea>
+                                </div>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label>Observações da folha (deixe vazio p/ usar o texto padrão)</label>
+                                    <textarea id="observacoes_folha" name="observacoes_folha" class="form-control" rows="3" placeholder="Padrão: normas ABNT, medidas em milímetros, desenho sem escala, embalagem conforme distância."></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Garantia (deixe vazio p/ usar o texto padrão)</label>
+                                    <textarea id="garantia_folha" name="garantia_folha" class="form-control" rows="3" placeholder="Padrão: produtos testados e garantidos pela fábrica; assistência de segunda a sexta."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="form-grid-3">
                             <div class="form-group">
                                 <label>Mao de Obra</label>
@@ -1899,6 +1969,19 @@ function editarProduto(produto) {
     preencherMoeda(document.getElementById('custo_mao_obra'), produto.custo_mao_obra || 0);
     preencherMoeda(document.getElementById('custo_indireto'), produto.custo_indireto || 0);
     document.getElementById('margem_lucro').value = produto.margem_lucro || 30;
+
+    // Folha técnica (verso da O.P.)
+    document.getElementById('tipo_produto').value = produto.tipo_produto || '';
+    document.getElementById('medida_a').value = produto.medida_a || '';
+    document.getElementById('medida_b').value = produto.medida_b || '';
+    document.getElementById('medida_c').value = produto.medida_c || '';
+    document.getElementById('medida_d').value = produto.medida_d || '';
+    document.getElementById('caracteristicas').value = produto.caracteristicas || '';
+    document.getElementById('codificacao_legenda').value = produto.codificacao_legenda || '';
+    document.getElementById('opcoes_folha').value = produto.opcoes_folha || '';
+    document.getElementById('observacoes_folha').value = produto.observacoes_folha || '';
+    document.getElementById('garantia_folha').value = produto.garantia_folha || '';
+    document.getElementById('perspectiva_atual').textContent = produto.perspectiva ? ('Perspectiva atual: ' + produto.perspectiva + ' (envie outra para substituir)') : 'Nenhuma perspectiva anexada ainda.';
 
     const body = document.getElementById('componentesBody');
     body.innerHTML = '';

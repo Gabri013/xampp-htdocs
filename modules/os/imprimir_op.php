@@ -163,7 +163,27 @@ try {
     $materiaisOP = $stmtMatOP->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) { /* tabela pode não existir */ }
 
-$totalPaginas = count($itens);
+// Folha técnica do produto (verso de cada folha de OP)
+$folhaPorProduto = [];
+$produtoIdsFolha = array_values(array_unique(array_filter(array_map(fn($it) => (int) ($it['produto_id'] ?? 0), $itens))));
+if (!empty($produtoIdsFolha)) {
+    try {
+        $inIds = implode(',', $produtoIdsFolha);
+        $stmtFolha = $db->query("SELECT p.id, p.codigo, p.nome, p.tipo_produto, p.medida_a, p.medida_b, p.medida_c, p.medida_d,
+                p.caracteristicas, p.codificacao_legenda, p.opcoes_folha, p.observacoes_folha, p.garantia_folha, p.perspectiva,
+                pc.nome AS linha_nome
+            FROM produtos p LEFT JOIN produto_categorias pc ON pc.id = p.categoria_id
+            WHERE p.id IN ($inIds)");
+        foreach ($stmtFolha->fetchAll(PDO::FETCH_ASSOC) as $fRow) {
+            $folhaPorProduto[(int) $fRow['id']] = $fRow;
+        }
+    } catch (Exception $e) { /* colunas podem não existir em banco antigo */ }
+}
+$obsFolhaPadrao = "Todas as instalações devem obedecer às normas da ABNT;\nMedidas em milímetros;\nDesenho sem escala;\nProduto embalado conforme a distância a ser percorrida.";
+$garantiaFolhaPadrao = 'Todos os produtos fabricados pela Cozinca são testados e garantidos pela fábrica e por seus representantes autorizados. A assistência técnica coberta pela garantia é prestada de segunda a sexta-feira. Para mais informações, consulte o suporte técnico Cozinca.';
+$linhasTexto = fn(?string $t) => array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', (string) $t))));
+
+$totalPaginas = count($itens) * 2; // frente (OP) + verso (folha técnica) por item
 
 // Data/hora de impressão em pt-BR (ex.: Qua, 4 fev 2026 09:51:53)
 $diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -273,6 +293,42 @@ header('Content-Type: text/html; charset=UTF-8');
         /* ── Rodapé ──────────────────────────────────────────────── */
         .op-footer{margin-top:4mm;display:flex;justify-content:space-between;align-items:flex-end;font-size:7px;color:#333}
         .op-footer .doc{text-align:right;line-height:1.5}
+
+        /* ===== Verso: Folha Técnica do Produto ===== */
+        .ft-head{display:flex;align-items:center;justify-content:space-between;border-bottom:2.5px solid #E8901A;padding-bottom:3mm;margin-bottom:4mm}
+        .ft-head img{height:14mm}
+        .ft-head .tit{text-align:right}
+        .ft-head .tit .linha-nome{font-size:26px;font-weight:800;color:#3a2c1e;letter-spacing:1px;text-transform:uppercase}
+        .ft-head .tit .tipo{font-size:11px;letter-spacing:4px;color:#555;text-transform:uppercase;margin-top:1mm}
+        .ft-body{display:flex;gap:4mm}
+        .ft-col-esq{flex:1.35;display:flex;flex-direction:column;gap:3mm}
+        .ft-col-dir{flex:1;display:flex;flex-direction:column;gap:3mm}
+        .ft-persp{border:1px solid #444;min-height:105mm;display:flex;align-items:center;justify-content:center;position:relative;padding:3mm}
+        .ft-persp img{max-width:100%;max-height:100mm}
+        .ft-persp .rotulo{position:absolute;left:3mm;bottom:2mm;font-size:10px;font-weight:700;letter-spacing:2px;color:#666}
+        .ft-sec .barra{background:#c9c9c9;font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:1.4mm 2mm}
+        .ft-sec .conteudo{border:1px solid #444;border-top:0;padding:2mm;font-size:9.5px;min-height:8mm}
+        .ft-cod .codigo-grande{font-size:15px;font-weight:800;letter-spacing:2px;margin-bottom:2mm}
+        .ft-cod .leg{font-size:8.5px;line-height:1.7}
+        .ft-cod .leg div{border-bottom:0;padding-left:2mm}
+        .ft-campos{border:1px solid #444;padding:2.5mm;display:flex;flex-direction:column;gap:2.4mm;font-size:10px}
+        .ft-campos .cl{display:flex;align-items:baseline;gap:2mm}
+        .ft-campos .cl .l{font-weight:700;min-width:16mm}
+        .ft-campos .cl .v{flex:1;border-bottom:1px solid #999;padding:0 1mm;min-height:4mm}
+        .ft-desc .conteudo{font-size:13px;font-weight:700;color:#8a6d3b;min-height:10mm;display:flex;align-items:center}
+        .ft-med .conteudo{display:flex;flex-direction:column;gap:1.8mm;padding:2.5mm 2mm}
+        .ft-med .m{display:flex;align-items:center;gap:2mm;font-size:10.5px}
+        .ft-med .m .rot{font-weight:800;width:8mm}
+        .ft-med .m .cx{border:1px solid #999;background:#f2f2f2;flex:1;text-align:center;padding:1mm;font-weight:700;min-height:5mm}
+        .ft-med .m .un{font-size:9px;color:#555;width:8mm}
+        .ft-li{margin:0;padding-left:4mm;font-size:9px;line-height:1.55}
+        .ft-li li{margin-bottom:1mm}
+        .ft-li li::marker{color:#E8901A}
+        .ft-gar{font-size:8.5px;line-height:1.5}
+        .ft-rodape{border-top:2px solid #333;margin-top:auto;padding-top:1.5mm;display:flex;justify-content:space-between;font-size:8.5px}
+        .ft-rodape strong{font-size:9.5px}
+        .ft-lateral{position:absolute;right:2mm;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;font-size:6.5px;letter-spacing:1px;color:#888;text-transform:uppercase}
+        .ft-page{position:relative;display:flex;flex-direction:column}
 
         .printbar{position:sticky;top:0;background:#111827;color:#fff;padding:8px 12px;display:flex;gap:8px;z-index:10}
         .printbar button{background:#16a34a;border:0;color:#fff;font-weight:700;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px}
@@ -481,7 +537,113 @@ header('Content-Type: text/html; charset=UTF-8');
 
         <div class="op-footer">
             <div><?= htmlspecialchars($dataImpressao) ?></div>
-            <div class="doc">FR-028 - REV 16<br>Página <?= $idx + 1 ?> de <?= $totalPaginas ?></div>
+            <div class="doc">FR-028 - REV 16<br>Página <?= $idx * 2 + 1 ?> de <?= $totalPaginas ?></div>
+        </div>
+    </div>
+
+    <?php
+    // ===== VERSO: Folha Técnica do Produto =====
+    $folha = $folhaPorProduto[(int) ($item['produto_id'] ?? 0)] ?? null;
+    $ftLinhaNome = mb_strtoupper(trim((string) ($folha['linha_nome'] ?? '')), 'UTF-8') ?: 'PRODUTO';
+    $ftTipo = trim((string) ($folha['tipo_produto'] ?? ''));
+    $ftCodigo = trim((string) ($folha['codigo'] ?? ($item['produto_codigo'] ?? ''))) ?: '-';
+    $ftCaracs = $linhasTexto($folha['caracteristicas'] ?? '');
+    $ftCodLeg = $linhasTexto($folha['codificacao_legenda'] ?? '');
+    $ftOpcoes = $linhasTexto($folha['opcoes_folha'] ?? '');
+    $ftObs = $linhasTexto(($folha['observacoes_folha'] ?? '') ?: $obsFolhaPadrao);
+    $ftGarantia = trim((string) (($folha['garantia_folha'] ?? '') ?: $garantiaFolhaPadrao));
+    $ftPerspectiva = trim((string) ($folha['perspectiva'] ?? ''));
+    $ftMedidas = ['A' => $folha['medida_a'] ?? '', 'B' => $folha['medida_b'] ?? '', 'C' => $folha['medida_c'] ?? '', 'D' => $folha['medida_d'] ?? ''];
+    ?>
+    <div class="op-page ft-page">
+        <div class="ft-lateral">A Cozinca reserva-se o direito de alterar as características técnicas e estéticas de seus produtos sem aviso prévio</div>
+        <div class="ft-head">
+            <img src="<?= SITE_URL ?>/assets/img/logo_cozinca_op.png" alt="Cozinca Inox">
+            <div class="tit">
+                <div class="linha-nome"><?= htmlspecialchars($ftLinhaNome) ?></div>
+                <div class="tipo"><?= htmlspecialchars($ftTipo ?: 'TIPO DE PRODUTO') ?></div>
+            </div>
+        </div>
+        <div class="ft-body">
+            <div class="ft-col-esq">
+                <div class="ft-persp">
+                    <?php if ($ftPerspectiva !== ''): ?>
+                        <img src="<?= SITE_URL ?>/assets/uploads/produtos/<?= htmlspecialchars($ftPerspectiva) ?>" alt="Perspectiva">
+                    <?php else: ?>
+                        <span style="color:#bbb;font-size:11px;letter-spacing:2px">‹ PERSPECTIVA COM COTAS ›</span>
+                    <?php endif; ?>
+                    <span class="rotulo">PERSPECTIVA</span>
+                </div>
+                <div class="ft-sec ft-cod">
+                    <div class="barra">Codificação:</div>
+                    <div class="conteudo">
+                        <div class="codigo-grande"><?= htmlspecialchars($ftCodigo) ?></div>
+                        <div class="leg">
+                            <?php if (!empty($ftCodLeg)): foreach ($ftCodLeg as $leg): ?>
+                                <div>— <?= htmlspecialchars($leg) ?></div>
+                            <?php endforeach; else: for ($l = 0; $l < 4; $l++): ?>
+                                <div style="border-bottom:1px solid #ccc;height:4mm"></div>
+                            <?php endfor; endif; ?>
+                        </div>
+                    </div>
+                </div>
+                <div class="ft-sec">
+                    <div class="barra">Opções:</div>
+                    <div class="conteudo">
+                        <?php if (!empty($ftOpcoes)): ?>
+                            <ul class="ft-li"><?php foreach ($ftOpcoes as $op): ?><li><?= htmlspecialchars($op) ?></li><?php endforeach; ?></ul>
+                        <?php else: for ($l = 0; $l < 3; $l++): ?>
+                            <div style="border-bottom:1px solid #ccc;height:5mm"></div>
+                        <?php endfor; endif; ?>
+                    </div>
+                </div>
+            </div>
+            <div class="ft-col-dir">
+                <div class="ft-campos">
+                    <div class="cl"><span class="l">Qtd. :</span><span class="v"><?= htmlspecialchars((string) ($item['quantidade'] ?? '')) ?></span></div>
+                    <div class="cl"><span class="l">Item :</span><span class="v"><?= $numItem ?></span></div>
+                    <div class="cl"><span class="l">Pedido :</span><span class="v"><?= htmlspecialchars((string) ($os['venda_numero'] ?? '')) ?></span></div>
+                    <div class="cl"><span class="l">Cliente :</span><span class="v"><?= htmlspecialchars((string) ($os['razao_social'] ?? '')) ?></span></div>
+                </div>
+                <div class="ft-sec ft-desc">
+                    <div class="barra">Descrição:</div>
+                    <div class="conteudo"><?= htmlspecialchars($ftCodigo) ?></div>
+                </div>
+                <div class="ft-sec ft-med">
+                    <div class="barra">Medidas :</div>
+                    <div class="conteudo">
+                        <?php foreach ($ftMedidas as $rotMed => $valMed): ?>
+                            <div class="m"><span class="rot"><?= $rotMed ?> =</span><span class="cx"><?= htmlspecialchars((string) $valMed) ?></span><span class="un">mm</span></div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <div class="ft-sec">
+                    <div class="barra">Características :</div>
+                    <div class="conteudo">
+                        <ul class="ft-li">
+                            <?php if (!empty($ftCaracs)): foreach ($ftCaracs as $c): ?>
+                                <li><?= htmlspecialchars(rtrim($c, ';')) ?>;</li>
+                            <?php endforeach; else: ?>
+                                <li>Construção em aço inox;</li>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                </div>
+                <div class="ft-sec">
+                    <div class="barra">Observações :</div>
+                    <div class="conteudo">
+                        <ul class="ft-li"><?php foreach ($ftObs as $ob): ?><li><?= htmlspecialchars(rtrim($ob, ';')) ?>;</li><?php endforeach; ?></ul>
+                    </div>
+                </div>
+                <div class="ft-sec">
+                    <div class="barra">Garantia :</div>
+                    <div class="conteudo ft-gar"><?= htmlspecialchars($ftGarantia) ?></div>
+                </div>
+            </div>
+        </div>
+        <div class="ft-rodape">
+            <div><strong>COZINCA INOX</strong> — Brasil</div>
+            <div>O.P. <?= htmlspecialchars($numOpItem) ?> · Página <?= $idx * 2 + 2 ?> de <?= $totalPaginas ?></div>
         </div>
     </div>
     <?php endforeach; ?>
