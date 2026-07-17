@@ -223,7 +223,7 @@ include '../../includes/header_vendedor.php';
 <style>
     .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); overflow-y: auto; }
     .modal.show { display: block; }
-    .modal-content { background: white; margin: 2% auto; padding: 20px; border-radius: 8px; width: 90%; max-width: 900px; }
+    .modal-content { background: white; margin: 2% auto; padding: 20px; border-radius: 8px; width: 90%; max-width: 900px; max-height: 85vh; overflow-y: auto; }
     .mt-20 { margin-top: 20px; }
     .etapa-checkbox-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-bottom: 1px solid #eee; }
     .etapa-checkbox-item:last-child { border-bottom: none; }

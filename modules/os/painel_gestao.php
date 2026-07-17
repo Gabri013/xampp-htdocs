@@ -212,6 +212,17 @@ $stmt = $db->query("
 ");
 $alertas_atrasadas = $stmt->fetchAll();
 
+// ===== VENCENDO AMANHÃ (ALTA PRIORIDADE) =====
+$stmt = $db->query("
+    SELECT os.id, os.numero, os.data_termino, c.razao_social
+    FROM ordens_servico os
+    INNER JOIN clientes c ON os.cliente_id = c.id
+    WHERE os.status NOT IN ('concluida', 'cancelada')
+    AND os.data_termino = DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+    ORDER BY os.numero ASC
+");
+$vencendo_amanha = $stmt->fetchAll();
+
 // ===== PRÓXIMAS ENTREGAS (7 DIAS) =====
 $stmt = $db->query("
     SELECT os.id, os.numero, os.data_termino, c.razao_social
@@ -481,6 +492,26 @@ include '../../includes/header_vendedor.php';
     </div>
 </div>
 
+<!-- ===== VENCENDO AMANHÃ - ALERTA CRÍTICO ===== -->
+<?php if (!empty($vencendo_amanha)): ?>
+<div style="background: #fff3cd; border: 3px solid #fd7e14; border-radius: 12px; padding: 20px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(253, 126, 20, 0.2);">
+    <div style="font-size: 20px; font-weight: 700; color: #fd7e14; margin-bottom: 15px;">
+        ⚡ ATENÇÃO: <?= count($vencendo_amanha) ?> PEDIDOS VENCEM AMANHÃ!
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+        <?php foreach ($vencendo_amanha as $os): ?>
+        <div style="background: white; padding: 15px; border-radius: 8px; border-left: 5px solid #fd7e14;">
+            <div style="font-weight: 700; color: #fd7e14; font-size: 14px;">OS <?= $os['numero'] ?></div>
+            <div style="color: #333; margin-top: 5px;"><?= substr($os['razao_social'], 0, 40) ?></div>
+            <div style="color: #666; font-size: 12px; margin-top: 5px;">
+                📅 Entrega: <?= date('d/m/Y', strtotime($os['data_termino'])) ?>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- ===== ALERTAS E DETALHES ===== -->
 <div class="painel-alertas">
     <!-- ALERTAS CRÍTICOS -->
@@ -609,8 +640,36 @@ new Chart(document.getElementById('grafico4'), {
     options: chartOptions
 });
 
-// Auto-refresh a cada 60 segundos
-setInterval(() => { location.reload(); }, 60000);
+// ===== REAL-TIME: Atualizar dados a cada 30 segundos =====
+function atualizarPainel() {
+    fetch('<?= SITE_URL ?>/api/painel_dados.php')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+
+            // Atualizar KPIs
+            document.querySelectorAll('.painel-kpi-numero')[0].textContent = data.kpis.producao;
+            document.querySelectorAll('.painel-kpi-numero')[1].textContent = data.kpis.concluidas;
+            document.querySelectorAll('.painel-kpi-numero')[2].textContent = data.kpis.criticas;
+            document.querySelectorAll('.painel-kpi-numero')[3].textContent = data.kpis.prazos + '%';
+            document.querySelectorAll('.painel-kpi-numero')[4].textContent = 'R$ ' + new Intl.NumberFormat('pt-BR').format(data.kpis.vendas);
+            document.querySelectorAll('.painel-kpi-numero')[5].textContent = data.kpis.hoje;
+
+            // Atualizar subtítulo de atrasadas
+            document.querySelectorAll('.painel-kpi-sub')[0].innerHTML = '🟠 ' + data.kpis.urgentes + ' Urgentes | ⚠️ ' + data.kpis.avisos + ' Avisos';
+
+            // Log de atualização
+            console.log('✓ Painel atualizado às', data.timestamp);
+        })
+        .catch(e => console.error('Erro ao atualizar:', e));
+}
+
+// Atualizar a cada 30 segundos
+atualizarPainel();
+setInterval(atualizarPainel, 30000);
+
+// Badge de "ao vivo" no título
+document.title = '📊 Painel (ao vivo)';
 </script>
 
 <?php include '../../includes/footer_vendedor.php'; ?>
