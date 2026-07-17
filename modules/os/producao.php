@@ -412,7 +412,7 @@ function abrirModalRetorno(os) {
     
     const opcoesRetorno = [{
         valor: 'projetista',
-        label: 'Projetista (avaliar alteracoes)'
+        label: 'Projetista (volta para o desenho — continua em produção)'
     }];
     const pos_atual = fluxo_etapas.indexOf(os.etapa_atual);
 

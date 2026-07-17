@@ -125,7 +125,7 @@ function abrirModalRetorno(os) {
     document.getElementById('etapa_nome_retorno').textContent = os.etapa_atual;
     const container = document.getElementById('etapas_retorno_container');
     container.innerHTML = '';
-    const opcoesRetorno = [{valor:'projetista',label:'Projetista (avaliar alteracoes)'}];
+    const opcoesRetorno = [{valor:'projetista',label:'Projetista (volta para o desenho — continua em produção)'}];
     const pos_atual = fluxo_etapas.indexOf(os.etapa_atual);
     if (pos_atual > 0) {
         for (let i = 1; i < pos_atual; i++) {

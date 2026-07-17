@@ -222,7 +222,12 @@ try {
                 }
 
                 if ($retornar_para_projetista) {
-                    $etapa_anterior = 'autorizacao';
+                    // O Projetista é uma etapa de produção: retornar "para o
+                    // projetista" volta a O.S. para a etapa dele SEM sair da
+                    // produção (ela continua visível nos painéis/apontamento).
+                    // Só quando quem devolve JÁ É o projetista a O.S. sai da
+                    // produção e volta para a revisão comercial (vendedor).
+                    $etapa_anterior = ($etapa_atual === 'engenharia') ? 'autorizacao' : 'engenharia';
                 } else {
                     if ($etapa_destino === null || !in_array($etapa_destino, $fluxo, true) || $etapa_destino === 'concluida') {
                         echo json_encode(['error' => 'Etapa de retorno inválida']);
@@ -245,7 +250,7 @@ try {
                 $stmt = $db->prepare("UPDATE ordens_servico SET etapa_atual = ?, status = ? WHERE id = ?");
                 $stmt->execute([$etapa_anterior, $novo_status_os, $os_id]);
 
-                $destinoTexto = $etapa_anterior === 'autorizacao' ? 'Projetista' : ucfirst($etapa_anterior);
+                $destinoTexto = $etapa_anterior === 'autorizacao' ? 'Revisão do Vendedor' : getEtapaLabel($etapa_anterior);
                 $obs_retorno = "RECALL: Etapa retornada de " . ucfirst($etapa_atual) . " para " . $destinoTexto . ". Motivo: " . $justificativa;
                 $stmt = $db->prepare("INSERT INTO os_observacoes (os_id, tipo_setor, observacao, usuario_id) VALUES (?, 'producao', ?, ?)");
                 $stmt->execute([$os_id, $obs_retorno, $_SESSION['usuario_id']]);
@@ -261,12 +266,19 @@ try {
                 ");
                 $stmt->execute([$os_id, $statusAnteriorHistorico, $statusNovoHistorico, $_SESSION['usuario_id'], $obsHistorico]);
 
-                $stmt = $db->prepare("DELETE FROM os_etapas_producao WHERE os_id = ? AND etapa = ?");
+                // A etapa atual volta a "pendente" — NÃO some do roteiro
+                // (antes era DELETE e a O.S. perdia o caminho planejado)
+                $stmt = $db->prepare("UPDATE os_etapas_producao SET status='pendente', data_inicio=NULL, data_fim=NULL, tempo_total_segundos=0 WHERE os_id = ? AND etapa = ?");
                 $stmt->execute([$os_id, $etapa_atual]);
 
                 if ($etapa_anterior !== 'autorizacao') {
+                    // Reseta a etapa de destino e garante que ela existe no roteiro
                     $stmt = $db->prepare("UPDATE os_etapas_producao SET status='pendente', data_inicio=NULL, data_fim=NULL, tempo_total_segundos=0 WHERE os_id = ? AND etapa = ?");
                     $stmt->execute([$os_id, $etapa_anterior]);
+                    $stmt = $db->prepare("INSERT INTO os_etapas_producao (os_id, etapa, status)
+                        SELECT ?, ?, 'pendente' FROM DUAL
+                        WHERE NOT EXISTS (SELECT 1 FROM os_etapas_producao WHERE os_id = ? AND etapa = ?)");
+                    $stmt->execute([$os_id, $etapa_anterior, $os_id, $etapa_anterior]);
                 }
 
                 if ($db->inTransaction()) {
@@ -275,8 +287,8 @@ try {
                 echo json_encode([
                     'success' => true,
                     'message' => $etapa_anterior === 'autorizacao'
-                        ? 'O.S. retornada com sucesso para o projetista'
-                        : 'Etapa retornada com sucesso'
+                        ? 'O.S. devolvida para a revisão comercial — ela está no Kanban (Em Revisão) e na fila "Aguardando Projeto" do Painel do Projetista.'
+                        : 'Etapa retornada para ' . $destinoTexto . ' — a O.S. continua em produção.'
                 ]);
             } catch (Exception $e) {
                 if ($db->inTransaction()) {

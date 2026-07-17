@@ -289,7 +289,9 @@ function abrirModalRetorno(os) {
     document.getElementById('os_numero_retorno').textContent = os.numero;
     const container = document.getElementById('etapas_retorno_container');
     container.innerHTML = '';
-    const opcoesRetorno = [{valor:'projetista', label:'Projetista (avaliar alterações)'}];
+    // No painel do Projetista, "retornar" = devolver para a fase comercial
+    // (a O.S. sai da produção e cai em "Aguardando Projeto" / Em Revisão)
+    const opcoesRetorno = [{valor:'projetista', label:'Devolver para revisão do Vendedor (sai da produção)'}];
     const pos_atual = fluxo_etapas.indexOf(os.etapa_atual);
     if (pos_atual > 0) {
         for (let i = 1; i < pos_atual; i++) {
