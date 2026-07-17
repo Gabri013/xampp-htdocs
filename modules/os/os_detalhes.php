@@ -310,32 +310,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'aprovar
     exit;
 }
 
-// POST: devolver proposta
+// POST: solicitar alteração (cliente ou projetista pediu mudança de medida)
+// — volta para o Projetista refazer o desenho proposta (status em_revisao)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'devolver_proposta') {
     require_once __DIR__ . '/../../includes/workflow.php';
     $uid = (int)$_SESSION['usuario_id'];
     $motivo = trim($_POST['motivo'] ?? '');
     $statusAtual = (string) ($os['status'] ?? '');
-    $validation = validateOSStatusTransition($statusAtual, 'em_projeto', $_SESSION['usuario_tipo'] ?? '');
+    $validation = validateOSStatusTransition($statusAtual, 'em_revisao', $_SESSION['usuario_tipo'] ?? '');
     if (!$validation['valid']) {
         setError($validation['message']);
         header('Location: ' . $_SERVER['REQUEST_URI']);
         exit;
     }
 
-    $db->prepare("UPDATE ordens_servico SET status='em_projeto', etapa_atual=NULL WHERE id=?")->execute([$os_id]);
-    $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, ?, 'em_projeto', ?, ?)")
-       ->execute([$os_id, $statusAtual, $uid, $motivo ?: 'Proposta devolvida para ajustes']);
-    setSuccess('Proposta devolvida!');
+    $db->prepare("UPDATE ordens_servico SET status='em_revisao', etapa_atual=NULL WHERE id=?")->execute([$os_id]);
+    $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, ?, 'em_revisao', ?, ?)")
+       ->execute([$os_id, $statusAtual, $uid, 'Alteração solicitada: ' . ($motivo ?: 'sem motivo informado')]);
+    setSuccess('Alteração solicitada — a O.S. voltou para o Projetista refazer o desenho proposta.');
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit;
+}
+
+// POST: editar descrição/quantidade do item (vendedor ajusta medidas
+// solicitadas pelo cliente ou pelo projetista antes da produção)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'editar_item') {
+    $uid = (int)$_SESSION['usuario_id'];
+    $itemIdEd = (int) ($_POST['item_id'] ?? 0);
+    $novaDescricao = trim($_POST['nova_descricao'] ?? '');
+    $novaQtd = (float) str_replace(',', '.', (string) ($_POST['nova_quantidade'] ?? 0));
+    $statusAtual = (string) ($os['status'] ?? '');
+
+    if (!in_array($statusAtual, ['pendente', 'em_projeto', 'proposta', 'em_revisao'], true)) {
+        setError('Itens só podem ser alterados antes da produção. Em produção, use o retorno de etapa.');
+    } elseif ($itemIdEd <= 0 || $novaDescricao === '' || $novaQtd <= 0) {
+        setError('Informe a descrição e a quantidade do item.');
+    } else {
+        try {
+            if (!empty($os['venda_id'])) {
+                $stmtEd = $db->prepare("UPDATE vendas_itens SET descricao_manual = ?, quantidade = ? WHERE id = ? AND venda_id = ?");
+                $stmtEd->execute([$novaDescricao, $novaQtd, $itemIdEd, (int) $os['venda_id']]);
+            } else {
+                $stmtEd = $db->prepare("UPDATE os_itens SET descricao_manual = ?, quantidade = ? WHERE id = ? AND os_id = ?");
+                $stmtEd->execute([$novaDescricao, $novaQtd, $itemIdEd, $os_id]);
+            }
+            $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, ?, ?, ?, ?)")
+               ->execute([$os_id, $statusAtual, $statusAtual, $uid, 'Item #' . $itemIdEd . ' alterado: ' . mb_substr($novaDescricao, 0, 150)]);
+            setSuccess('Item atualizado! Se a alteração afeta o desenho, use "Solicitar Alteração" para devolver ao Projetista.');
+        } catch (Exception $e) {
+            setError('Erro ao alterar o item: ' . $e->getMessage());
+        }
+    }
     header('Location: ' . $_SERVER['REQUEST_URI']);
     exit;
 }
 
 // Itens
 if (!empty($os['venda_id'])) {
-    $si = $db->prepare("SELECT vi.id, vi.produto_id, vi.descricao_manual, vi.quantidade, p.codigo, COALESCE(p.nome,vi.descricao_manual) as descricao FROM vendas_itens vi LEFT JOIN produtos p ON vi.produto_id=p.id WHERE vi.venda_id=? ORDER BY vi.id");
+    $si = $db->prepare("SELECT vi.id, vi.produto_id, vi.descricao_manual, vi.quantidade, p.codigo, COALESCE(NULLIF(vi.descricao_manual,''), p.nome) as descricao FROM vendas_itens vi LEFT JOIN produtos p ON vi.produto_id=p.id WHERE vi.venda_id=? ORDER BY vi.id");
 } else {
-    $si = $db->prepare("SELECT oi.id, oi.produto_id, oi.descricao_manual, oi.quantidade, p.codigo, COALESCE(p.nome,oi.descricao_manual) as descricao FROM os_itens oi LEFT JOIN produtos p ON oi.produto_id=p.id WHERE oi.os_id=? ORDER BY oi.id");
+    $si = $db->prepare("SELECT oi.id, oi.produto_id, oi.descricao_manual, oi.quantidade, p.codigo, COALESCE(NULLIF(oi.descricao_manual,''), p.nome) as descricao FROM os_itens oi LEFT JOIN produtos p ON oi.produto_id=p.id WHERE oi.os_id=? ORDER BY oi.id");
 }
 $si->execute([$os['venda_id'] ? $os['venda_id'] : $os_id]);
 $itens = $si->fetchAll(PDO::FETCH_ASSOC);
@@ -444,14 +478,17 @@ include '../../includes/header_vendedor.php';
             </div>
         </div>
 
-        <?php if ($os['status'] === 'em_projeto'): ?>
+        <?php if (in_array($os['status'], ['pendente', 'em_projeto', 'em_revisao'], true)): ?>
         <div class="vend-card">
-            <div class="vend-card-head"><span class="vend-card-title">Enviar Proposta</span></div>
+            <div class="vend-card-head"><span class="vend-card-title"><i class="fas fa-drafting-compass"></i> Desenho Proposta <?= $os['status'] === 'em_revisao' ? '(REFAZER — alteração solicitada)' : '' ?></span></div>
+            <?php if ($os['status'] === 'em_revisao'): ?>
+                <div class="vend-alert" style="background:#FEF0EA;border-left:4px solid #D85A30;margin:0 0 10px"><i class="fas fa-exclamation-circle" style="color:#D85A30"></i> O vendedor/cliente solicitou alteração — confira o histórico e os itens atualizados abaixo, refaça o desenho proposta e envie de novo.</div>
+            <?php endif; ?>
             <form method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="acao" value="salvar_proposta">
                 <div class="form-group"><label>Alterações do Projeto</label><textarea name="alteracoes" class="form-control" rows="3" placeholder="Descrição das alterações..."></textarea></div>
                 <div class="form-group"><label>Arquivo PDF da Proposta</label><input type="file" name="proposta_pdf" accept="application/pdf" class="form-control" required></div>
-                <button type="submit" class="vbtn-sm btn-success"><i class="fas fa-paper-plane"></i> Enviar para Aprovação</button>
+                <button type="submit" class="vbtn-sm btn-success"><i class="fas fa-paper-plane"></i> Enviar Proposta ao Vendedor</button>
             </form>
         </div>
         <?php endif; ?>
@@ -462,16 +499,17 @@ include '../../includes/header_vendedor.php';
             <?php if (!empty($arquivos)): foreach ($arquivos as $arq): ?>
                 <a href="<?= SITE_URL ?>/assets/uploads/propostas/<?= $arq['nome_arquivo'] ?>" class="vbadge vbadge-info" target="_blank"><i class="fas fa-file-pdf"></i> <?= htmlspecialchars($arq['nome_original']) ?></a>
             <?php endforeach; endif; ?>
-            <form method="POST" style="margin-top:12px">
+            <form method="POST" style="margin-top:12px" onsubmit="return confirm('Cliente aprovou a proposta? A O.S. vai para o Projetista fazer o desenho de produção (DXF/PDF/3D).')">
                 <input type="hidden" name="acao" value="aprovar_proposta">
-                <button type="submit" class="vbtn-sm btn-success"><i class="fas fa-check"></i> Aprovar Proposta</button>
-                <button type="button" class="vbtn-sm" onclick="document.getElementById('motivo-devolucao').style.display='block'"><i class="fas fa-undo"></i> Devolver</button>
+                <button type="submit" class="vbtn-sm btn-success"><i class="fas fa-check"></i> Cliente Aprovou</button>
+                <button type="button" class="vbtn-sm btn-warning" onclick="document.getElementById('motivo-devolucao').style.display='block'"><i class="fas fa-undo"></i> Solicitar Alteração</button>
             </form>
             <div id="motivo-devolucao" style="display:none;margin-top:12px">
                 <form method="POST">
                     <input type="hidden" name="acao" value="devolver_proposta">
-                    <textarea name="motivo" class="form-control" rows="2" placeholder="Motivo da devolução..." required></textarea>
-                    <button type="submit" class="vbtn-sm btn-danger" style="margin-top:8px">Confirmar Devolução</button>
+                    <div style="font-size:12px;color:#666;margin-bottom:6px"><i class="fas fa-info-circle"></i> Se a medida mudou, primeiro edite a descrição do item (lápis na tabela de itens) e depois confirme aqui — a O.S. volta ao Projetista para refazer o desenho.</div>
+                    <textarea name="motivo" class="form-control" rows="2" placeholder="O que precisa mudar? (ex.: cliente pediu bancada com 1,80m em vez de 2,00m)" required></textarea>
+                    <button type="submit" class="vbtn-sm btn-danger" style="margin-top:8px">Confirmar — devolver ao Projetista</button>
                 </form>
             </div>
         </div>
@@ -526,6 +564,9 @@ include '../../includes/header_vendedor.php';
                                             </form>
                                         <?php endif; ?>
 
+                                        <?php if (in_array($os['status'], ['pendente', 'em_projeto', 'proposta', 'em_revisao'], true)): ?>
+                                            <button type="button" class="vbtn-sm" title="Editar descrição/medidas do item (alteração do cliente ou do projetista)" onclick='abrirModalEditarItem(<?= (int) $item['id'] ?>, <?= json_encode((string) $item['descricao'], JSON_HEX_APOS | JSON_HEX_QUOT) ?>, "<?= htmlspecialchars((string) $item['quantidade']) ?>")'><i class="fas fa-pencil-alt"></i></button>
+                                        <?php endif; ?>
                                         <?php if (in_array($os['status'], ['pendente', 'em_projeto', 'proposta', 'em_revisao', 'em_producao'], true)): ?>
                                             <form method="POST" enctype="multipart/form-data" style="display:inline" id="form-pdf-<?= $item['id'] ?>">
                                                 <input type="hidden" name="acao" value="anexar_arquivo_item">
@@ -597,7 +638,17 @@ include '../../includes/header_vendedor.php';
     </div>
 </div>
 
+<!-- Modal Editar Item (alteração de medidas/descrição pelo vendedor) -->
+<div id="modalEditarItem" class="modal"><div class="modal-content" style="max-width:520px"><div class="modal-header"><h3><i class="fas fa-pencil-alt"></i> Alterar Item</h3><button class="close" onclick="document.getElementById('modalEditarItem').style.display='none'">&times;</button></div><form method="POST"><div class="modal-body"><input type="hidden" name="acao" value="editar_item"><input type="hidden" name="item_id" id="edit_item_id"><div class="form-group"><label><strong>Descrição / Medidas *</strong></label><textarea name="nova_descricao" id="edit_item_desc" class="form-control" rows="4" required placeholder="Descrição completa com as medidas atualizadas..."></textarea></div><div class="form-group"><label><strong>Quantidade *</strong></label><input type="text" name="nova_quantidade" id="edit_item_qtd" class="form-control" required style="max-width:120px"></div><div style="font-size:12px;color:#666"><i class="fas fa-info-circle"></i> Depois de salvar, se a alteração afetar o desenho, use <strong>Solicitar Alteração</strong> para a O.S. voltar ao Projetista.</div></div><div class="modal-footer"><button type="button" class="vbtn-sm" onclick="document.getElementById('modalEditarItem').style.display='none'">Cancelar</button><button type="submit" class="vbtn-sm btn-success"><i class="fas fa-save"></i> Salvar Alteração</button></div></form></div></div>
+
 <script>
+function abrirModalEditarItem(itemId, descricao, qtd) {
+    document.getElementById('edit_item_id').value = itemId;
+    document.getElementById('edit_item_desc').value = descricao || '';
+    document.getElementById('edit_item_qtd').value = qtd || '1';
+    document.getElementById('modalEditarItem').style.display = 'block';
+}
+
 function enviarItemSetor(itemId, setor) {
     if (!setor) return;
     if (confirm('Enviar este item para ' + setor + '? Os demais itens continuam na O.S.')) {
