@@ -155,6 +155,14 @@ try {
     }
 } catch (Exception $e) { /* coluna cor pode não existir */ }
 
+// Materiais solicitados pelo projetista (matéria-prima/insumos)
+$materiaisOP = [];
+try {
+    $stmtMatOP = $db->prepare("SELECT descricao, quantidade, unidade, observacao FROM os_materiais_solicitados WHERE os_id = ? ORDER BY id");
+    $stmtMatOP->execute([$osId]);
+    $materiaisOP = $stmtMatOP->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) { /* tabela pode não existir */ }
+
 $totalPaginas = count($itens);
 
 // Data/hora de impressão em pt-BR (ex.: Qua, 4 fev 2026 09:51:53)
@@ -414,6 +422,35 @@ header('Content-Type: text/html; charset=UTF-8');
                 </tbody>
             </table>
         </div>
+
+        <?php if (!empty($materiaisOP)): ?>
+        <!-- Matéria-prima / insumos solicitados pelo projetista -->
+        <div class="revisao">
+            <div class="titulo-sec">Matéria-Prima / Insumos Solicitados</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:5mm"></th>
+                        <th>Material</th>
+                        <th style="width:14mm">Qtd</th>
+                        <th style="width:10mm">Un</th>
+                        <th>Observação / Medida (melhor aproveitamento)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($materiaisOP as $iMat => $mat): ?>
+                    <tr>
+                        <td class="n"><?= $iMat + 1 ?></td>
+                        <td style="text-align:left;padding-left:1.5mm"><?= htmlspecialchars($mat['descricao']) ?></td>
+                        <td><?= rtrim(rtrim(number_format((float) $mat['quantidade'], 2, ',', '.'), '0'), ',') ?></td>
+                        <td><?= htmlspecialchars($mat['unidade']) ?></td>
+                        <td style="text-align:left;padding-left:1.5mm"><?= htmlspecialchars($mat['observacao'] ?? '') ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
 
         <!-- Controle de revisão de prazo -->
         <div class="revisao">

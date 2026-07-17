@@ -386,6 +386,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'salvar_
     exit;
 }
 
+// POST: solicitar material (matéria-prima/insumo — rodízios, cubas,
+// chapas no tamanho de melhor aproveitamento etc.)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'solicitar_material') {
+    $uid = (int)$_SESSION['usuario_id'];
+    if (!hasPermission(['master', 'projetista', 'gerente'])) {
+        setError('Somente Projetista/gestão podem solicitar materiais.');
+    } else {
+        $matDescricao = trim($_POST['mat_descricao'] ?? '');
+        $matQtd = (float) str_replace(',', '.', (string) ($_POST['mat_quantidade'] ?? 1));
+        $matUnidade = trim($_POST['mat_unidade'] ?? 'un') ?: 'un';
+        $matObs = trim($_POST['mat_observacao'] ?? '');
+        // se a descrição bate com um insumo do catálogo (por código no início), vincula
+        $matInsumoId = null;
+        if (preg_match('/^(\S+)\s*[—-]/u', $matDescricao, $mIns)) {
+            $stmtIns = $db->prepare("SELECT id FROM insumos WHERE codigo = ? LIMIT 1");
+            $stmtIns->execute([$mIns[1]]);
+            $matInsumoId = $stmtIns->fetchColumn() ?: null;
+        }
+        if ($matDescricao === '' || $matQtd <= 0) {
+            setError('Informe o material e a quantidade.');
+        } else {
+            $db->prepare("INSERT INTO os_materiais_solicitados (os_id, insumo_id, descricao, quantidade, unidade, observacao, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?)")
+               ->execute([$os_id, $matInsumoId, $matDescricao, $matQtd, $matUnidade, $matObs ?: null, $uid]);
+            setSuccess('Material solicitado!');
+        }
+    }
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit;
+}
+
+// POST: remover/atender solicitação de material
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['acao'] ?? '', ['remover_material', 'atender_material'], true)) {
+    $matId = (int) ($_POST['material_id'] ?? 0);
+    if (!hasPermission(['master', 'projetista', 'gerente'])) {
+        setError('Sem permissão.');
+    } elseif ($matId > 0) {
+        if (($_POST['acao'] ?? '') === 'remover_material') {
+            $db->prepare("DELETE FROM os_materiais_solicitados WHERE id = ? AND os_id = ?")->execute([$matId, $os_id]);
+            setSuccess('Solicitação removida.');
+        } else {
+            $db->prepare("UPDATE os_materiais_solicitados SET atendido = 1 - atendido WHERE id = ? AND os_id = ?")->execute([$matId, $os_id]);
+            setSuccess('Solicitação atualizada.');
+        }
+    }
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit;
+}
+
 // POST: editar descrição/quantidade do item (vendedor ajusta medidas
 // solicitadas pelo cliente ou pelo projetista antes da produção)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'editar_item') {
@@ -450,6 +498,17 @@ try {
 $podeEditarRoteiroUI = hasPermission(['master', 'projetista', 'gerente'])
     && (in_array($os['status'], ['pendente', 'em_projeto', 'proposta', 'em_revisao'], true)
         || ($os['status'] === 'em_producao' && ($os['etapa_atual'] ?? '') === 'engenharia'));
+
+// Materiais solicitados (matéria-prima/insumos) + catálogo para o datalist
+$materiaisSolicitados = [];
+$insumosCatalogo = [];
+try {
+    $stmtMat = $db->prepare("SELECT m.*, COALESCE(u.nome,'-') as solicitante FROM os_materiais_solicitados m LEFT JOIN usuarios u ON u.id = m.usuario_id WHERE m.os_id = ? ORDER BY m.atendido, m.id");
+    $stmtMat->execute([$os_id]);
+    $materiaisSolicitados = $stmtMat->fetchAll(PDO::FETCH_ASSOC);
+    $insumosCatalogo = $db->query("SELECT codigo, nome, unidade FROM insumos ORDER BY nome LIMIT 500")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {}
+$podeSolicitarMaterial = hasPermission(['master', 'projetista', 'gerente']);
 
 // Itens já despachados por envio parcial (desmembramento)
 $despachosPorItem = [];
@@ -615,6 +674,59 @@ include '../../includes/header_vendedor.php';
                     <div style="margin-top:10px;font-size:12px;color:#666"><i class="fas fa-lock"></i> Roteiro editável pelo Projetista/gestão antes da produção ou na etapa do Projetista.</div>
                 <?php endif; ?>
             </form>
+        </div>
+        <?php endif; ?>
+
+        <?php if (hasPermission(['master', 'projetista', 'gerente', 'producao']) || !empty($materiaisSolicitados)): ?>
+        <div class="vend-card" style="margin-bottom:16px">
+            <div class="vend-card-head"><span class="vend-card-title"><i class="fas fa-boxes"></i> Matéria-Prima / Insumos Solicitados</span></div>
+            <div style="padding:12px 16px">
+                <?php if (empty($materiaisSolicitados)): ?>
+                    <div style="font-size:13px;color:#666;margin-bottom:10px">Nenhum material solicitado ainda. Ex.: rodízios, cubas, chapas no tamanho de melhor aproveitamento.</div>
+                <?php else: ?>
+                    <div class="vend-table-wrap" style="margin-bottom:12px">
+                        <table class="vend-table">
+                            <thead><tr><th>Material</th><th>Qtd</th><th>Un</th><th>Observação / Medida</th><th>Solicitante</th><th>Status</th><?php if ($podeSolicitarMaterial): ?><th></th><?php endif; ?></tr></thead>
+                            <tbody>
+                                <?php foreach ($materiaisSolicitados as $mat): ?>
+                                <tr style="<?= $mat['atendido'] ? 'opacity:.6' : '' ?>">
+                                    <td><?= htmlspecialchars($mat['descricao']) ?></td>
+                                    <td><?= rtrim(rtrim(number_format((float) $mat['quantidade'], 2, ',', '.'), '0'), ',') ?></td>
+                                    <td><?= htmlspecialchars($mat['unidade']) ?></td>
+                                    <td><?= htmlspecialchars($mat['observacao'] ?? '-') ?></td>
+                                    <td><?= htmlspecialchars($mat['solicitante']) ?></td>
+                                    <td><?= $mat['atendido'] ? '<span class="vbadge vbadge-ok"><i class="fas fa-check"></i> Atendido</span>' : '<span class="vbadge vbadge-warn">Pendente</span>' ?></td>
+                                    <?php if ($podeSolicitarMaterial): ?>
+                                    <td style="white-space:nowrap">
+                                        <form method="POST" style="display:inline"><input type="hidden" name="acao" value="atender_material"><input type="hidden" name="material_id" value="<?= (int) $mat['id'] ?>"><button type="submit" class="vbtn-sm" title="<?= $mat['atendido'] ? 'Voltar para pendente' : 'Marcar como atendido' ?>"><i class="fas fa-<?= $mat['atendido'] ? 'undo' : 'check' ?>"></i></button></form>
+                                        <form method="POST" style="display:inline" onsubmit="return confirm('Remover esta solicitação de material?')"><input type="hidden" name="acao" value="remover_material"><input type="hidden" name="material_id" value="<?= (int) $mat['id'] ?>"><button type="submit" class="vbtn-sm btn-danger" title="Remover"><i class="fas fa-trash"></i></button></form>
+                                    </td>
+                                    <?php endif; ?>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+                <?php if ($podeSolicitarMaterial): ?>
+                <form method="POST" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">
+                    <input type="hidden" name="acao" value="solicitar_material">
+                    <div style="flex:2;min-width:240px">
+                        <label style="font-size:12px">Material (busque no catálogo ou descreva) *</label>
+                        <input type="text" name="mat_descricao" class="form-control" list="insumosCatalogo" required placeholder="Ex.: 1050203 — Chapa inox 304 1,2mm | ou: Rodízio 4'' com trava">
+                        <datalist id="insumosCatalogo">
+                            <?php foreach ($insumosCatalogo as $ins): ?>
+                                <option value="<?= htmlspecialchars($ins['codigo'] . ' — ' . $ins['nome']) ?>"><?= htmlspecialchars($ins['unidade']) ?></option>
+                            <?php endforeach; ?>
+                        </datalist>
+                    </div>
+                    <div style="width:90px"><label style="font-size:12px">Qtd *</label><input type="text" name="mat_quantidade" class="form-control" value="1" required></div>
+                    <div style="width:80px"><label style="font-size:12px">Un</label><input type="text" name="mat_unidade" class="form-control" value="un"></div>
+                    <div style="flex:2;min-width:200px"><label style="font-size:12px">Observação / Medida (melhor aproveitamento)</label><input type="text" name="mat_observacao" class="form-control" placeholder="Ex.: cortar em 2000x1250 para melhor aproveitamento"></div>
+                    <button type="submit" class="vbtn-sm btn-success"><i class="fas fa-plus"></i> Solicitar</button>
+                </form>
+                <?php endif; ?>
+            </div>
         </div>
         <?php endif; ?>
 
