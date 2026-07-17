@@ -264,6 +264,127 @@ function ensureEngenhariaSchema(PDO $db): void
     ensureIndexIfMissing($db, 'vendas_itens', 'idx_vendas_itens_venda_produto', "CREATE INDEX idx_vendas_itens_venda_produto ON vendas_itens (venda_id, produto_id)");
     ensureIndexIfMissing($db, 'os_arquivos', 'idx_os_arquivos_os_tipo', "CREATE INDEX idx_os_arquivos_os_tipo ON os_arquivos (os_id, tipo)");
     ensureIndexIfMissing($db, 'logs_retorno_etapa', 'idx_logs_retorno_os_data', "CREATE INDEX idx_logs_retorno_os_data ON logs_retorno_etapa (os_id, created_at)");
+
+    // ===== DESENHO TÉCNICO E APROVAÇÃO =====
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS desenhos_tecnicos (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            os_id INT NOT NULL,
+            titulo VARCHAR(255) NOT NULL,
+            descricao TEXT NULL,
+            versao VARCHAR(30) NOT NULL DEFAULT 'v1.0',
+            status ENUM('rascunho', 'submetido', 'em_revisao', 'aprovado', 'rejeitado', 'obsoleto') DEFAULT 'rascunho',
+            prioridade ENUM('baixa', 'normal', 'alta', 'critica') DEFAULT 'normal',
+            usuario_projetista_id INT NOT NULL,
+            usuario_gerente_id INT NULL,
+            usuario_producao_id INT NULL,
+            data_submissao DATETIME NULL,
+            data_aprovacao_gerencia DATETIME NULL,
+            data_aprovacao_producao DATETIME NULL,
+            data_rejeicao DATETIME NULL,
+            observacoes_gerencia TEXT NULL,
+            observacoes_producao TEXT NULL,
+            observacoes_internas TEXT NULL,
+            qualidade_exigida ENUM('normal', 'certificada', 'alimentar', 'clinica') DEFAULT 'normal',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (os_id) REFERENCES ordens_servico(id) ON DELETE CASCADE,
+            FOREIGN KEY (usuario_projetista_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
+            FOREIGN KEY (usuario_gerente_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+            FOREIGN KEY (usuario_producao_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+            INDEX idx_desenho_os (os_id),
+            INDEX idx_desenho_status (status),
+            INDEX idx_desenho_versao (os_id, versao),
+            INDEX idx_desenho_data_submissao (data_submissao),
+            INDEX idx_desenho_criacao (created_at)
+        ) ENGINE=InnoDB
+    ");
+
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS desenhos_arquivos (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            desenho_id INT NOT NULL,
+            arquivo_tipo ENUM('pdf', 'dwg', 'png', 'jpg', '3d', 'dxf', 'outro') NOT NULL,
+            nome_original VARCHAR(255) NOT NULL,
+            nome_arquivo VARCHAR(255) NOT NULL,
+            caminho_arquivo VARCHAR(512) NOT NULL,
+            tamanho_bytes INT NOT NULL DEFAULT 0,
+            dimensoes VARCHAR(100) NULL,
+            sequencia INT DEFAULT 0,
+            usuario_upload_id INT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (desenho_id) REFERENCES desenhos_tecnicos(id) ON DELETE CASCADE,
+            FOREIGN KEY (usuario_upload_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
+            INDEX idx_arquivo_desenho (desenho_id),
+            INDEX idx_arquivo_tipo (arquivo_tipo),
+            INDEX idx_arquivo_criacao (created_at)
+        ) ENGINE=InnoDB
+    ");
+
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS desenhos_revisoes (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            desenho_id INT NOT NULL,
+            versao_anterior VARCHAR(30) NULL,
+            versao_nova VARCHAR(30) NOT NULL,
+            tipo_revisao ENUM('criacao', 'atualizacao', 'correcao', 'aprovacao', 'rejeicao') NOT NULL DEFAULT 'atualizacao',
+            motivo_revisao TEXT NULL,
+            usuario_id INT NOT NULL,
+            alteracoes_descricao TEXT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (desenho_id) REFERENCES desenhos_tecnicos(id) ON DELETE CASCADE,
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
+            INDEX idx_revisao_desenho (desenho_id),
+            INDEX idx_revisao_versao (versao_nova),
+            INDEX idx_revisao_criacao (created_at)
+        ) ENGINE=InnoDB
+    ");
+
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS desenhos_aprovaes (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            desenho_id INT NOT NULL,
+            etapa ENUM('gerencia', 'producao', 'qualidade') NOT NULL,
+            status ENUM('pendente', 'aprovado', 'rejeitado', 'observacoes') NOT NULL DEFAULT 'pendente',
+            usuario_id INT NULL,
+            observacoes TEXT NULL,
+            data_resposta DATETIME NULL,
+            prazo_resposta DATETIME NULL,
+            requer_alteracoes TINYINT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (desenho_id) REFERENCES desenhos_tecnicos(id) ON DELETE CASCADE,
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+            INDEX idx_aprovacao_desenho (desenho_id),
+            INDEX idx_aprovacao_etapa (etapa),
+            INDEX idx_aprovacao_status (status),
+            INDEX idx_aprovacao_prazo (prazo_resposta)
+        ) ENGINE=InnoDB
+    ");
+
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS desenhos_historico (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            desenho_id INT NOT NULL,
+            acao VARCHAR(100) NOT NULL,
+            usuario_id INT NOT NULL,
+            status_anterior VARCHAR(50) NULL,
+            status_novo VARCHAR(50) NULL,
+            detalhes TEXT NULL,
+            endereco_ip VARCHAR(45) NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (desenho_id) REFERENCES desenhos_tecnicos(id) ON DELETE CASCADE,
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
+            INDEX idx_historico_desenho (desenho_id),
+            INDEX idx_historico_acao (acao),
+            INDEX idx_historico_criacao (created_at)
+        ) ENGINE=InnoDB
+    ");
+
+    // Índices adicionais
+    ensureIndexIfMissing($db, 'desenhos_tecnicos', 'idx_desenho_projetista', "CREATE INDEX idx_desenho_projetista ON desenhos_tecnicos (usuario_projetista_id)");
+    ensureIndexIfMissing($db, 'desenhos_tecnicos', 'idx_desenho_gerente', "CREATE INDEX idx_desenho_gerente ON desenhos_tecnicos (usuario_gerente_id)");
+    ensureIndexIfMissing($db, 'desenhos_tecnicos', 'idx_desenho_producao', "CREATE INDEX idx_desenho_producao ON desenhos_tecnicos (usuario_producao_id)");
 }
 
 function getOrCreateEstruturaProduto(PDO $db, int $produtoId): array
