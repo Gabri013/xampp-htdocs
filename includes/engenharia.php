@@ -789,6 +789,18 @@ function getPlanejamentoEtapasPorOS(PDO $db, int $osId, int $vendaId = 0): array
 
 function sincronizarPlanejamentoOS(PDO $db, int $osId, int $vendaId = 0): array
 {
+    // Roteiro definido manualmente pelo projetista tem prioridade — não
+    // sobrescreve com o planejamento automático derivado do produto.
+    try {
+        $stmtManual = $db->prepare("SELECT roteiro_manual FROM ordens_servico WHERE id = ?");
+        $stmtManual->execute([$osId]);
+        if ((int) $stmtManual->fetchColumn() === 1) {
+            $stmtAtual = $db->prepare("SELECT etapa FROM os_etapas_producao WHERE os_id = ?");
+            $stmtAtual->execute([$osId]);
+            return array_map(fn($e) => ['etapa' => $e], $stmtAtual->fetchAll(PDO::FETCH_COLUMN));
+        }
+    } catch (Exception $e) { /* coluna pode não existir em bancos antigos */ }
+
     $etapasPlanejadas = getPlanejamentoEtapasPorOS($db, $osId, $vendaId);
 
     $stmtExistentes = $db->prepare("

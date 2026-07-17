@@ -332,6 +332,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'devolve
     exit;
 }
 
+// POST: salvar roteiro de produção (projetista marca por quais setores
+// o projeto deve passar). Etapas já iniciadas/concluídas ficam travadas.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'salvar_roteiro') {
+    require_once __DIR__ . '/../../includes/workflow.php';
+    $uid = (int)$_SESSION['usuario_id'];
+    $statusAtual = (string) ($os['status'] ?? '');
+    $podeEditarRoteiro = hasPermission(['master', 'projetista', 'gerente'])
+        && (in_array($statusAtual, ['pendente', 'em_projeto', 'proposta', 'em_revisao'], true)
+            || ($statusAtual === 'em_producao' && ($os['etapa_atual'] ?? '') === 'engenharia'));
+
+    if (!$podeEditarRoteiro) {
+        setError('O roteiro só pode ser alterado pelo Projetista/gestão antes da produção ou enquanto a O.S. está no Projetista.');
+    } else {
+        $selecionadas = array_values(array_intersect((array) ($_POST['roteiro_etapas'] ?? []), getEtapasBancada()));
+        // engenharia (Projetista) sempre faz parte do roteiro
+        if (!in_array('engenharia', $selecionadas, true)) {
+            array_unshift($selecionadas, 'engenharia');
+        }
+        try {
+            $db->beginTransaction();
+            $stmtEx = $db->prepare("SELECT etapa, status FROM os_etapas_producao WHERE os_id = ?");
+            $stmtEx->execute([$os_id]);
+            $existentes = [];
+            foreach ($stmtEx->fetchAll(PDO::FETCH_ASSOC) as $ex) {
+                $existentes[$ex['etapa']] = $ex['status'];
+            }
+            // remove etapas desmarcadas que ainda estão pendentes
+            $stmtDel = $db->prepare("DELETE FROM os_etapas_producao WHERE os_id = ? AND etapa = ? AND status = 'pendente'");
+            foreach ($existentes as $etapaEx => $statusEx) {
+                if ($statusEx === 'pendente' && !in_array($etapaEx, $selecionadas, true)) {
+                    $stmtDel->execute([$os_id, $etapaEx]);
+                }
+            }
+            // adiciona etapas marcadas que não existem
+            $stmtIns = $db->prepare("INSERT INTO os_etapas_producao (os_id, etapa, status) VALUES (?, ?, 'pendente')");
+            foreach ($selecionadas as $etapaSel) {
+                if (!isset($existentes[$etapaSel])) {
+                    $stmtIns->execute([$os_id, $etapaSel]);
+                }
+            }
+            $db->prepare("UPDATE ordens_servico SET roteiro_manual = 1 WHERE id = ?")->execute([$os_id]);
+            $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, ?, ?, ?, ?)")
+               ->execute([$os_id, $statusAtual, $statusAtual, $uid, 'Roteiro definido pelo projetista: ' . implode(', ', array_map('getEtapaLabel', $selecionadas))]);
+            $db->commit();
+            setSuccess('Roteiro de produção salvo! O projeto vai passar por: ' . implode(' → ', array_map('getEtapaLabel', $selecionadas)));
+        } catch (Exception $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            setError('Erro ao salvar o roteiro: ' . $e->getMessage());
+        }
+    }
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit;
+}
+
 // POST: editar descrição/quantidade do item (vendedor ajusta medidas
 // solicitadas pelo cliente ou pelo projetista antes da produção)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'editar_item') {
@@ -383,6 +437,19 @@ if (!empty($itens)) {
         $arquivosPorItem[(int) $arqItem['os_item_id']][] = $arqItem;
     }
 }
+
+// Roteiro de produção atual (etapa => status) para o card do roteiro
+$roteiroAtual = [];
+try {
+    $stmtRot = $db->prepare("SELECT etapa, status FROM os_etapas_producao WHERE os_id = ?");
+    $stmtRot->execute([$os_id]);
+    foreach ($stmtRot->fetchAll(PDO::FETCH_ASSOC) as $rot) {
+        $roteiroAtual[$rot['etapa']] = $rot['status'];
+    }
+} catch (Exception $e) {}
+$podeEditarRoteiroUI = hasPermission(['master', 'projetista', 'gerente'])
+    && (in_array($os['status'], ['pendente', 'em_projeto', 'proposta', 'em_revisao'], true)
+        || ($os['status'] === 'em_producao' && ($os['etapa_atual'] ?? '') === 'engenharia'));
 
 // Itens já despachados por envio parcial (desmembramento)
 $despachosPorItem = [];
@@ -512,6 +579,42 @@ include '../../includes/header_vendedor.php';
                     <button type="submit" class="vbtn-sm btn-danger" style="margin-top:8px">Confirmar — devolver ao Projetista</button>
                 </form>
             </div>
+        </div>
+        <?php endif; ?>
+
+        <?php if (hasPermission(['master', 'projetista', 'gerente', 'producao'])): ?>
+        <div class="vend-card" style="margin-bottom:16px">
+            <div class="vend-card-head"><span class="vend-card-title"><i class="fas fa-route"></i> Roteiro de Produção — por quais setores o projeto passa</span></div>
+            <form method="POST" style="padding:12px 16px">
+                <input type="hidden" name="acao" value="salvar_roteiro">
+                <div style="display:flex;flex-wrap:wrap;gap:10px">
+                    <?php require_once __DIR__ . '/../../includes/workflow.php';
+                    foreach (getEtapasBancada() as $etapaRot):
+                        $statusRot = $roteiroAtual[$etapaRot] ?? null;
+                        $marcada = $statusRot !== null;
+                        $travada = $marcada && $statusRot !== 'pendente'; // já iniciada/concluída
+                        $obrigatoria = ($etapaRot === 'engenharia');
+                    ?>
+                        <label style="display:flex;align-items:center;gap:6px;background:<?= $travada ? '#e7f6ec' : ($marcada ? '#FEF0EA' : '#f8f9fa') ?>;border:1px solid #e9ecef;border-radius:6px;padding:6px 10px;cursor:<?= ($travada || $obrigatoria || !$podeEditarRoteiroUI) ? 'default' : 'pointer' ?>;font-weight:normal;margin:0">
+                            <input type="checkbox" name="roteiro_etapas[]" value="<?= $etapaRot ?>" <?= $marcada || $obrigatoria ? 'checked' : '' ?> <?= ($travada || $obrigatoria || !$podeEditarRoteiroUI) ? 'disabled' : '' ?>>
+                            <?php if ($travada && $marcada): // disabled não envia — repõe via hidden ?>
+                                <input type="hidden" name="roteiro_etapas[]" value="<?= $etapaRot ?>">
+                            <?php endif; ?>
+                            <?= getEtapaLabel($etapaRot) ?>
+                            <?php if ($travada): ?><i class="fas fa-lock" style="font-size:10px;color:#16a34a" title="Etapa já iniciada/concluída — não pode ser removida"></i><?php endif; ?>
+                            <?php if ($obrigatoria): ?><span style="font-size:10px;color:#666">(sempre)</span><?php endif; ?>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+                <?php if ($podeEditarRoteiroUI): ?>
+                    <div style="margin-top:10px;display:flex;align-items:center;gap:10px">
+                        <button type="submit" class="vbtn-sm btn-success"><i class="fas fa-save"></i> Salvar Roteiro</button>
+                        <span style="font-size:12px;color:#666">Marque só os setores que este projeto precisa (ex.: sem mobiliário se não tem móvel).</span>
+                    </div>
+                <?php else: ?>
+                    <div style="margin-top:10px;font-size:12px;color:#666"><i class="fas fa-lock"></i> Roteiro editável pelo Projetista/gestão antes da produção ou na etapa do Projetista.</div>
+                <?php endif; ?>
+            </form>
         </div>
         <?php endif; ?>
 
