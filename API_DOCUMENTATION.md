@@ -463,6 +463,150 @@ const expedicao = await fetch('/api/expedicao.php', {
 
 ---
 
+---
+
+## 🤖 API de MRP (Material Requirements Planning)
+
+**Arquivo**: `/api/mrp.php`
+
+### Analisar Demanda
+```
+GET /api/mrp.php?acao=analisar_demanda
+
+Response:
+{
+  "sucesso": true,
+  "total": 5,
+  "criticas": 2,
+  "demanda": [
+    {
+      "venda_id": 1,
+      "venda_numero": "VD-001",
+      "cliente": "Empresa XYZ",
+      "produto_id": 10,
+      "produto_nome": "Fogão Inox",
+      "quantidade_solicitada": 10,
+      "estoque_atual": 2,
+      "faltante": 8,
+      "percentual_falta": 80.0,
+      "dias_para_entrega": 2,
+      "urgencia_score": 95.5,
+      "status_urgencia": "crítica"
+    }
+  ]
+}
+```
+
+### Sugerir Ordens de Produção
+```
+GET /api/mrp.php?acao=sugerir_ordens
+
+Response:
+{
+  "sucesso": true,
+  "total_sugestoes": 3,
+  "criticas": 1,
+  "altas": 2,
+  "sugestoes": [
+    {
+      "produto_id": 10,
+      "produto_nome": "Fogão Inox",
+      "estoque_atual": 2.0,
+      "estoque_minimo": 5,
+      "quantidade_vendas": 10.0,
+      "necessario": 8.0,
+      "quantidade_sugerida": 9.2,
+      "margem_seguranca": 15,
+      "prioridade": "crítica",
+      "acao_recomendada": "Criar O.S. de produção"
+    }
+  ]
+}
+```
+
+### Prever Materiais (BOM)
+```
+POST /api/mrp.php
+{
+  "acao": "prever_materiais",
+  "produto_id": 10,
+  "quantidade": 5
+}
+
+Response:
+{
+  "sucesso": true,
+  "produto_id": 10,
+  "quantidade_producao": 5,
+  "total_materiais": 4,
+  "materiais_faltando": 1,
+  "materiais": [
+    {
+      "material_id": 5,
+      "material_nome": "Parafuso M8",
+      "qtd_bom": 4.0,
+      "unidade": "un",
+      "quantidade_necessaria": 20.0,
+      "estoque_atual": 30.0,
+      "faltante": 0.0,
+      "status": "ok"
+    }
+  ]
+}
+```
+
+### Otimizar Cronograma
+```
+GET /api/mrp.php?acao=otimizar_cronograma
+
+Response:
+{
+  "sucesso": true,
+  "total_os": 3,
+  "acelerar": 1,
+  "focar": 2,
+  "cronograma": [
+    {
+      "os_id": 5,
+      "os_numero": "OS-001",
+      "cliente": "Cliente A",
+      "data_prevista": "2026-07-18",
+      "dias_faltando": 1,
+      "prioridade": "alta",
+      "progresso_percentual": 50,
+      "etapas_totais": 5,
+      "etapas_concluidas": 2,
+      "score_urgencia": 250.0,
+      "recomendacao": "ACELERAR"
+    }
+  ]
+}
+```
+
+### Alertas Críticos
+```
+GET /api/mrp.php?acao=alertas
+
+Response:
+{
+  "sucesso": true,
+  "total": 3,
+  "criticas": 2,
+  "alertas": [
+    {
+      "tipo": "produto_sem_estoque",
+      "severidade": "crítica",
+      "titulo": "Produto sem estoque: Fogão",
+      "descricao": "Produto não tem quantidade no estoque",
+      "produto_id": 10,
+      "icon": "🚨"
+    }
+  ]
+}
+```
+
+---
+
 **Última atualização**: 2026-07-17  
-**Versão**: 1.0 (TIER 1)  
-**Status**: ✅ Documentação Completa
+**Versão**: 1.1 (TIER 1 + TIER 2 Fase 1)  
+**Status**: ✅ Documentação Completa (MRP adicionado)

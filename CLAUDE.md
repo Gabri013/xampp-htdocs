@@ -157,4 +157,4 @@ if ($acao === 'criar') {
 ---
 
 **Última atualização**: 2026-07-17
-**Versão**: 1.0 (TIER 1 Completo)
+**Versão**: 1.1 (TIER 1 Completo + TIER 2 Fase 1: MRP)
