@@ -416,6 +416,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'solicit
     exit;
 }
 
+// POST: corrigir a categoria/linha do produto do item (item categorizado
+// errado — afeta bolinhas, etapas condicionais e folha técnica)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'corrigir_categoria') {
+    $uid = (int)$_SESSION['usuario_id'];
+    $produtoIdCat = (int) ($_POST['produto_id'] ?? 0);
+    $novaCategoriaId = (int) ($_POST['categoria_id'] ?? 0);
+    if (!hasPermission(['master', 'projetista', 'gerente'])) {
+        setError('Somente Projetista/gestão podem corrigir a categoria.');
+    } elseif ($produtoIdCat <= 0 || $novaCategoriaId <= 0) {
+        setError('Selecione a categoria correta.');
+    } else {
+        try {
+            $stmtCat = $db->prepare("SELECT nome FROM produto_categorias WHERE id = ?");
+            $stmtCat->execute([$novaCategoriaId]);
+            $nomeCategoria = $stmtCat->fetchColumn();
+            $stmtProd = $db->prepare("SELECT nome, categoria_id FROM produtos WHERE id = ?");
+            $stmtProd->execute([$produtoIdCat]);
+            $prodCat = $stmtProd->fetch(PDO::FETCH_ASSOC);
+            if (!$nomeCategoria || !$prodCat) {
+                setError('Produto ou categoria não encontrados.');
+            } else {
+                $db->prepare("UPDATE produtos SET categoria_id = ? WHERE id = ?")->execute([$novaCategoriaId, $produtoIdCat]);
+                $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, ?, ?, ?, ?)")
+                   ->execute([$os_id, $os['status'], $os['status'], $uid, 'Categoria do produto "' . $prodCat['nome'] . '" corrigida para ' . $nomeCategoria]);
+                // Se o roteiro não foi travado manualmente e a O.S. ainda não
+                // entrou em produção, replaneja as etapas condicionais
+                // (mobiliário/cocção/refrigeração) conforme a nova linha.
+                if (empty($os['roteiro_manual']) && in_array($os['status'], ['pendente', 'em_projeto', 'proposta', 'em_revisao'], true)) {
+                    try {
+                        sincronizarPlanejamentoOS($db, $os_id, (int) ($os['venda_id'] ?? 0));
+                    } catch (Exception $e) { /* replaneja no aprovar */ }
+                }
+                setSuccess('Categoria corrigida para ' . $nomeCategoria . '! Bolinhas, folha técnica e etapas condicionais passam a seguir a nova linha.');
+            }
+        } catch (Exception $e) {
+            setError('Erro ao corrigir a categoria: ' . $e->getMessage());
+        }
+    }
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit;
+}
+
 // POST: cadastrar insumo novo NA HORA (não existe no catálogo) e já
 // solicitar para esta O.S. — código gerado automaticamente
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'cadastrar_insumo_rapido') {
@@ -510,9 +552,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'editar_
 
 // Itens
 if (!empty($os['venda_id'])) {
-    $si = $db->prepare("SELECT vi.id, vi.produto_id, vi.descricao_manual, vi.quantidade, p.codigo, COALESCE(NULLIF(vi.descricao_manual,''), p.nome) as descricao FROM vendas_itens vi LEFT JOIN produtos p ON vi.produto_id=p.id WHERE vi.venda_id=? ORDER BY vi.id");
+    $si = $db->prepare("SELECT vi.id, vi.produto_id, vi.descricao_manual, vi.quantidade, p.codigo, COALESCE(NULLIF(vi.descricao_manual,''), p.nome) as descricao, p.categoria_id, pc.nome as categoria_nome, pc.cor as categoria_cor FROM vendas_itens vi LEFT JOIN produtos p ON vi.produto_id=p.id LEFT JOIN produto_categorias pc ON pc.id=p.categoria_id WHERE vi.venda_id=? ORDER BY vi.id");
 } else {
-    $si = $db->prepare("SELECT oi.id, oi.produto_id, oi.descricao_manual, oi.quantidade, p.codigo, COALESCE(NULLIF(oi.descricao_manual,''), p.nome) as descricao FROM os_itens oi LEFT JOIN produtos p ON oi.produto_id=p.id WHERE oi.os_id=? ORDER BY oi.id");
+    $si = $db->prepare("SELECT oi.id, oi.produto_id, oi.descricao_manual, oi.quantidade, p.codigo, COALESCE(NULLIF(oi.descricao_manual,''), p.nome) as descricao, p.categoria_id, pc.nome as categoria_nome, pc.cor as categoria_cor FROM os_itens oi LEFT JOIN produtos p ON oi.produto_id=p.id LEFT JOIN produto_categorias pc ON pc.id=p.categoria_id WHERE oi.os_id=? ORDER BY oi.id");
 }
 $si->execute([$os['venda_id'] ? $os['venda_id'] : $os_id]);
 $itens = $si->fetchAll(PDO::FETCH_ASSOC);
@@ -550,6 +592,13 @@ try {
     $insumosCatalogo = $db->query("SELECT codigo, nome, unidade FROM insumos ORDER BY nome LIMIT 500")->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {}
 $podeSolicitarMaterial = hasPermission(['master', 'projetista', 'gerente']);
+
+// Categorias (linhas) para a correção de item categorizado errado
+$categoriasLinhas = [];
+try {
+    $categoriasLinhas = $db->query("SELECT id, nome, cor FROM produto_categorias WHERE status = 'ativo' ORDER BY nome")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {}
+$podeCorrigirCategoria = hasPermission(['master', 'projetista', 'gerente']);
 
 // Itens já despachados por envio parcial (desmembramento)
 $despachosPorItem = [];
@@ -784,7 +833,34 @@ include '../../includes/header_vendedor.php';
                             <tr>
                                 <td><?= $item['id'] ?></td>
                                 <td><?= htmlspecialchars($item['codigo'] ?? '-') ?></td>
-                                <td><?= htmlspecialchars($item['descricao']) ?></td>
+                                <td>
+                                    <?= htmlspecialchars($item['descricao']) ?>
+                                    <?php if (!empty($item['produto_id'])): ?>
+                                        <div style="margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                                            <?php if (!empty($item['categoria_nome'])): ?>
+                                                <span class="vbadge" style="background:#f1f5f9;color:#475569" title="Linha/categoria do produto">
+                                                    <?php if (!empty($item['categoria_cor'])): ?><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:<?= htmlspecialchars($item['categoria_cor']) ?>;border:1px solid rgba(0,0,0,.2);margin-right:3px;vertical-align:middle"></span><?php endif; ?>
+                                                    <?= htmlspecialchars($item['categoria_nome']) ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="vbadge vbadge-warn" title="Produto sem linha/categoria definida">Sem linha</span>
+                                            <?php endif; ?>
+                                            <?php if ($podeCorrigirCategoria && !empty($categoriasLinhas)): ?>
+                                                <form method="POST" style="display:inline-flex;align-items:center;gap:4px;margin:0" onsubmit="return confirm('Corrigir a linha/categoria deste produto? Bolinhas, folha técnica e etapas condicionais passam a seguir a nova linha.')">
+                                                    <input type="hidden" name="acao" value="corrigir_categoria">
+                                                    <input type="hidden" name="produto_id" value="<?= (int) $item['produto_id'] ?>">
+                                                    <select name="categoria_id" style="font-size:11px;padding:2px 4px;border:1px solid #e9ecef;border-radius:4px" title="Item categorizado errado? Selecione a linha correta">
+                                                        <option value="">corrigir linha…</option>
+                                                        <?php foreach ($categoriasLinhas as $catL): if ((int) $catL['id'] === (int) ($item['categoria_id'] ?? 0)) continue; ?>
+                                                            <option value="<?= (int) $catL['id'] ?>"><?= htmlspecialchars($catL['nome']) ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                    <button type="submit" class="vbtn-sm" style="padding:2px 7px;font-size:11px" title="Salvar a correção da linha"><i class="fas fa-check"></i></button>
+                                                </form>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?= $item['quantidade'] ?></td>
 <td>
                                     <?php $podeEnviarItem = in_array($os['status'], ['pendente', 'em_projeto', 'proposta'], true)
