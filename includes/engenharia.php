@@ -1238,6 +1238,23 @@ function ensureOrdensProducaoSchema(PDO $db): void
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+    // Cura tabelas antigas (versão mínima: id, os_id, numero, status, criado_em)
+    // adicionando as colunas que o código espera. ADD COLUMN só se faltar.
+    $colsOp = $db->query("SHOW COLUMNS FROM ordens_producao")->fetchAll(PDO::FETCH_COLUMN);
+    $colunasOp = [
+        'responsavel_id' => "ADD COLUMN responsavel_id INT NULL",
+        'data_inicio'    => "ADD COLUMN data_inicio DATETIME NULL",
+        'data_termino'   => "ADD COLUMN data_termino DATETIME NULL",
+        'prazo_original' => "ADD COLUMN prazo_original DATETIME NULL",
+        'observacoes'    => "ADD COLUMN observacoes TEXT NULL",
+        'atualizado_em'  => "ADD COLUMN atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+    ];
+    foreach ($colunasOp as $col => $ddl) {
+        if (!in_array($col, $colsOp, true)) {
+            try { $db->exec("ALTER TABLE ordens_producao $ddl"); } catch (Throwable $e) {}
+        }
+    }
+
     $db->exec("CREATE TABLE IF NOT EXISTS ordens_producao_itens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     op_id INT NOT NULL,

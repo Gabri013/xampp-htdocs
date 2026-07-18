@@ -158,7 +158,9 @@ include '../../includes/header_vendedor.php';
             <div><h1 class="vend-page-title">Nova O.S. Independente</h1></div>
             <a href="<?php echo $voltarUrl; ?>" class="vbtn-sm"><i class="fas fa-arrow-left"></i> Voltar</a>
         </div>
-        
+
+        <div class="vend-content">
+        <div class="vend-card"><div class="vend-card-body" style="padding:20px">
         <form method="POST" enctype="multipart/form-data">
             <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
                 <div style="flex:2">
@@ -259,8 +261,8 @@ include '../../includes/header_vendedor.php';
             
             <button type="submit" class="vbtn-sm vbtn-brand">Criar O.S. Independente</button>
         </form>
+        </div></div></div>
     </div>
-</div>
 </div>
 
 <script>
@@ -347,7 +349,7 @@ include '../../includes/header_vendedor.php';
 
     tipoCliente.addEventListener('change', atualizarModoCliente);
     selTipo.addEventListener('change', atualizarModoItem);
-    fluxoOs.addEventListener('change', atualizarFluxoOS);
+    if (fluxoOs) fluxoOs.addEventListener('change', atualizarFluxoOS);
 
     atualizarModoCliente();
     atualizarModoItem();
