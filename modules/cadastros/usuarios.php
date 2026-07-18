@@ -55,13 +55,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tipo = $_POST['tipo'];
         $status = $_POST['status'];
         $senha = $_POST['senha'] ?? '';
-        $permissoes = $_POST['permissoes'] ?? [];
-        
+        $acessos = $_POST['acessos'] ?? [];
+
         try {
             $db = getDB();
             ensureUsuariosTiposSchema($db);
-            inicializarPermissoes($db);
-            
+            ensureAcessosExtrasSchema($db);
+            $salvou = false;
+
             if ($id) {
                 // Atualizar
                 if (!empty($senha)) {
@@ -72,14 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $db->prepare("UPDATE usuarios SET nome=?, email=?, tipo=?, status=? WHERE id=?");
                     $stmt->execute([$nome, $email, $tipo, $status, $id]);
                 }
-                
-                // Atualizar permissões granulares
-                $stmt = $db->prepare("DELETE FROM usuario_permissoes WHERE usuario_id = ?");
-                $stmt->execute([$id]);
-                foreach ($permissoes as $perm) {
-                    concederPermissao($db, $id, $perm);
-                }
-                
+                setAcessosExtras($db, $id, $acessos);
+                $salvou = true;
                 setSuccess('Usuário atualizado com sucesso!');
             } else {
                 // Inserir
@@ -90,16 +85,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $db->prepare("INSERT INTO usuarios (nome, email, senha, tipo, status) VALUES (?, ?, ?, ?, ?)");
                     $stmt->execute([$nome, $email, $senha_hash, $tipo, $status]);
                     $id = (int) $db->lastInsertId();
-                    
-                    // Conceder permissões granulares
-                    foreach ($permissoes as $perm) {
-                        concederPermissao($db, $id, $perm);
-                    }
-                    
+                    setAcessosExtras($db, $id, $acessos);
+                    $salvou = true;
                     setSuccess('Usuário cadastrado com sucesso!');
                 }
             }
-            
+
+            // Se o master editou a si mesmo, atualiza os acessos na sessão atual
+            if ($salvou && $id == ($_SESSION['usuario_id'] ?? 0)) {
+                $_SESSION['acessos_extras'] = getAcessosExtras($db, (int) $id);
+            }
+
             header('Location: usuarios.php');
             exit;
         } catch (Exception $e) {
@@ -125,23 +121,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Buscar permissões disponíveis
+// Preparar dados
 $db = getDB();
 ensureUsuariosTiposSchema($db);
+ensureAcessosExtrasSchema($db);
 $tiposUsuario = getTiposUsuarioDisponiveis();
-inicializarPermissoes($db);
-$permissoesDisponiveis = $db->query("SELECT chave, nome, modulo FROM permissoes ORDER BY modulo, chave")->fetchAll(PDO::FETCH_ASSOC);
+
+// Acessos extras concedíveis = todos os cargos EXCETO master (não se concede admin como extra)
+$acessosConcediveis = array_filter($tiposUsuario, fn($k) => $k !== 'master', ARRAY_FILTER_USE_KEY);
 
 // Buscar usuários
 $stmt = $db->query("SELECT * FROM usuarios ORDER BY nome");
 $usuarios = $stmt->fetchAll();
 
-// Buscar permissões de cada usuário
-$usuarioPermissoes = [];
+// Acessos extras de cada usuário
+$usuarioAcessos = [];
 foreach ($usuarios as $u) {
-    $stmt = $db->prepare("SELECT p.chave FROM usuario_permissoes up JOIN permissoes p ON up.permissao_id = p.id WHERE up.usuario_id = ?");
-    $stmt->execute([$u['id']]);
-    $usuarioPermissoes[$u['id']] = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $usuarioAcessos[$u['id']] = getAcessosExtras($db, (int) $u['id']);
 }
 
 include '../../includes/header_vendedor.php';
@@ -245,25 +241,14 @@ include '../../includes/header_vendedor.php';
                 </div>
 
                 <div class="form-group" style="margin-top: 15px;">
-                    <label style="display: block; margin-bottom: 8px;">Permissões Específicas</label>
-                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 6px; background: #f9f9f9;">
-                        <?php 
-                        $modulos = [];
-                        foreach ($permissoesDisponiveis as $p) {
-                            $modulos[$p['modulo']][] = $p;
-                        }
-                        foreach ($modulos as $modulo => $perms): ?>
-                            <div style="margin-bottom: 10px;">
-                                <strong style="text-transform: capitalize; font-size: 12px; color: #666;"><?= htmlspecialchars($modulo) ?></strong>
-                                <?php foreach ($perms as $perm): ?>
-                                    <div style="margin-left: 15px; margin-top: 5px;">
-                                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
-                                            <input type="checkbox" name="permissoes[]" value="<?= htmlspecialchars($perm['chave']) ?>" class="perm-check">
-                                            <?= htmlspecialchars($perm['nome']) ?>
-                                        </label>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
+                    <label style="display: block; margin-bottom: 4px;">Acessos extras</label>
+                    <p style="font-size:12px;color:#666;margin:0 0 8px">Marque áreas que este usuário pode acessar <strong>além</strong> do cargo dele. O cargo já garante o acesso próprio.</p>
+                    <div style="max-height: 220px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 6px; background: #f9f9f9; display:grid; grid-template-columns:1fr 1fr; gap:4px 12px;">
+                        <?php foreach ($acessosConcediveis as $valor => $rotulo): ?>
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+                                <input type="checkbox" name="acessos[]" value="<?= htmlspecialchars($valor) ?>" class="acesso-check" data-acesso="<?= htmlspecialchars($valor) ?>">
+                                <span><?= htmlspecialchars($rotulo) ?></span>
+                            </label>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -277,6 +262,23 @@ include '../../includes/header_vendedor.php';
 </div>
 
 <script>
+const acessosMap = <?= json_encode($usuarioAcessos) ?>;
+
+// O acesso correspondente ao CARGO é redundante como extra — desabilita e marca visualmente
+function refletirCargo() {
+    const tipoAtual = document.getElementById('tipo').value;
+    document.querySelectorAll('.acesso-check').forEach(cb => {
+        const ehCargo = cb.dataset.acesso === tipoAtual;
+        cb.disabled = ehCargo;
+        const wrap = cb.closest('label');
+        if (wrap) {
+            wrap.style.opacity = ehCargo ? '0.55' : '1';
+            wrap.title = ehCargo ? 'Já incluído pelo cargo do usuário' : '';
+        }
+        if (ehCargo) cb.checked = false;
+    });
+}
+
 function abrirModal() {
     document.getElementById('modalTitulo').textContent = 'Novo Usuário';
     document.getElementById('usuarioId').value = '';
@@ -285,6 +287,9 @@ function abrirModal() {
     document.getElementById('senha').value = '';
     document.getElementById('senha').required = true;
     document.getElementById('senhaOpcional').style.display = 'none';
+    document.getElementById('status').value = 'ativo';
+    document.querySelectorAll('.acesso-check').forEach(cb => cb.checked = false);
+    refletirCargo();
     document.getElementById('modalUsuario').style.display = 'block';
 }
 
@@ -298,22 +303,23 @@ function editarUsuario(usuario) {
     document.getElementById('senhaOpcional').style.display = 'inline';
     document.getElementById('tipo').value = usuario.tipo;
     document.getElementById('status').value = usuario.status;
-    
-    // Uncheck all permissions first
-    document.querySelectorAll('.perm-check').forEach(cb => cb.checked = false);
-    
-    // Check user's permissions
-    const usuarioId = usuario.id;
-    const permMap = <?= json_encode($usuarioPermissoes) ?>;
-    if (permMap[usuarioId]) {
-        permMap[usuarioId].forEach(perm => {
-            const cb = document.querySelector('.perm-check[value="' + perm + '"]');
-            if (cb) cb.checked = true;
-        });
-    }
-    
+
+    document.querySelectorAll('.acesso-check').forEach(cb => cb.checked = false);
+    const extras = acessosMap[usuario.id] || [];
+    extras.forEach(acesso => {
+        const cb = document.querySelector('.acesso-check[value="' + acesso + '"]');
+        if (cb) cb.checked = true;
+    });
+    refletirCargo();
+
     document.getElementById('modalUsuario').style.display = 'block';
 }
+
+// Atualiza o destaque do cargo ao trocar o tipo
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoSel = document.getElementById('tipo');
+    if (tipoSel) tipoSel.addEventListener('change', refletirCargo);
+});
 
 function fecharModal() {
     document.getElementById('modalUsuario').style.display = 'none';

@@ -71,6 +71,49 @@ function getPermissoesPadrao(): array
     ];
 }
 
+/**
+ * Acessos extras por usuário (modelo aditivo): cada linha é um tipo/setor que
+ * o master liberou para o usuário ALÉM do cargo dele. Consumido por
+ * hasPermission() (via sessão) e pela sidebar.
+ */
+function ensureAcessosExtrasSchema(PDO $db): void
+{
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS usuario_acessos_extras (
+            usuario_id INT NOT NULL,
+            acesso VARCHAR(40) NOT NULL,
+            concedido_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (usuario_id, acesso),
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB
+    ");
+}
+
+function getAcessosExtras(PDO $db, int $usuarioId): array
+{
+    $stmt = $db->prepare("SELECT acesso FROM usuario_acessos_extras WHERE usuario_id = ?");
+    $stmt->execute([$usuarioId]);
+    return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+}
+
+/**
+ * Substitui os acessos extras do usuário pelo conjunto informado.
+ * 'master' nunca é gravável como extra (evita escalonar para admin).
+ */
+function setAcessosExtras(PDO $db, int $usuarioId, array $acessos): void
+{
+    ensureAcessosExtrasSchema($db);
+    $acessos = array_values(array_unique(array_filter($acessos, fn($a) => $a !== '' && $a !== 'master')));
+
+    $db->prepare("DELETE FROM usuario_acessos_extras WHERE usuario_id = ?")->execute([$usuarioId]);
+    if (!empty($acessos)) {
+        $stmt = $db->prepare("INSERT INTO usuario_acessos_extras (usuario_id, acesso) VALUES (?, ?)");
+        foreach ($acessos as $acesso) {
+            $stmt->execute([$usuarioId, $acesso]);
+        }
+    }
+}
+
 function getPermissoesUsuario(PDO $db, int $usuarioId): array
 {
     $stmt = $db->prepare("

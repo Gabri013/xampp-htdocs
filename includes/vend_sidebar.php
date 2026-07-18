@@ -7,35 +7,35 @@
 $tipo_usuario = $_SESSION['usuario_tipo'] ?? 'vendedor';
 
 // Grupos de visibilidade (espelham o requirePermission de cada página)
-$ve_dashboard      = in_array($tipo_usuario, ['master', 'vendedor']);
-$ve_gerente        = in_array($tipo_usuario, ['master', 'gerente']);
-$ve_projetista     = in_array($tipo_usuario, ['master', 'projetista', 'engenharia']);
-$ve_os_lista       = in_array($tipo_usuario, ['master', 'vendedor', 'projetista', 'gerente']);
-$ve_producao_gestao = in_array($tipo_usuario, ['master', 'gerente', 'producao']);
-$ve_dash_producao  = in_array($tipo_usuario, ['master', 'dashboard_producao', 'gerente', 'producao']);
-$ve_vendas         = in_array($tipo_usuario, ['master', 'vendedor']);
-$ve_nova_os        = in_array($tipo_usuario, ['master', 'vendedor', 'projetista', 'gerente']);
-$ve_engenharia     = in_array($tipo_usuario, ['master', 'gerente', 'producao', 'projetista', 'engenharia']);
-$ve_cadastros      = in_array($tipo_usuario, ['master', 'vendedor']);
-$ve_usuarios       = ($tipo_usuario === 'master');
-$ve_faturamento    = in_array($tipo_usuario, ['master', 'vendedor']);
-$ve_contas         = ($tipo_usuario === 'master');
-$ve_relatorios     = in_array($tipo_usuario, ['master', 'vendedor']);
-$ve_expediente     = in_array($tipo_usuario, ['master', 'gerente']);
-$ve_admin          = ($tipo_usuario === 'master');
+$ve_dashboard      = hasPermission(['master', 'vendedor']);
+$ve_gerente        = hasPermission(['master', 'gerente']);
+$ve_projetista     = hasPermission(['master', 'projetista', 'engenharia']);
+$ve_os_lista       = hasPermission(['master', 'vendedor', 'projetista', 'gerente']);
+$ve_producao_gestao = hasPermission(['master', 'gerente', 'producao']);
+$ve_dash_producao  = hasPermission(['master', 'dashboard_producao', 'gerente', 'producao']);
+$ve_vendas         = hasPermission(['master', 'vendedor']);
+$ve_nova_os        = hasPermission(['master', 'vendedor', 'projetista', 'gerente']);
+$ve_engenharia     = hasPermission(['master', 'gerente', 'producao', 'projetista', 'engenharia']);
+$ve_cadastros      = hasPermission(['master', 'vendedor']);
+$ve_usuarios       = hasPermission(['master']);
+$ve_faturamento    = hasPermission(['master', 'vendedor']);
+$ve_contas         = hasPermission(['master']);
+$ve_relatorios     = hasPermission(['master', 'vendedor']);
+$ve_expediente     = hasPermission(['master', 'gerente']);
+$ve_admin          = hasPermission(['master']);
 
 // Painéis integrados (espelham o requirePermission de cada página)
-$ve_gestao_prod    = in_array($tipo_usuario, ['master', 'gerente', 'dashboard_producao', 'producao']);
-$ve_op             = in_array($tipo_usuario, ['master', 'gerente', 'producao', 'projetista', 'programacao']);
-$ve_etiquetas      = in_array($tipo_usuario, ['master', 'gerente', 'dashboard_producao', 'producao', 'projetista']);
-$ve_apontamento    = in_array($tipo_usuario, ['master', 'gerente', 'producao', 'engenharia', 'programacao', 'corte', 'dobra', 'tubo', 'solda', 'mobiliario', 'coccao', 'refrigeracao', 'acabamento', 'montagem', 'embalagem', 'finalizacao']);
-$ve_mrp            = in_array($tipo_usuario, ['master', 'gerente', 'producao']);
-$ve_estoque        = in_array($tipo_usuario, ['master', 'gerente', 'dashboard_producao', 'producao']);
-$ve_importar_jotec = in_array($tipo_usuario, ['master', 'estoque', 'gerente']);
-$ve_expedicao      = in_array($tipo_usuario, ['master', 'gerente', 'expedicao', 'dashboard_producao']);
-$ve_sac            = in_array($tipo_usuario, ['master', 'gerente', 'sac', 'dashboard_producao']);
-$ve_custos         = in_array($tipo_usuario, ['master', 'gerente', 'financeiro']);
-$ve_desenho        = in_array($tipo_usuario, ['master', 'gerente', 'producao', 'projetista', 'engenharia']);
+$ve_gestao_prod    = hasPermission(['master', 'gerente', 'dashboard_producao', 'producao']);
+$ve_op             = hasPermission(['master', 'gerente', 'producao', 'projetista', 'programacao']);
+$ve_etiquetas      = hasPermission(['master', 'gerente', 'dashboard_producao', 'producao', 'projetista']);
+$ve_apontamento    = hasPermission(['master', 'gerente', 'producao', 'engenharia', 'programacao', 'corte', 'dobra', 'tubo', 'solda', 'mobiliario', 'coccao', 'refrigeracao', 'acabamento', 'montagem', 'embalagem', 'finalizacao']);
+$ve_mrp            = hasPermission(['master', 'gerente', 'producao']);
+$ve_estoque        = hasPermission(['master', 'gerente', 'dashboard_producao', 'producao']);
+$ve_importar_jotec = hasPermission(['master', 'estoque', 'gerente']);
+$ve_expedicao      = hasPermission(['master', 'gerente', 'expedicao', 'dashboard_producao']);
+$ve_sac            = hasPermission(['master', 'gerente', 'sac', 'dashboard_producao']);
+$ve_custos         = hasPermission(['master', 'gerente', 'financeiro']);
+$ve_desenho        = hasPermission(['master', 'gerente', 'producao', 'projetista', 'engenharia']);
 
 // Setores de produção (ordem do fluxo): gestão vê todos; cada setor vê o seu.
 // O setor de engenharia foi unificado no Projetista — a etapa é operada no
@@ -58,14 +58,14 @@ $setores_sidebar = [
 // acompanha a produção pelo Kanban e pela lista de O.S. (mantém permissão
 // de leitura dos painéis se navegar direto), e sua engenharia já está no
 // grupo Principal — não precisa da lista de setores poluindo o menu.
-$ve_todos_setores = in_array($tipo_usuario, ['master', 'gerente', 'producao']);
+$ve_todos_setores = hasPermission(['master', 'gerente', 'producao']);
 $setores_visiveis = [];
 foreach ($setores_sidebar as $setor_key => $setor_info) {
     // finalizacao.php não aceita projetista/producao (requirePermission da página)
-    if ($setor_key === 'finalizacao' && !in_array($tipo_usuario, ['master', 'gerente', 'producao', 'finalizacao'], true)) {
+    if ($setor_key === 'finalizacao' && !hasPermission(['master', 'gerente', 'producao', 'finalizacao'])) {
         continue;
     }
-    if ($ve_todos_setores || $tipo_usuario === $setor_key) {
+    if ($ve_todos_setores || hasPermission([$setor_key])) {
         $setores_visiveis[$setor_key] = $setor_info;
     }
 }
@@ -118,7 +118,7 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
         <?php if ($ve_os_lista): ?>
         <a href="<?php echo SITE_URL; ?>/modules/os/vendedor.php" class="vend-nav-item <?php echo czNavActive('vendedor.php'); ?>"><i class="fas fa-clipboard-list"></i> O.S.</a>
         <?php endif; ?>
-        <?php if (in_array($tipo_usuario, ['master', 'gerente', 'producao', 'vendedor', 'projetista'])): ?>
+        <?php if (hasPermission(['master', 'gerente', 'producao', 'vendedor', 'projetista'])): ?>
         <a href="<?php echo SITE_URL; ?>/modules/os/kanban.php" class="vend-nav-item <?php echo czNavActive('kanban.php'); ?>"><i class="fas fa-columns"></i> Kanban</a>
         <?php endif; ?>
         <?php if ($ve_producao_gestao): ?>
@@ -130,7 +130,7 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
         <?php endif; ?>
     </div>
 
-    <?php if (in_array($tipo_usuario, ['master', 'vendedor', 'gerente'])): ?>
+    <?php if (hasPermission(['master', 'vendedor', 'gerente'])): ?>
     <hr class="vend-nav-divider">
     <div class="vend-nav-group">
         <span class="vend-nav-label">CRM</span>

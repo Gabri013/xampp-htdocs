@@ -22,9 +22,40 @@ function hasPermission($tipos_permitidos = []) {
     if (empty($tipos_permitidos)) {
         return true;
     }
-    
-    // Verifica se o tipo do usuário está na lista de permitidos
-    return in_array($_SESSION['usuario_tipo'], $tipos_permitidos);
+
+    // 1) Acesso base pelo CARGO (tipo) do usuário
+    if (in_array($_SESSION['usuario_tipo'] ?? '', $tipos_permitidos, true)) {
+        return true;
+    }
+
+    // 2) Acessos EXTRAS concedidos por usuário (aditivo, carregados no login).
+    //    Um extra é um tipo/setor que o master liberou para este usuário além
+    //    do cargo dele — nunca reduz acesso, só amplia.
+    $extras = $_SESSION['acessos_extras'] ?? [];
+    if (!empty($extras)) {
+        foreach ($tipos_permitidos as $t) {
+            if (in_array($t, $extras, true)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Retorna os acessos extras concedidos a um usuário (lista de tipos/setores).
+ * Defensivo: se a tabela ainda não existe, devolve vazio.
+ */
+function getAcessosExtrasUsuario($usuarioId) {
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("SELECT acesso FROM usuario_acessos_extras WHERE usuario_id = ?");
+        $stmt->execute([(int) $usuarioId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+    } catch (Throwable $e) {
+        return [];
+    }
 }
 
 /**
@@ -66,7 +97,10 @@ function login($email, $senha) {
             $_SESSION['usuario_nome'] = $usuario['nome'];
             $_SESSION['usuario_email'] = $usuario['email'];
             $_SESSION['usuario_tipo'] = $usuario['tipo'];
-            
+            // Acessos extras concedidos pelo master (cargo + extras); ficam na
+            // sessão para o hasPermission() não bater no banco a cada página.
+            $_SESSION['acessos_extras'] = getAcessosExtrasUsuario($usuario['id']);
+
             // Registrar último acesso
             $stmt = $db->prepare("UPDATE usuarios SET updated_at = NOW() WHERE id = ?");
             $stmt->execute([$usuario['id']]);
