@@ -28,33 +28,24 @@ $dashboard_id = $_GET['id'] ?? null;
 
 <?php $page_title = 'Dashboard Builder'; ?>
 <?php include '../../includes/header_vendedor.php'; ?>
-<!-- Tailwind mantido para as classes utilitárias desta página -->
-<script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/assets/css/nomus-theme.css">
 <div class="vend-layout">
     <?php include '../../includes/vend_sidebar.php'; ?>
     <div class="vend-main"><div class="vend-content">
 
 
-<!-- ===== HEADER ===== -->
-<header class="bg-white border-b-2 border-purple-500 shadow-sm sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-        <div>
-            <h1 class="text-2xl font-bold text-purple-600">🎨 Dashboard Builder</h1>
-            <p class="text-sm text-slate-600">Crie relatórios personalizados sem código</p>
-        </div>
-        <div class="flex gap-2">
-            <button onclick="visualizarDashboard()" class="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700">
-                👁️ Visualizar
-            </button>
-            <button onclick="salvarDashboard()" class="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700">
-                ✅ Salvar
-            </button>
-        </div>
+<div class="dash-head">
+    <div>
+        <h1 class="dash-head-title"><span class="dash-head-ic" style="background:var(--dash-purple)"><i class="fas fa-palette"></i></span> Dashboard Builder</h1>
+        <p class="dash-head-sub">Crie relatórios personalizados sem código</p>
     </div>
-</header>
+    <div class="dash-form-row" style="margin:0">
+        <button type="button" class="dash-btn ghost" onclick="visualizarDashboard()"><i class="fas fa-eye"></i> Visualizar</button>
+        <button type="button" class="dash-btn green" onclick="salvarDashboard()"><i class="fas fa-check"></i> Salvar</button>
+    </div>
+</div>
 
-<div class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
     <!-- SIDEBAR: Ferramentas -->
     <div class="bg-white rounded-lg shadow-md p-6 h-fit">
         <h2 class="text-lg font-bold mb-4">📦 Componentes</h2>

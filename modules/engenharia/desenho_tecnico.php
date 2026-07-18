@@ -117,8 +117,6 @@ $statusLabels = [
 
 ?>
 <?php include '../../includes/header_vendedor.php'; ?>
-<!-- Tailwind mantido para as classes utilitárias desta página -->
-<script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/assets/css/nomus-theme.css">
 <style>
         .badge-status {
