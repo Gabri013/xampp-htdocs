@@ -298,6 +298,10 @@ foreach (($conteudosPorTipo['fotos_produtos'] ?? []) as $fotoConteudo) {
 include '../../includes/header_vendedor.php';
 ?>
 
+<div class="vend-layout">
+    <?php include '../../includes/vend_sidebar.php'; ?>
+    <div class="vend-main"><div class="vend-content">
+
 <style>
 .conteudos-layout .card-header,
 .conteudos-layout .card-body {
@@ -1188,4 +1192,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+    </div></div>
+</div>
 <?php include '../../includes/footer_vendedor.php'; ?>

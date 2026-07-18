@@ -28,6 +28,10 @@ $usuario = [
 
 <?php include '../../includes/header_vendedor.php'; ?>
 
+<div class="vend-layout">
+    <?php include '../../includes/vend_sidebar.php'; ?>
+    <div class="vend-main"><div class="vend-content">
+
 <div class="container mt-5">
     <div class="row">
         <div class="col-md-12">
@@ -408,4 +412,6 @@ function carregarHistorico() {
 document.addEventListener('DOMContentLoaded', carregarHistorico);
 </script>
 
+    </div></div>
+</div>
 <?php include '../../includes/footer_vendedor.php'; ?>

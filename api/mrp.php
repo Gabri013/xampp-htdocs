@@ -21,6 +21,30 @@ header('Content-Type: application/json; charset=utf-8');
 $db = getDB();
 requirePermission(['master', 'gerente', 'producao']);
 
+// Garante as tabelas que o MRP consulta (mesmas defs de estoque_movimentacoes.php
+// e bom.php). Este ERP é make-to-order: estoque_saldos costuma ficar vazio, então
+// o estoque aparece como 0 — comportamento correto para produção sob demanda.
+$db->exec("CREATE TABLE IF NOT EXISTS estoque_saldos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    produto_id INT NOT NULL,
+    quantidade_total DECIMAL(10,2) DEFAULT 0,
+    quantidade_minima DECIMAL(10,2) DEFAULT 0,
+    quantidade_maxima DECIMAL(10,2) DEFAULT 0,
+    localizacao VARCHAR(100),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_produto (produto_id)
+) ENGINE=InnoDB");
+$db->exec("CREATE TABLE IF NOT EXISTS produtos_bom (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    produto_principal_id INT NOT NULL,
+    material_id INT NOT NULL,
+    quantidade DECIMAL(10,3) NOT NULL DEFAULT 1,
+    unidade VARCHAR(20) DEFAULT 'un',
+    ativo TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_bom_principal (produto_principal_id)
+) ENGINE=InnoDB");
+
 $acao = $_POST['acao'] ?? $_GET['acao'] ?? null;
 
 try {
@@ -32,20 +56,20 @@ try {
                 v.id as venda_id,
                 v.numero as venda_numero,
                 v.valor_total,
-                v.data_prevista,
+                COALESCE(v.data_recebimento_prevista, v.data_venda) as data_prevista,
                 c.razao_social,
                 p.id as produto_id,
                 p.nome as produto_nome,
-                pv.quantidade as quantidade_solicitada,
-                (SELECT COALESCE(SUM(quantidade), 0)
+                vi.quantidade as quantidade_solicitada,
+                (SELECT COALESCE(SUM(quantidade_total), 0)
                  FROM estoque_saldos
                  WHERE produto_id = p.id) as estoque_atual
             FROM vendas v
             JOIN clientes c ON v.cliente_id = c.id
-            JOIN produtos_vendas pv ON v.id = pv.venda_id
-            JOIN produtos p ON pv.produto_id = p.id
-            WHERE v.status IN ('confirmada', 'aguardando_producao')
-            ORDER BY v.data_prevista ASC, v.id DESC
+            JOIN vendas_itens vi ON v.id = vi.venda_id
+            JOIN produtos p ON vi.produto_id = p.id
+            WHERE v.status = 'em_andamento'
+            ORDER BY data_prevista ASC, v.id DESC
         ");
         $stmt->execute();
         $vendas = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -92,16 +116,16 @@ try {
         // Pega demanda + calcula sugestões inteligentes
         $stmt = $db->prepare("
             SELECT
-                pv.produto_id,
+                vi.produto_id,
                 p.nome as produto_nome,
-                p.estoque_minimo,
-                p.estoque_maximo,
-                SUM(pv.quantidade) as quantidade_total_vendas,
-                (SELECT COALESCE(SUM(quantidade), 0) FROM estoque_saldos WHERE produto_id = p.id) as estoque_atual
-            FROM produtos_vendas pv
-            JOIN produtos p ON pv.produto_id = p.id
-            JOIN vendas v ON pv.venda_id = v.id
-            WHERE v.status IN ('confirmada', 'aguardando_producao')
+                0 as estoque_minimo,
+                0 as estoque_maximo,
+                SUM(vi.quantidade) as quantidade_total_vendas,
+                (SELECT COALESCE(SUM(quantidade_total), 0) FROM estoque_saldos WHERE produto_id = p.id) as estoque_atual
+            FROM vendas_itens vi
+            JOIN produtos p ON vi.produto_id = p.id
+            JOIN vendas v ON vi.venda_id = v.id
+            WHERE v.status = 'em_andamento'
             GROUP BY p.id
         ");
         $stmt->execute();
@@ -169,7 +193,7 @@ try {
                 p.nome as material_nome,
                 pb.quantidade as qtd_bom,
                 pb.unidade,
-                (SELECT COALESCE(SUM(es.quantidade), 0) FROM estoque_saldos es WHERE es.produto_id = pb.material_id) as estoque_material
+                (SELECT COALESCE(SUM(es.quantidade_total), 0) FROM estoque_saldos es WHERE es.produto_id = pb.material_id) as estoque_material
             FROM produtos_bom pb
             JOIN produtos p ON pb.material_id = p.id
             WHERE pb.produto_principal_id = ?
@@ -211,7 +235,7 @@ try {
             SELECT
                 os.id,
                 os.numero,
-                os.data_prevista,
+                COALESCE(os.data_termino, os.data_inicio) as data_prevista,
                 os.prioridade,
                 c.razao_social,
                 COUNT(DISTINCT ose.id) as total_etapas,
@@ -219,9 +243,9 @@ try {
             FROM ordens_servico os
             JOIN clientes c ON os.cliente_id = c.id
             LEFT JOIN os_etapas_producao ose ON os.id = ose.os_id
-            WHERE os.status IN ('em_producao', 'aguardando_inicio')
+            WHERE os.status = 'em_producao'
             GROUP BY os.id
-            ORDER BY os.data_prevista ASC
+            ORDER BY data_prevista ASC
         ");
         $stmt->execute();
         $os_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -267,11 +291,14 @@ try {
         $alertas = [];
 
         // Alerta 1: Produtos sem estoque
+        // Só alerta produtos com controle de estoque que zeraram. Neste ERP
+        // make-to-order, estoque_saldos costuma ficar vazio (produção sob
+        // demanda) — nesse caso, sem alertas falsos de "sem estoque".
         $stmt = $db->prepare("
-            SELECT p.id, p.nome, es.quantidade
+            SELECT p.id, p.nome, es.quantidade_total as quantidade
             FROM produtos p
-            LEFT JOIN estoque_saldos es ON p.id = es.produto_id
-            WHERE COALESCE(es.quantidade, 0) = 0
+            INNER JOIN estoque_saldos es ON p.id = es.produto_id
+            WHERE p.status = 'ativo' AND es.quantidade_total <= 0
             LIMIT 20
         ");
         $stmt->execute();
@@ -289,12 +316,12 @@ try {
         // Alerta 2: O.S. atrasadas
         $stmt = $db->prepare("
             SELECT os.id, os.numero, c.razao_social,
-                   DATEDIFF(CURDATE(), os.data_prevista) as dias_atraso
+                   DATEDIFF(CURDATE(), os.data_termino) as dias_atraso
             FROM ordens_servico os
             JOIN clientes c ON os.cliente_id = c.id
-            WHERE os.status IN ('em_producao', 'aguardando_inicio')
-            AND os.data_prevista < CURDATE()
-            ORDER BY os.data_prevista ASC
+            WHERE os.status = 'em_producao'
+            AND os.data_termino IS NOT NULL AND os.data_termino < CURDATE()
+            ORDER BY os.data_termino ASC
             LIMIT 10
         ");
         $stmt->execute();

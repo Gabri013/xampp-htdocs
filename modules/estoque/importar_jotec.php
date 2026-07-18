@@ -20,15 +20,15 @@ $arquivoUpload = $_FILES['arquivo'] ?? null;
 $acao = $_POST['acao'] ?? null;
 
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Importar Cadastro JOTEC - Cozinka ERP</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50">
+<?php $page_title = 'Importar Cadastro JOTEC'; ?>
+<?php include '../../includes/header_vendedor.php'; ?>
+<!-- Tailwind mantido para as classes utilitárias desta página -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/nomus-theme.css">
+<div class="vend-layout">
+    <?php include '../../includes/vend_sidebar.php'; ?>
+    <div class="vend-main"><div class="vend-content">
+
     <div class="max-w-4xl mx-auto py-8 px-4">
         <!-- Header -->
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -178,5 +178,6 @@ $acao = $_POST['acao'] ?? null;
             }
         }
     </script>
-</body>
-</html>
+    </div></div>
+</div>
+<?php include '../../includes/footer_vendedor.php'; ?>

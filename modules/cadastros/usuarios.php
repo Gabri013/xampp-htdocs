@@ -143,6 +143,10 @@ foreach ($usuarios as $u) {
 include '../../includes/header_vendedor.php';
 ?>
 
+<div class="vend-layout">
+    <?php include '../../includes/vend_sidebar.php'; ?>
+    <div class="vend-main"><div class="vend-content">
+
 <div class="vend-card">
     <div class="vend-card-header" style="display: flex; justify-content: space-between; align-items: center;">
         <h3>Usuários do Sistema</h3>
@@ -329,5 +333,7 @@ window.onclick = function(event) {
 }
 </script>
 
+    </div></div>
+</div>
 <?php include '../../includes/footer_vendedor.php'; ?>
 

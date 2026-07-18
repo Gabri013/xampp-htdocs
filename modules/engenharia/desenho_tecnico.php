@@ -116,15 +116,11 @@ $statusLabels = [
 ];
 
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($page_title) ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
+<?php include '../../includes/header_vendedor.php'; ?>
+<!-- Tailwind mantido para as classes utilitárias desta página -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/nomus-theme.css">
+<style>
         .badge-status {
             display: inline-block;
             padding: 4px 12px;
@@ -223,8 +219,10 @@ $statusLabels = [
             border: 3px solid white;
         }
     </style>
-</head>
-<body class="bg-gray-50">
+<div class="vend-layout">
+    <?php include '../../includes/vend_sidebar.php'; ?>
+    <div class="vend-main"><div class="vend-content">
+
     <div class="container mx-auto max-w-6xl p-4">
         <!-- Breadcrumb -->
         <nav class="mb-6 flex items-center gap-2 text-sm text-gray-600">
@@ -538,5 +536,6 @@ $statusLabels = [
             // TODO: Implementar edição
         }
     </script>
-</body>
-</html>
+    </div></div>
+</div>
+<?php include '../../includes/footer_vendedor.php'; ?>

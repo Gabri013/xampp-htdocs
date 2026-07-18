@@ -15,6 +15,10 @@ $logs = $db->query($sql)->fetchAll();
 include '../../includes/header_vendedor.php';
 ?>
 
+<div class="vend-layout">
+    <?php include '../../includes/vend_sidebar.php'; ?>
+    <div class="vend-main"><div class="vend-content">
+
 <div class="card">
     <div class="card-header">
         <h3>Logs de Exclusão de Vendas</h3>
@@ -92,4 +96,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+    </div></div>
+</div>
 <?php include '../../includes/footer_vendedor.php'; ?>

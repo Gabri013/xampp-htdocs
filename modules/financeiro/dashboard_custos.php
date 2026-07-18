@@ -22,17 +22,15 @@ requirePermission(['master', 'gerente', 'financeiro']);
 $usuario_nome = $_SESSION['usuario_nome'] ?? 'Usuário';
 ?>
 
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💰 Dashboard Custos - Cozinka ERP</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/assets/css/nomus-theme.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-</head>
-<body class="bg-slate-50 text-slate-900">
+<?php $page_title = 'Dashboard de Custos'; ?>
+<?php include '../../includes/header_vendedor.php'; ?>
+<!-- Tailwind mantido para as classes utilitárias desta página -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/nomus-theme.css">
+<div class="vend-layout">
+    <?php include '../../includes/vend_sidebar.php'; ?>
+    <div class="vend-main"><div class="vend-content">
+
 
 <!-- ===== HEADER ===== -->
 <header class="bg-white border-b-2 border-green-500 shadow-sm sticky top-0 z-40">
@@ -502,5 +500,6 @@ function carregarDetalhesOS() {
 }
 </script>
 
-</body>
-</html>
+    </div></div>
+</div>
+<?php include '../../includes/footer_vendedor.php'; ?>
