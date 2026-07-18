@@ -1,12 +1,9 @@
 <?php
 /**
- * IMPORTAR CADASTRO JOTEC - Produtos/Insumos
+ * Importar Cadastro JOTEC — Produtos/Insumos (padrão Nomus).
+ * Upload de Excel, validação e importação de matérias primas/insumos.
  *
- * Módulo para:
- * 1. Upload de arquivo Excel
- * 2. Validação de dados
- * 3. Importação para banco de dados
- * 4. Relatório de resultado
+ * Acesso: master, estoque, gerente
  */
 
 require_once '../../config/config.php';
@@ -15,169 +12,133 @@ require_once '../../includes/workflow.php';
 $db = getDB();
 requirePermission(['master', 'estoque', 'gerente']);
 
-$resultado = null;
-$arquivoUpload = $_FILES['arquivo'] ?? null;
-$acao = $_POST['acao'] ?? null;
-
+$page_title = 'Importar Cadastro JOTEC';
+include '../../includes/header_vendedor.php';
 ?>
-<?php $page_title = 'Importar Cadastro JOTEC'; ?>
-<?php include '../../includes/header_vendedor.php'; ?>
-<!-- Tailwind mantido para as classes utilitárias desta página -->
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="/assets/css/nomus-theme.css">
 <div class="vend-layout">
-    <?php include '../../includes/vend_sidebar.php'; ?>
+    <?php $GLOBALS['modulo_tipo'] = 'estoque'; include '../../includes/vend_sidebar.php'; ?>
     <div class="vend-main"><div class="vend-content">
 
-    <div class="max-w-4xl mx-auto py-8 px-4">
-        <!-- Header -->
-        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
-                📊 Importar Cadastro JOTEC
-            </h1>
-            <p class="text-gray-600 mt-2">Importar matérias primas e insumos do arquivo Excel</p>
+    <div class="dash-head">
+        <div>
+            <h1 class="dash-head-title"><span class="dash-head-ic" style="background:var(--dash-green)"><i class="fas fa-file-import"></i></span> Importar Cadastro JOTEC</h1>
+            <p class="dash-head-sub">Importe matérias primas e insumos a partir de um arquivo Excel</p>
         </div>
+    </div>
 
-        <!-- Abas -->
-        <div class="bg-white rounded-lg shadow-sm mb-6">
-            <div class="flex border-b">
-                <button class="flex-1 py-4 px-6 text-center font-semibold text-blue-600 border-b-2 border-blue-600">
-                    📁 Upload de Arquivo
-                </button>
-                <button class="flex-1 py-4 px-6 text-center font-semibold text-gray-600 hover:text-blue-600">
-                    📋 Pré-visualização
-                </button>
-                <button class="flex-1 py-4 px-6 text-center font-semibold text-gray-600 hover:text-blue-600">
-                    ✅ Resultado
-                </button>
-            </div>
+    <div class="dash-section">
+        <div class="dash-section-head"><h2><i class="fas fa-cloud-arrow-up"></i> Upload de Arquivo</h2></div>
+        <div class="dash-section-body">
+            <form id="formImport" method="POST" enctype="multipart/form-data">
+                <div class="dash-row blue" style="border-radius:8px;margin-bottom:16px">
+                    <div class="dash-row-title"><i class="fas fa-circle-info"></i> Instruções</div>
+                    <ul class="dash-row-sub" style="margin-top:6px;line-height:1.7;padding-left:16px;list-style:disc">
+                        <li>Arquivo em formato Excel (.xls ou .xlsx)</li>
+                        <li>Primeira linha deve conter os cabeçalhos</li>
+                        <li>Colunas esperadas: Código, Descrição, Fornecedor, Preço, Unidade</li>
+                        <li>Todas as abas do arquivo serão importadas</li>
+                        <li>Validação anti-duplicidade é aplicada automaticamente</li>
+                    </ul>
+                </div>
 
-            <!-- Aba 1: Upload -->
-            <div class="p-8">
-                <form method="POST" enctype="multipart/form-data" class="space-y-6">
-                    <!-- Instruções -->
-                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                        <h3 class="font-semibold text-blue-900 mb-2">📌 Instruções:</h3>
-                        <ul class="text-sm text-blue-800 space-y-1">
-                            <li>✅ Arquivo deve estar em formato Excel (.xls ou .xlsx)</li>
-                            <li>✅ Primeira linha deve conter os headers</li>
-                            <li>✅ Colunas esperadas: Código, Descrição, Fornecedor, Preço, Unidade</li>
-                            <li>✅ Todas as abas do arquivo serão importadas</li>
-                            <li>✅ Validação anti-duplicidade será aplicada</li>
-                        </ul>
-                    </div>
+                <label for="arquivo" style="display:block;border:2px dashed var(--dash-border);border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:border-color .15s" id="dropzone">
+                    <div style="font-size:38px;color:var(--dash-brand);margin-bottom:8px"><i class="fas fa-file-arrow-up"></i></div>
+                    <p style="font-weight:700;color:var(--dash-text)">Clique ou arraste o arquivo aqui</p>
+                    <p class="dash-row-sub">Formatos aceitos: .xls, .xlsx</p>
+                    <input type="file" name="arquivo" id="arquivo" accept=".xls,.xlsx" required style="display:none">
+                </label>
+                <div id="fileInfo" class="dash-row green" hidden style="border-radius:8px;margin-top:12px">
+                    <div class="dash-row-title"><i class="fas fa-file-excel"></i> <span id="fileName"></span></div>
+                </div>
 
-                    <!-- Upload -->
-                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition">
-                        <input type="file" name="arquivo" id="arquivo" accept=".xls,.xlsx" class="hidden" required>
-                        <label for="arquivo" class="cursor-pointer">
-                            <div class="text-4xl mb-3">📤</div>
-                            <p class="text-lg font-semibold text-gray-700">Clique ou arraste o arquivo</p>
-                            <p class="text-sm text-gray-500">Formatos: .xls, .xlsx</p>
-                        </label>
-                    </div>
+                <div style="display:flex;flex-direction:column;gap:10px;margin:18px 0">
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" name="validar_duplicidade" checked> <span>Validar duplicidade (não importar registros repetidos)</span></label>
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" name="atualizar_existentes" checked> <span>Atualizar registros existentes (por código)</span></label>
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" name="registrar_auditoria" checked> <span>Registrar auditoria (quem, quando, o quê)</span></label>
+                </div>
 
-                    <!-- Arquivo selecionado -->
-                    <div id="fileInfo" class="hidden bg-green-50 p-4 rounded border-l-4 border-green-500">
-                        <p class="text-sm text-green-800">
-                            📁 Arquivo: <span id="fileName" class="font-semibold"></span>
-                        </p>
-                    </div>
-
-                    <!-- Opções -->
-                    <div class="space-y-4">
-                        <label class="flex items-center gap-3">
-                            <input type="checkbox" name="validar_duplicidade" checked class="w-5 h-5">
-                            <span class="text-gray-700">✅ Validar duplicidade (não importar registros duplicados)</span>
-                        </label>
-                        <label class="flex items-center gap-3">
-                            <input type="checkbox" name="atualizar_existentes" checked class="w-5 h-5">
-                            <span class="text-gray-700">🔄 Atualizar registros existentes (por código)</span>
-                        </label>
-                        <label class="flex items-center gap-3">
-                            <input type="checkbox" name="registrar_auditoria" checked class="w-5 h-5">
-                            <span class="text-gray-700">📝 Registrar auditoria (quem, quando, o que)</span>
-                        </label>
-                    </div>
-
-                    <!-- Botões -->
-                    <div class="flex gap-4">
-                        <button type="submit" name="acao" value="preview" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
-                            👁️ Pré-visualizar Dados
-                        </button>
-                        <button type="submit" name="acao" value="importar" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition">
-                            📥 Importar Agora
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <div class="dash-form-row">
+                    <button type="button" class="dash-btn slate" onclick="enviarImport('preview')"><i class="fas fa-eye"></i> Pré-visualizar</button>
+                    <button type="button" class="dash-btn green" onclick="enviarImport('importar')"><i class="fas fa-download"></i> Importar Agora</button>
+                </div>
+            </form>
         </div>
+    </div>
 
-        <!-- Info útil -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-white rounded-lg shadow-sm p-6">
-                <h3 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    📊 Estrutura esperada do arquivo
-                </h3>
-                <div class="text-sm bg-gray-50 p-3 rounded font-mono">
-                    <p>Coluna A: <span class="text-blue-600">Código</span></p>
-                    <p>Coluna B: <span class="text-blue-600">Descrição</span></p>
-                    <p>Coluna C: <span class="text-blue-600">Fornecedor</span></p>
-                    <p>Coluna D: <span class="text-blue-600">Preço</span></p>
-                    <p>Coluna E: <span class="text-blue-600">Unidade</span></p>
+    <div id="resultado-import" class="dash-section" hidden>
+        <div class="dash-section-head"><h2><i class="fas fa-clipboard-check"></i> Resultado</h2></div>
+        <div class="dash-section-body" id="resultado-conteudo"></div>
+    </div>
+
+    <div class="dash-grid cols-2">
+        <div class="dash-section" style="margin:0">
+            <div class="dash-section-head"><h2><i class="fas fa-table-columns"></i> Estrutura esperada</h2></div>
+            <div class="dash-section-body">
+                <div class="dash-list">
+                    <div class="dash-row"><div class="dash-row-top"><span class="dash-row-title">Coluna A</span><span class="dash-chip blue">Código</span></div></div>
+                    <div class="dash-row"><div class="dash-row-top"><span class="dash-row-title">Coluna B</span><span class="dash-chip blue">Descrição</span></div></div>
+                    <div class="dash-row"><div class="dash-row-top"><span class="dash-row-title">Coluna C</span><span class="dash-chip blue">Fornecedor</span></div></div>
+                    <div class="dash-row"><div class="dash-row-top"><span class="dash-row-title">Coluna D</span><span class="dash-chip blue">Preço</span></div></div>
+                    <div class="dash-row"><div class="dash-row-top"><span class="dash-row-title">Coluna E</span><span class="dash-chip blue">Unidade</span></div></div>
                 </div>
             </div>
-
-            <div class="bg-white rounded-lg shadow-sm p-6">
-                <h3 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    ✅ Validações aplicadas
-                </h3>
-                <ul class="text-sm space-y-2">
-                    <li>✓ Código único (não duplicar)</li>
-                    <li>✓ Descrição obrigatória</li>
-                    <li>✓ Fornecedor válido</li>
-                    <li>✓ Preço > 0</li>
-                    <li>✓ Unidade válida</li>
-                    <li>✓ Anti-duplicidade (HASH)</li>
+        </div>
+        <div class="dash-section" style="margin:0">
+            <div class="dash-section-head"><h2><i class="fas fa-circle-check"></i> Validações aplicadas</h2></div>
+            <div class="dash-section-body">
+                <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--dash-text)">
+                    <li><i class="fas fa-check" style="color:var(--dash-green)"></i> Código único (sem duplicar)</li>
+                    <li><i class="fas fa-check" style="color:var(--dash-green)"></i> Descrição obrigatória</li>
+                    <li><i class="fas fa-check" style="color:var(--dash-green)"></i> Fornecedor válido</li>
+                    <li><i class="fas fa-check" style="color:var(--dash-green)"></i> Preço maior que zero</li>
+                    <li><i class="fas fa-check" style="color:var(--dash-green)"></i> Unidade válida</li>
+                    <li><i class="fas fa-check" style="color:var(--dash-green)"></i> Anti-duplicidade por HASH</li>
                 </ul>
             </div>
         </div>
     </div>
 
-    <script>
-        // Drag and drop
-        const fileInput = document.getElementById('arquivo');
-        const fileInfo = document.getElementById('fileInfo');
-        const fileName = document.getElementById('fileName');
-
-        document.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.currentTarget.classList.add('bg-blue-50');
-        });
-
-        document.addEventListener('dragleave', (e) => {
-            e.currentTarget.classList.remove('bg-blue-50');
-        });
-
-        document.addEventListener('drop', (e) => {
-            e.preventDefault();
-            const files = e.dataTransfer.files;
-            if (files.length) {
-                fileInput.files = files;
-                updateFileInfo();
-            }
-        });
-
-        fileInput.addEventListener('change', updateFileInfo);
-
-        function updateFileInfo() {
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                fileName.textContent = file.name;
-                fileInfo.classList.remove('hidden');
-            }
-        }
-    </script>
     </div></div>
 </div>
+
+<script>
+const fileInput = document.getElementById('arquivo');
+const fileInfo = document.getElementById('fileInfo');
+const fileName = document.getElementById('fileName');
+const dropzone = document.getElementById('dropzone');
+
+['dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); dropzone.style.borderColor = 'var(--dash-brand)'; }));
+document.addEventListener('dragleave', () => { dropzone.style.borderColor = 'var(--dash-border)'; });
+document.addEventListener('drop', e => {
+    e.preventDefault(); dropzone.style.borderColor = 'var(--dash-border)';
+    if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; updateFileInfo(); }
+});
+fileInput.addEventListener('change', updateFileInfo);
+function updateFileInfo() {
+    if (fileInput.files.length) { fileName.textContent = fileInput.files[0].name; fileInfo.hidden = false; }
+}
+
+const escI = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function enviarImport(acao) {
+    if (!fileInput.files.length) { alert('Selecione um arquivo primeiro.'); return; }
+    const box = document.getElementById('resultado-import');
+    const cont = document.getElementById('resultado-conteudo');
+    box.hidden = false;
+    cont.innerHTML = '<div class="dash-empty"><i class="fas fa-spinner fa-spin"></i> Processando…</div>';
+    try {
+        const fd = new FormData(document.getElementById('formImport'));
+        fd.append('acao', acao);
+        const data = await (await fetch('<?= SITE_URL ?>/api/importar_jotec.php', { method: 'POST', body: fd })).json();
+        if (data.erro) { cont.innerHTML = `<div class="dash-empty err"><i class="fas fa-circle-xmark"></i> ${escI(data.mensagem || 'Erro na importação')}</div>`; return; }
+        const linhas = data.total ?? data.importados ?? data.registros ?? '';
+        cont.innerHTML = `<div class="dash-row ${acao === 'importar' ? 'green' : 'blue'}" style="border-radius:8px">
+            <div class="dash-row-title"><i class="fas fa-circle-check"></i> ${acao === 'importar' ? 'Importação concluída' : 'Pré-visualização gerada'}</div>
+            <div class="dash-row-sub" style="margin-top:6px;white-space:pre-wrap">${escI(JSON.stringify(data, null, 2))}</div>
+        </div>`;
+    } catch (err) {
+        cont.innerHTML = `<div class="dash-empty err">Erro: ${escI(err.message)}</div>`;
+    }
+}
+</script>
 <?php include '../../includes/footer_vendedor.php'; ?>

@@ -31,37 +31,34 @@ if (!$usuario_id) {
 $acao = $_POST['acao'] ?? $_GET['acao'] ?? null;
 
 try {
-    // ===== CRIAR TABELA SE NÃO EXISTIR =====
-    if (!$db->query("SHOW TABLES LIKE 'dashboards_customizados'")) {
-        $db->exec("
-            CREATE TABLE IF NOT EXISTS dashboards_customizados (
-                id INT PRIMARY KEY AUTO_INCREMENT,
-                usuario_id INT NOT NULL,
-                nome VARCHAR(255) NOT NULL,
-                descricao TEXT,
-                layout JSON,
-                metricas JSON,
-                filtros JSON,
-                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                compartilhado BOOLEAN DEFAULT FALSE,
-                KEY(usuario_id)
-            )
-        ");
-    }
-
-    if (!$db->query("SHOW TABLES LIKE 'dashboard_compartilhamentos'")) {
-        $db->exec("
-            CREATE TABLE IF NOT EXISTS dashboard_compartilhamentos (
-                id INT PRIMARY KEY AUTO_INCREMENT,
-                dashboard_id INT NOT NULL,
-                usuario_id INT NOT NULL,
-                permissao VARCHAR(50) DEFAULT 'visualizar',
-                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                KEY(dashboard_id, usuario_id)
-            )
-        ");
-    }
+    // ===== CRIAR TABELAS SE NÃO EXISTIREM =====
+    // (CREATE TABLE IF NOT EXISTS é idempotente; o antigo guard com
+    //  SHOW TABLES nunca disparava — query() retorna PDOStatement truthy.)
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS dashboards_customizados (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            usuario_id INT NOT NULL,
+            nome VARCHAR(255) NOT NULL,
+            descricao TEXT,
+            layout JSON,
+            metricas JSON,
+            filtros JSON,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            compartilhado BOOLEAN DEFAULT FALSE,
+            KEY(usuario_id)
+        )
+    ");
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS dashboard_compartilhamentos (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            dashboard_id INT NOT NULL,
+            usuario_id INT NOT NULL,
+            permissao VARCHAR(50) DEFAULT 'visualizar',
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            KEY(dashboard_id, usuario_id)
+        )
+    ");
 
     // ===== AÇÃO: CRIAR DASHBOARD =====
     if ($acao === 'criar') {
