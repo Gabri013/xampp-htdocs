@@ -1,0 +1,215 @@
+/**
+ * NOMUS DASHBOARDS — componentes compartilhados dos painéis (MRP, Custos,
+ * Estoque, Expedição, SAC, etc.). Segue o padrão da sidebar: marca Cozinca,
+ * cores por status, ícones Font Awesome. 100% responsivo. Sem dependências.
+ *
+ * Uso: incluído automaticamente pelo header_vendedor. As páginas usam as
+ * classes .dash-* em vez de utilitárias do Tailwind.
+ */
+
+:root {
+    --dash-brand: var(--color-cozinca, #D85A30);
+    --dash-brand-dark: var(--color-cozinca-dark, #993C1D);
+    --dash-brand-light: var(--color-cozinca-light, #FEF0EA);
+    --dash-red: #dc2626;      --dash-red-bg: #fee2e2;
+    --dash-amber: #d97706;    --dash-amber-bg: #fef3c7;
+    --dash-green: #16a34a;    --dash-green-bg: #dcfce7;
+    --dash-blue: #2563eb;     --dash-blue-bg: #dbeafe;
+    --dash-purple: #7c3aed;   --dash-purple-bg: #ede9fe;
+    --dash-slate: #475569;    --dash-slate-bg: #f1f5f9;
+    --dash-radius: 12px;
+    --dash-radius-sm: 8px;
+    --dash-shadow: 0 1px 3px rgba(16,24,40,.08), 0 1px 2px rgba(16,24,40,.04);
+    --dash-shadow-hover: 0 8px 24px rgba(16,24,40,.12);
+    --dash-border: #e5e7eb;
+    --dash-text: #1f2937;
+    --dash-text-sub: #6b7280;
+}
+
+/* ===== Cabeçalho de página do painel ===== */
+.dash-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.dash-head-title {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 22px; font-weight: 800; color: var(--dash-text); margin: 0;
+}
+.dash-head-title .dash-head-ic {
+    width: 42px; height: 42px; border-radius: 12px; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px; color: #fff; background: var(--dash-brand);
+}
+.dash-head-sub { font-size: 13px; color: var(--dash-text-sub); margin: 2px 0 0; }
+.dash-head-meta { text-align: right; font-size: 12px; color: var(--dash-text-sub); }
+.dash-head-meta strong { display: block; color: var(--dash-text); font-size: 13px; }
+
+/* ===== Abas ===== */
+.dash-tabs {
+    display: flex; gap: 4px; flex-wrap: wrap;
+    border-bottom: 2px solid var(--dash-border); margin-bottom: 20px;
+}
+.dash-tab {
+    appearance: none; background: none; border: none; cursor: pointer;
+    padding: 10px 16px; font-size: 13px; font-weight: 700;
+    color: var(--dash-text-sub); border-bottom: 3px solid transparent;
+    margin-bottom: -2px; transition: color .15s, border-color .15s;
+    display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+}
+.dash-tab:hover { color: var(--dash-brand); }
+.dash-tab.active { color: var(--dash-brand); border-bottom-color: var(--dash-brand); }
+
+/* ===== KPI tiles ===== */
+.dash-kpis {
+    display: grid; gap: 16px; margin-bottom: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.dash-kpi {
+    background: #fff; border: 1px solid var(--dash-border);
+    border-left: 4px solid var(--dash-brand);
+    border-radius: var(--dash-radius); padding: 18px 20px;
+    box-shadow: var(--dash-shadow); transition: box-shadow .2s, transform .2s;
+}
+.dash-kpi:hover { box-shadow: var(--dash-shadow-hover); transform: translateY(-2px); }
+.dash-kpi-label { font-size: 12px; color: var(--dash-text-sub); font-weight: 600;
+    display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.dash-kpi-val { font-size: 32px; font-weight: 800; line-height: 1; color: var(--dash-text); }
+.dash-kpi-sub { font-size: 11px; color: var(--dash-text-sub); margin-top: 8px; }
+.dash-kpi.red   { border-left-color: var(--dash-red); }   .dash-kpi.red .dash-kpi-val   { color: var(--dash-red); }
+.dash-kpi.amber { border-left-color: var(--dash-amber); } .dash-kpi.amber .dash-kpi-val { color: var(--dash-amber); }
+.dash-kpi.green { border-left-color: var(--dash-green); } .dash-kpi.green .dash-kpi-val { color: var(--dash-green); }
+.dash-kpi.blue  { border-left-color: var(--dash-blue); }  .dash-kpi.blue .dash-kpi-val  { color: var(--dash-blue); }
+.dash-kpi.purple{ border-left-color: var(--dash-purple); }.dash-kpi.purple .dash-kpi-val{ color: var(--dash-purple); }
+
+/* ===== Seção / card ===== */
+.dash-section {
+    background: #fff; border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius); box-shadow: var(--dash-shadow);
+    overflow: hidden; margin-bottom: 20px;
+}
+.dash-section-head {
+    padding: 14px 20px; border-bottom: 1px solid var(--dash-border);
+    background: var(--dash-brand-light);
+}
+.dash-section-head h2 {
+    margin: 0; font-size: 15px; font-weight: 800; color: var(--dash-brand-dark);
+    display: flex; align-items: center; gap: 8px;
+}
+.dash-section-head p { margin: 2px 0 0; font-size: 12px; color: var(--dash-text-sub); }
+.dash-section-body { padding: 16px 20px; }
+.dash-scroll { max-height: 460px; overflow-y: auto; }
+
+/* ===== Linhas de lista com acento por status ===== */
+.dash-list > * + * { border-top: 1px solid var(--dash-border); }
+.dash-row {
+    padding: 14px 20px; border-left: 4px solid var(--dash-slate);
+    transition: background .12s;
+}
+.dash-row:hover { background: var(--dash-slate-bg); }
+.dash-row.red { border-left-color: var(--dash-red); }
+.dash-row.amber { border-left-color: var(--dash-amber); }
+.dash-row.green { border-left-color: var(--dash-green); }
+.dash-row.blue { border-left-color: var(--dash-blue); }
+.dash-row-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+.dash-row-title { font-weight: 700; color: var(--dash-text); font-size: 14px; }
+.dash-row-sub { font-size: 12px; color: var(--dash-text-sub); margin-top: 2px; }
+
+/* ===== Mini-grade de métricas dentro de uma linha ===== */
+.dash-mini {
+    display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    font-size: 12px;
+}
+.dash-mini > div { background: var(--dash-slate-bg); border-radius: 8px; padding: 8px 10px; }
+.dash-mini .k { color: var(--dash-text-sub); }
+.dash-mini .v { font-weight: 700; color: var(--dash-text); }
+.dash-mini .v.red { color: var(--dash-red); } .dash-mini .v.green { color: var(--dash-green); }
+.dash-mini .v.amber { color: var(--dash-amber); } .dash-mini .v.blue { color: var(--dash-blue); }
+
+/* ===== Chip de status ===== */
+.dash-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    background: var(--dash-slate-bg); color: var(--dash-slate);
+}
+.dash-chip.red { background: var(--dash-red-bg); color: var(--dash-red); }
+.dash-chip.amber { background: var(--dash-amber-bg); color: var(--dash-amber); }
+.dash-chip.green { background: var(--dash-green-bg); color: var(--dash-green); }
+.dash-chip.blue { background: var(--dash-blue-bg); color: var(--dash-blue); }
+.dash-chip.purple { background: var(--dash-purple-bg); color: var(--dash-purple); }
+
+/* ===== Barra de progresso ===== */
+.dash-progress { height: 8px; background: var(--dash-slate-bg); border-radius: 999px; overflow: hidden; margin: 8px 0; }
+.dash-progress > span { display: block; height: 100%; background: var(--dash-brand); border-radius: 999px; }
+
+/* ===== Botões (reaproveitam a marca; alinhados aos vbtn) ===== */
+.dash-btn {
+    appearance: none; border: none; cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px; justify-content: center;
+    padding: 8px 16px; border-radius: var(--dash-radius-sm);
+    font-size: 13px; font-weight: 700; color: #fff; background: var(--dash-brand);
+    transition: filter .15s, transform .1s;
+}
+.dash-btn:hover { filter: brightness(.94); }
+.dash-btn:active { transform: translateY(1px); }
+.dash-btn.sm { padding: 5px 12px; font-size: 12px; }
+.dash-btn.green { background: var(--dash-green); }
+.dash-btn.red { background: var(--dash-red); }
+.dash-btn.slate { background: var(--dash-slate); }
+.dash-btn.ghost { background: transparent; color: var(--dash-brand); border: 1px solid var(--dash-brand); }
+
+/* ===== Linha de formulário / filtros ===== */
+.dash-form-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.dash-field { display: flex; flex-direction: column; gap: 4px; }
+.dash-field.grow { flex: 1 1 240px; }
+.dash-field label { font-size: 12px; font-weight: 600; color: var(--dash-text-sub); }
+.dash-input, .dash-select {
+    padding: 9px 12px; border: 1px solid var(--dash-border); border-radius: var(--dash-radius-sm);
+    font-size: 13px; font-family: inherit; background: #fff; color: var(--dash-text); width: 100%;
+}
+.dash-input:focus, .dash-select:focus {
+    outline: none; border-color: var(--dash-brand);
+    box-shadow: 0 0 0 3px var(--dash-brand-light);
+}
+
+/* ===== Estado vazio ===== */
+.dash-empty { padding: 40px 20px; text-align: center; color: var(--dash-text-sub); font-size: 14px; }
+.dash-empty.ok { color: var(--dash-green); }
+.dash-empty.err { color: var(--dash-red); }
+
+/* ===== Tabela ===== */
+.dash-table-wrap { overflow-x: auto; }
+.dash-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.dash-table thead th {
+    text-align: left; padding: 10px 14px; background: var(--dash-slate-bg);
+    color: var(--dash-text); font-weight: 700; white-space: nowrap;
+    border-bottom: 2px solid var(--dash-border);
+}
+.dash-table tbody td { padding: 10px 14px; border-bottom: 1px solid var(--dash-border); color: var(--dash-text); }
+.dash-table tbody tr:hover { background: var(--dash-slate-bg); }
+
+/* ===== Modal ===== */
+.dash-modal { position: fixed; inset: 0; background: rgba(15,23,42,.5); z-index: 1000;
+    display: none; align-items: center; justify-content: center; padding: 16px; }
+.dash-modal.open { display: flex; }
+.dash-modal-card { background: #fff; border-radius: var(--dash-radius); width: 100%;
+    max-width: 640px; max-height: 85vh; overflow: hidden; display: flex; flex-direction: column;
+    box-shadow: var(--dash-shadow-hover); }
+.dash-modal-head { padding: 14px 20px; border-bottom: 1px solid var(--dash-border);
+    background: var(--dash-brand-light); display: flex; justify-content: space-between; align-items: center; }
+.dash-modal-head h2 { margin: 0; font-size: 15px; font-weight: 800; color: var(--dash-brand-dark); }
+.dash-modal-close { appearance: none; border: none; background: none; cursor: pointer;
+    font-size: 20px; color: var(--dash-text-sub); line-height: 1; }
+.dash-modal-body { padding: 20px; overflow-y: auto; }
+
+/* ===== Grade utilitária responsiva ===== */
+.dash-grid { display: grid; gap: 16px; }
+.dash-grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.dash-grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+@media (max-width: 640px) {
+    .dash-head-title { font-size: 18px; }
+    .dash-kpi-val { font-size: 26px; }
+    .dash-section-body { padding: 12px 14px; }
+    .dash-row { padding: 12px 14px; }
+    .dash-btn { padding: 8px 12px; }
+}

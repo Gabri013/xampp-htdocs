@@ -62,6 +62,8 @@ if (!isset($qtd_notificacoes_nao_lidas)) $qtd_notificacoes_nao_lidas = 0;
     <meta name="theme-color" content="#D85A30">
     <title><?php echo $page_title ?? SITE_NAME; ?></title>
     <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/style.css?v=<?php echo $css_version; ?>">
+    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/nomus-theme.css">
+    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/nomus-dashboards.css?v=<?php echo @filemtime(BASE_PATH . '/assets/css/nomus-dashboards.css') ?: '1'; ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
