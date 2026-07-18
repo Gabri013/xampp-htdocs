@@ -85,8 +85,9 @@ include '../../includes/header_vendedor.php';
                             <label class="vend-filter-label">Período Final</label>
                             <input type="date" name="fim" value="<?php echo htmlspecialchars($fim); ?>" class="vend-filter-input">
                         </div>
-                        <div class="vend-filter-item" style="align-self:flex-end">
-                            <button type="submit" class="vbtn-sm"><i class="fas fa-search"></i></button>
+                        <div class="vend-filter-item" style="align-self:flex-end;display:flex;gap:8px">
+                            <button type="submit" class="vbtn-sm"><i class="fas fa-search"></i> Filtrar</button>
+                            <a href="imprimir.php?inicio=<?php echo htmlspecialchars($inicio); ?>&fim=<?php echo htmlspecialchars($fim); ?>" target="_blank" class="vbtn-sm btn-secondary"><i class="fas fa-print"></i> Imprimir</a>
                         </div>
                     </div>
                 </form>

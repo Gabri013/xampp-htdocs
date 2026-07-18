@@ -148,6 +148,7 @@ include '../../includes/header_vendedor.php';
                     <input type="text" name="busca" value="<?php echo htmlspecialchars($busca); ?>" placeholder="Buscar vendas..." class="vbtn-sm" style="width:200px">
                     <button type="submit" class="vbtn-sm"><i class="fas fa-search"></i></button>
                 </form>
+                <button type="button" id="btnImprimirLote" class="vbtn-sm btn-secondary" style="display:none" onclick="imprimirLote()"><i class="fas fa-print"></i> Imprimir selecionadas</button>
                 <a href="nova_venda.php" class="vbtn-sm vbtn-brand"><i class="fas fa-plus"></i> Nova Venda</a>
             </div>
         </div>
@@ -156,6 +157,7 @@ include '../../includes/header_vendedor.php';
             <table class="vend-table">
                 <thead>
                     <tr>
+                        <th style="width:32px"><input type="checkbox" id="selectAll" title="Selecionar todas"></th>
                         <th>Número</th>
                         <th>Cliente</th>
                         <th>Data</th>
@@ -167,9 +169,10 @@ include '../../includes/header_vendedor.php';
                 </thead>
                 <tbody>
                     <?php if (empty($vendas)): ?>
-                        <tr><td colspan="7" class="text-center" style="padding:40px;color:#888">Nenhuma venda encontrada</td></tr>
+                        <tr><td colspan="8" class="text-center" style="padding:40px;color:#888">Nenhuma venda encontrada</td></tr>
                     <?php else: foreach ($vendas as $venda): ?>
                         <tr>
+                            <td><input type="checkbox" class="venda-checkbox" value="<?php echo (int) $venda['id']; ?>"></td>
                             <td><strong><?php echo htmlspecialchars($venda['numero']); ?></strong></td>
                             <td><?php echo htmlspecialchars($venda['razao_social']); ?></td>
                             <td><?php echo formatDate($venda['data_venda']); ?></td>
@@ -247,16 +250,29 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     });
 
-    // Seleção em lote
+    // Seleção em lote → imprimir_lote.php
     const selectAll = document.getElementById('selectAll');
     const checkboxes = document.querySelectorAll('.venda-checkbox');
+    const btnLote = document.getElementById('btnImprimirLote');
+    function atualizarBotaoLote() {
+        const algumMarcado = Array.from(checkboxes).some(cb => cb.checked);
+        if (btnLote) btnLote.style.display = algumMarcado ? 'inline-block' : 'none';
+    }
     if (selectAll) {
         selectAll.addEventListener('change', function() {
             checkboxes.forEach(cb => cb.checked = this.checked);
-            const btn = document.getElementById('btnImprimirLote');
-            btn.style.display = this.checked ? 'inline-block' : 'none';
+            atualizarBotaoLote();
         });
     }
+    checkboxes.forEach(cb => cb.addEventListener('change', function() {
+        if (!this.checked && selectAll) selectAll.checked = false;
+        atualizarBotaoLote();
+    }));
+    window.imprimirLote = function() {
+        const ids = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+        if (!ids.length) { alert('Selecione ao menos uma venda.'); return; }
+        window.open('imprimir_lote.php?ids=' + ids.join(','), '_blank');
+    };
 
     // Fechar modal ao clicar fora
     window.onclick = function(event) {
