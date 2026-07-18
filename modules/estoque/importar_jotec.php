@@ -131,7 +131,6 @@ async function enviarImport(acao) {
         fd.append('acao', acao);
         const data = await (await fetch('<?= SITE_URL ?>/api/importar_jotec.php', { method: 'POST', body: fd })).json();
         if (data.erro) { cont.innerHTML = `<div class="dash-empty err"><i class="fas fa-circle-xmark"></i> ${escI(data.mensagem || 'Erro na importação')}</div>`; return; }
-        const linhas = data.total ?? data.importados ?? data.registros ?? '';
         cont.innerHTML = `<div class="dash-row ${acao === 'importar' ? 'green' : 'blue'}" style="border-radius:8px">
             <div class="dash-row-title"><i class="fas fa-circle-check"></i> ${acao === 'importar' ? 'Importação concluída' : 'Pré-visualização gerada'}</div>
             <div class="dash-row-sub" style="margin-top:6px;white-space:pre-wrap">${escI(JSON.stringify(data, null, 2))}</div>

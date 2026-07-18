@@ -239,8 +239,7 @@ include '../../includes/header_vendedor.php';
                         </select>
                     </div>
                 </div>
-            </div>
-                
+
                 <div class="form-group" style="margin-top: 15px;">
                     <label style="display: block; margin-bottom: 8px;">Permissões Específicas</label>
                     <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 6px; background: #f9f9f9;">

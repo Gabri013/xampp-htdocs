@@ -196,6 +196,14 @@ async function preverMateriais() {
         fd.append('acao', 'prever_materiais'); fd.append('produto_id', produtoId); fd.append('quantidade', quantidade);
         const data = await (await fetch('/api/mrp.php', { method: 'POST', body: fd })).json();
         if (!data.sucesso) throw new Error(data.erro);
+        if (!data.materiais.length) {
+            const vazio = '<div class="dash-empty">Sem BOM cadastrado para este produto.</div>';
+            document.getElementById('modal-previsao-content').innerHTML = vazio;
+            document.getElementById('materiais-preview').hidden = false;
+            document.getElementById('materiais-list').innerHTML = vazio;
+            document.getElementById('modal-previsao').classList.add('open');
+            return;
+        }
         let html = '<div class="dash-list">';
         data.materiais.forEach(m => {
             const falta = Number(m.faltante) > 0;
@@ -210,7 +218,7 @@ async function preverMateriais() {
                 </div>`;
         });
         html += '</div>';
-        document.getElementById('modal-previsao-content').innerHTML = html || '<div class="dash-empty">Sem BOM cadastrado para este produto.</div>';
+        document.getElementById('modal-previsao-content').innerHTML = html;
         document.getElementById('modal-previsao').classList.add('open');
         document.getElementById('materiais-preview').hidden = false;
         document.getElementById('materiais-list').innerHTML = html;
