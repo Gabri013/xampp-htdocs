@@ -37,7 +37,7 @@ if ($acao === 'gerar_etiqueta' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $os = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($os) {
-            $qr_url = "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=" . urlencode("OS|" . $os['numero'] . "|" . $os_id);
+            $qr_url = gerarQrDataUri("OS|" . $os['numero'] . "|" . $os_id, 400);
             echo json_encode(['sucesso' => true, 'qr_url' => $qr_url, 'numero' => $os['numero']]);
         } else {
             echo json_encode(['sucesso' => false, 'erro' => 'O.S. não encontrada']);
