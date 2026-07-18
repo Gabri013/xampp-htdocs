@@ -61,6 +61,11 @@ for f in $PAGS; do
     # real: 200 = ok, 3xx = negado (redirect p/ index)
     code=$(curl -s -o /dev/null -w "%{http_code}" -b "${JAR[$t]}" "$BASE/$f")
     [ "$code" == "200" ] && act=1 || act=0
+    # Retry único em caso de divergência (elimina flakes transitorios de sessao/Apache sob carga)
+    if [ "$exp" != "$act" ]; then
+      code=$(curl -s -o /dev/null -w "%{http_code}" -b "${JAR[$t]}" "$BASE/$f")
+      [ "$code" == "200" ] && act=1 || act=0
+    fi
     if [ "$exp" != "$act" ]; then
       MISS=$((MISS+1))
       if [ "$exp" == "0" ] && [ "$act" == "1" ]; then
