@@ -437,3 +437,34 @@ function isArquivo3DVisualizavel(string $nomeArquivo): bool {
     $ext = strtolower(pathinfo($nomeArquivo, PATHINFO_EXTENSION));
     return in_array($ext, getExtensoes3DVisualizaveis(), true);
 }
+
+/**
+ * Gera um QR-code como data-URI (PNG base64) buscando no SERVIDOR. Assim a
+ * imagem é autocontida e não depende de o NAVEGADOR do cliente alcançar o
+ * serviço externo — resolve QR quebrado em máquinas sem acesso externo.
+ * Se a busca no servidor falhar, cai para a URL externa (degrada, nunca pior).
+ */
+function gerarQrDataUri(string $conteudo, int $size = 300): string {
+    $externa = 'https://api.qrserver.com/v1/create-qr-code/?size=' . $size . 'x' . $size
+        . '&data=' . urlencode($conteudo);
+    if (function_exists('curl_init')) {
+        try {
+            $ch = curl_init($externa);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT       => 8,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_FOLLOWLOCATION => true,
+            ]);
+            $png  = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            if ($png !== false && (int) $code === 200 && strlen($png) > 100) {
+                return 'data:image/png;base64,' . base64_encode($png);
+            }
+        } catch (Throwable $e) {
+            // cai no fallback externo
+        }
+    }
+    return $externa;
+}

@@ -135,10 +135,9 @@ if ($acao === 'registrar_impressao') {
 
 // Função auxiliar: gerar QR-code em SVG
 function gerar_qr_svg($conteudo) {
-    // Usar serviço local ou externo
-    // Aqui usamos qrserver.com (confiável e open-source)
-    $encoded = urlencode($conteudo);
-    return "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . $encoded;
+    // Data-URI gerado no servidor (autocontido, não depende do navegador
+    // alcançar o serviço externo). Fallback para URL externa se falhar.
+    return gerarQrDataUri($conteudo, 200);
 }
 
 http_response_code(400);

@@ -108,7 +108,7 @@ if ($acao === 'gerar_qr_svg') {
         }
 
         // Gerar QR-code via serviço externo
-        $qr_url = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($qr_content);
+        $qr_url = gerarQrDataUri($qr_content, 300);
 
         echo json_encode([
             'sucesso' => true,
@@ -177,7 +177,7 @@ if ($acao === 'gerar_qr_svg_op') {
             $etiqueta_id = $existe['id'];
         }
 
-        $qr_url = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($qr_content);
+        $qr_url = gerarQrDataUri($qr_content, 300);
 
         echo json_encode([
             'sucesso' => true,
@@ -258,9 +258,9 @@ if ($acao === 'listar_etiquetas') {
         // Adicionar URLs de QR e barcode
         foreach ($etiquetas as &$e) {
             if ($e['tipo'] === 'qr_os') {
-                $e['url_qr'] = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($e['conteudo']);
+                $e['url_qr'] = gerarQrDataUri($e['conteudo'], 300);
             } elseif ($e['tipo'] === 'qr_op') {
-                $e['url_qr'] = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($e['conteudo']);
+                $e['url_qr'] = gerarQrDataUri($e['conteudo'], 300);
             } elseif ($e['tipo'] === 'codigo128') {
                 $e['url_barcode'] = "https://www.aspose.cloud/v3.0/barcode/generate?Type=Code128&Text=" . urlencode($e['conteudo']);
             }

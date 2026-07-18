@@ -44,7 +44,7 @@ $data_producao = formatDate($os['data_inicio']);
 $responsavel = $os['responsavel_qc'] ?: ($_SESSION['usuario_nome'] ?? '-');
 $numero_limpo = preg_replace('/[^0-9]/', '', $os['numero']);
 $url_rastreio = 'https://sistema.cozinca.com/os/' . ($numero_limpo !== '' ? $numero_limpo : $os['numero']);
-$qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' . urlencode($url_rastreio);
+$qr_url = gerarQrDataUri($url_rastreio, 120);
 ?>
 <!doctype html>
 <html lang="pt-BR">

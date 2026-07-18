@@ -61,7 +61,7 @@ $os_lista = $stmt->fetchAll();
 
 // Buscar últimas O.P.s também
 try {
-    $stmt = $db->query("SELECT op.numero, os.numero as os_numero, c.razao_social
+    $stmt = $db->query("SELECT op.numero, os.id as os_id, os.numero as os_numero, c.razao_social
         FROM ordens_producao op
         LEFT JOIN ordens_servico os ON os.id = op.os_id
         LEFT JOIN clientes c ON c.id = os.cliente_id
@@ -443,7 +443,7 @@ include '../../includes/header_vendedor.php';
                             </div>
                         <?php else: ?>
                             <?php foreach ($op_lista as $op): ?>
-                                <div class="etiqueta-os-item" onclick="gerarQROp('<?= htmlspecialchars($op['numero']) ?>', '<?= htmlspecialchars($op['os_numero']) ?>')">
+                                <div class="etiqueta-os-item" onclick="gerarQROp('<?= htmlspecialchars($op['numero']) ?>', '<?= htmlspecialchars($op['os_numero']) ?>', <?= (int)($op['os_id'] ?? 0) ?>)">
                                     <div class="etiqueta-os-numero">OP <?= htmlspecialchars($op['numero']) ?></div>
                                     <div class="etiqueta-os-cliente"><?= htmlspecialchars(substr($op['razao_social'] ?? '-', 0, 20)) ?></div>
                                 </div>
@@ -605,10 +605,12 @@ function mudarAba(abaName, element) {
 }
 
 // Função para gerar QR de O.P.
-function gerarQROp(opNumero, osNumero) {
+function gerarQROp(opNumero, osNumero, osId) {
+    if (!osId) { alert('O.P. sem O.S. vinculada — não é possível gerar o QR.'); return; }
     const formData = new FormData();
     formData.append('acao', 'gerar_qr_svg_op');
     formData.append('op_numero', opNumero);
+    formData.append('os_id', osId);
 
     fetch('<?= SITE_URL ?>/api/etiqueta_qrcode.php', { method: 'POST', body: formData })
         .then(r => r.json())
