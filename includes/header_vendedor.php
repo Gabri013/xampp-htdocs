@@ -69,6 +69,12 @@ if (!isset($qtd_notificacoes_nao_lidas)) $qtd_notificacoes_nao_lidas = 0;
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+<?php if (function_exists('isImpersonating') && isImpersonating()): ?>
+<div style="background:#b45309;color:#fff;padding:8px 16px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;font-size:13px;font-weight:600">
+    <span><i class="fas fa-user-secret"></i> Você está acessando como <strong><?= htmlspecialchars($_SESSION['usuario_nome'] ?? '') ?></strong> (<?= htmlspecialchars(getTipoUsuarioNome($_SESSION['usuario_tipo'] ?? '')) ?>) — visão do usuário para teste.</span>
+    <a href="<?= SITE_URL ?>/modules/auth/impersonar.php?acao=sair" style="background:#fff;color:#b45309;padding:4px 12px;border-radius:6px;text-decoration:none;font-weight:700"><i class="fas fa-arrow-left"></i> Voltar para minha conta</a>
+</div>
+<?php endif; ?>
 <div id="czSidebarBackdrop" class="cz-sidebar-backdrop"></div>
 <div class="cz-topbar" style="position:sticky;top:0;left:0;right:0;height:60px;background:#fff;border-bottom:1px solid #e9ecef;z-index:100;display:flex;align-items:center;padding:0 20px;gap:12px">
     <button id="czMobileMenuBtn" class="cz-mobile-menu-btn" type="button" aria-label="Abrir menu">

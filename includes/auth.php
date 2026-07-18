@@ -59,6 +59,79 @@ function getAcessosExtrasUsuario($usuarioId) {
 }
 
 /**
+ * "Acessar como" (impersonação para teste/suporte). O master vê o sistema
+ * exatamente como o usuário-alvo, sem sair da própria conta. A identidade
+ * original fica guardada em $_SESSION['impersonator'] para o retorno.
+ */
+function isImpersonating(): bool {
+    return !empty($_SESSION['impersonator']);
+}
+
+/**
+ * Tipo REAL de quem operou o login (ignora a impersonação atual).
+ */
+function tipoReal(): string {
+    return $_SESSION['impersonator']['tipo'] ?? ($_SESSION['usuario_tipo'] ?? '');
+}
+
+/**
+ * Inicia (ou re-aponta) a impersonação. Só o master REAL pode. Não permite
+ * impersonar a si mesmo. Retorna [ok=>bool, erro=>string].
+ */
+function iniciarImpersonacao($targetUserId): array {
+    if (tipoReal() !== 'master') {
+        return ['ok' => false, 'erro' => 'Apenas o master pode acessar como outro usuário.'];
+    }
+    $targetUserId = (int) $targetUserId;
+    $realId = $_SESSION['impersonator']['id'] ?? ($_SESSION['usuario_id'] ?? 0);
+    if ($targetUserId === (int) $realId) {
+        return ['ok' => false, 'erro' => 'Você já está na sua própria conta.'];
+    }
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("SELECT id, nome, email, tipo FROM usuarios WHERE id = ? AND status = 'ativo'");
+        $stmt->execute([$targetUserId]);
+        $alvo = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {
+        return ['ok' => false, 'erro' => 'Erro ao carregar usuário.'];
+    }
+    if (!$alvo) {
+        return ['ok' => false, 'erro' => 'Usuário não encontrado ou inativo.'];
+    }
+    // Guarda o master original só na primeira vez (re-apontar mantém o original)
+    if (empty($_SESSION['impersonator'])) {
+        $_SESSION['impersonator'] = [
+            'id'    => $_SESSION['usuario_id'] ?? null,
+            'nome'  => $_SESSION['usuario_nome'] ?? '',
+            'email' => $_SESSION['usuario_email'] ?? '',
+            'tipo'  => $_SESSION['usuario_tipo'] ?? '',
+        ];
+    }
+    $_SESSION['usuario_id']     = $alvo['id'];
+    $_SESSION['usuario_nome']   = $alvo['nome'];
+    $_SESSION['usuario_email']  = $alvo['email'];
+    $_SESSION['usuario_tipo']   = $alvo['tipo'];
+    $_SESSION['acessos_extras'] = getAcessosExtrasUsuario($alvo['id']);
+    return ['ok' => true, 'erro' => ''];
+}
+
+/**
+ * Encerra a impersonação e restaura a conta original do master.
+ */
+function encerrarImpersonacao(): void {
+    if (empty($_SESSION['impersonator'])) {
+        return;
+    }
+    $m = $_SESSION['impersonator'];
+    $_SESSION['usuario_id']     = $m['id'];
+    $_SESSION['usuario_nome']   = $m['nome'];
+    $_SESSION['usuario_email']  = $m['email'];
+    $_SESSION['usuario_tipo']   = $m['tipo'];
+    $_SESSION['acessos_extras'] = getAcessosExtrasUsuario($m['id']);
+    unset($_SESSION['impersonator']);
+}
+
+/**
  * Redireciona para login se não estiver autenticado
  */
 function requireLogin() {

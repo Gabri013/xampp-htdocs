@@ -180,11 +180,14 @@ include '../../includes/header_vendedor.php';
                                 </span>
                             </td>
                             <td>
-                                <button class="vbtn-sm btn-sm btn-primary" onclick='editarUsuario(<?php echo json_encode($usuario); ?>)'>
+                                <button class="vbtn-sm btn-sm btn-primary" onclick='editarUsuario(<?php echo json_encode($usuario); ?>)' title="Editar">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <?php if ($usuario['id'] != $_SESSION['usuario_id']): ?>
-                                    <button class="vbtn-sm btn-sm btn-danger" onclick="excluirUsuario(<?php echo $usuario['id']; ?>)">
+                                    <a class="vbtn-sm btn-sm btn-info" href="<?= SITE_URL ?>/modules/auth/impersonar.php?acao=entrar&id=<?php echo (int) $usuario['id']; ?>" title="Acessar como este usuário (você volta pelo aviso no topo)">
+                                        <i class="fas fa-user-secret"></i> Acessar como
+                                    </a>
+                                    <button class="vbtn-sm btn-sm btn-danger" onclick="excluirUsuario(<?php echo $usuario['id']; ?>)" title="Excluir">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 <?php endif; ?>
