@@ -36,11 +36,12 @@ try {
         // Busca dados da O.S.
         $stmt = $db->prepare("
             SELECT
-                os.id, os.numero, os.valor_venda, os.prioridade,
+                os.id, os.numero, COALESCE(v.valor_total, 0) as valor_venda, os.prioridade,
                 c.razao_social, c.id as cliente_id,
                 COUNT(DISTINCT ose.id) as total_etapas
             FROM ordens_servico os
             JOIN clientes c ON os.cliente_id = c.id
+            LEFT JOIN vendas v ON os.venda_id = v.id
             LEFT JOIN os_etapas_producao ose ON os.id = ose.os_id
             WHERE os.id = ?
             GROUP BY os.id
@@ -59,7 +60,6 @@ try {
                 ose.etapa,
                 ose.usuario_id,
                 u.nome as usuario_nome,
-                u.valor_hora_producao,
                 ose.data_inicio,
                 ose.data_fim,
                 (SELECT COALESCE(SUM(TIMESTAMPDIFF(SECOND, data_inicio, data_fim)), 0)
@@ -93,17 +93,16 @@ try {
         // ==== 2. CUSTO DE MATERIAIS ====
         $stmt = $db->prepare("
             SELECT
-                rm.produto_id,
+                rm.material_id as produto_id,
                 p.nome as produto_nome,
-                rm.quantidade_planejada,
-                SUM(em.quantidade) as quantidade_consumida,
-                p.valor_custo_unitario,
-                rm.requisicao_id
+                rm.quantidade_solicitada as quantidade_planejada,
+                COALESCE(rm.quantidade_consumida, 0) as quantidade_consumida,
+                COALESCE(p.custo_total, 0) as valor_custo_unitario,
+                rm.id as requisicao_id
             FROM requisicoes_materiais rm
-            JOIN produtos p ON rm.produto_id = p.id
-            LEFT JOIN estoque_movimentacoes em ON rm.requisicao_id = em.referencia_id AND em.tipo = 'saida'
+            JOIN produtos p ON rm.material_id = p.id
             WHERE rm.os_id = ?
-            GROUP BY rm.requisicao_id
+            GROUP BY rm.id
         ");
         $stmt->execute([$os_id]);
         $materiais = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -196,19 +195,21 @@ try {
                 os.id,
                 os.numero,
                 c.razao_social,
-                os.valor_venda,
+                COALESCE(v.valor_total, 0) as valor_venda,
                 os.status,
-                os.data_prevista,
+                os.data_termino as data_prevista,
                 (SELECT COALESCE(SUM(TIMESTAMPDIFF(SECOND, data_inicio, data_fim)), 0) * 50 / 3600
                  FROM os_etapas_producao
                  WHERE os_id = os.id AND status = 'concluida') as custo_mao_obra_estimado,
-                (SELECT COALESCE(SUM(quantidade), 0) * 10
-                 FROM estoque_movimentacoes
-                 WHERE tipo = 'saida' AND created_at >= os.created_at AND created_at <= IFNULL(os.data_termino, NOW())) as custo_materiais_estimado
+                (SELECT COALESCE(SUM(em.quantidade * COALESCE(p.custo_total, 0)), 0)
+                 FROM estoque_movimentacoes em
+                 JOIN produtos p ON em.produto_id = p.id
+                 WHERE em.tipo = 'saida' AND em.os_id = os.id) as custo_materiais_estimado
             FROM ordens_servico os
             JOIN clientes c ON os.cliente_id = c.id
+            LEFT JOIN vendas v ON os.venda_id = v.id
             $where
-            ORDER BY os.data_prevista DESC
+            ORDER BY os.data_termino DESC
         ");
 
         $stmt->execute($params);
@@ -264,13 +265,14 @@ try {
             SELECT
                 c.id,
                 c.razao_social,
-                COUNT(os.id) as total_os,
-                SUM(os.valor_venda) as valor_total_venda,
+                COUNT(DISTINCT os.id) as total_os,
+                (SELECT COALESCE(SUM(v2.valor_total), 0)
+                 FROM ordens_servico os2 JOIN vendas v2 ON os2.venda_id = v2.id
+                 WHERE os2.cliente_id = c.id) as valor_total_venda,
                 COALESCE(SUM(TIMESTAMPDIFF(SECOND, ose.data_inicio, ose.data_fim)), 0) * 50 / 3600 as custo_mao_obra
             FROM clientes c
             LEFT JOIN ordens_servico os ON c.id = os.cliente_id
             LEFT JOIN os_etapas_producao ose ON os.id = ose.os_id AND ose.status = 'concluida'
-            WHERE c.status = 'ativo'
             GROUP BY c.id
             HAVING total_os > 0
             ORDER BY valor_total_venda DESC
