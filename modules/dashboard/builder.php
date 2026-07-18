@@ -320,11 +320,15 @@ window.addEventListener('load', () => {
         .then(r => r.json())
         .then(data => {
             if (data.sucesso) {
-                let html = '<option value="">Todos</option>';
+                const select = document.getElementById('filtro-cliente');
+                select.innerHTML = '<option value="">Todos</option>';
                 data.clientes.forEach(c => {
-                    html += `<option value="${c.id}">${c.razao_social}</option>`;
+                    // Usa textContent (não innerHTML) para evitar XSS via nome do cliente
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.razao_social;
+                    select.appendChild(opt);
                 });
-                document.getElementById('filtro-cliente').innerHTML = html;
             }
         })
         .catch(err => console.error('Erro:', err));

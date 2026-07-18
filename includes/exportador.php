@@ -475,6 +475,24 @@ class Exportador
     }
 
     /**
+     * Neutraliza injeção de fórmula (CSV/Excel): células que começam com
+     * = + - @ (ou tab/CR) são prefixadas com apóstrofo para serem tratadas
+     * como texto ao abrir na planilha.
+     */
+    private function neutralizarFormula($valor): string
+    {
+        $valor = (string) ($valor ?? '');
+        // Números legítimos (inclusive negativos, ex.: -2500.00) passam intactos.
+        if ($valor === '' || is_numeric($valor)) {
+            return $valor;
+        }
+        if (strpbrk($valor[0], "=+-@\t\r") !== false) {
+            return "'" . $valor;
+        }
+        return $valor;
+    }
+
+    /**
      * Exporta para CSV
      */
     private function exportarCSV(string $tabela, array $dados): array|false
@@ -498,7 +516,7 @@ class Exportador
         $csv .= implode(',', array_map(fn($v) => '"' . str_replace('"', '""', $v) . '"', $cabecalhos)) . "\n";
 
         foreach ($linhas as $linha) {
-            $csv .= implode(',', array_map(fn($v) => '"' . str_replace('"', '""', $v ?? '') . '"', $linha)) . "\n";
+            $csv .= implode(',', array_map(fn($v) => '"' . str_replace('"', '""', $this->neutralizarFormula($v)) . '"', $linha)) . "\n";
         }
 
         return [
