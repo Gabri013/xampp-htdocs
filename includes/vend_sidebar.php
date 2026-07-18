@@ -24,6 +24,19 @@ $ve_relatorios     = in_array($tipo_usuario, ['master', 'vendedor']);
 $ve_expediente     = in_array($tipo_usuario, ['master', 'gerente']);
 $ve_admin          = ($tipo_usuario === 'master');
 
+// Painéis integrados (espelham o requirePermission de cada página)
+$ve_gestao_prod    = in_array($tipo_usuario, ['master', 'gerente', 'dashboard_producao', 'producao']);
+$ve_op             = in_array($tipo_usuario, ['master', 'gerente', 'producao', 'projetista', 'programacao']);
+$ve_etiquetas      = in_array($tipo_usuario, ['master', 'gerente', 'dashboard_producao', 'producao', 'projetista']);
+$ve_apontamento    = in_array($tipo_usuario, ['master', 'gerente', 'producao', 'engenharia', 'programacao', 'corte', 'dobra', 'tubo', 'solda', 'mobiliario', 'coccao', 'refrigeracao', 'acabamento', 'montagem', 'embalagem', 'finalizacao']);
+$ve_mrp            = in_array($tipo_usuario, ['master', 'gerente', 'producao']);
+$ve_estoque        = in_array($tipo_usuario, ['master', 'gerente', 'dashboard_producao', 'producao']);
+$ve_importar_jotec = in_array($tipo_usuario, ['master', 'estoque', 'gerente']);
+$ve_expedicao      = in_array($tipo_usuario, ['master', 'gerente', 'expedicao', 'dashboard_producao']);
+$ve_sac            = in_array($tipo_usuario, ['master', 'gerente', 'sac', 'dashboard_producao']);
+$ve_custos         = in_array($tipo_usuario, ['master', 'gerente', 'financeiro']);
+$ve_desenho        = in_array($tipo_usuario, ['master', 'gerente', 'producao', 'projetista', 'engenharia']);
+
 // Setores de produção (ordem do fluxo): gestão vê todos; cada setor vê o seu.
 // O setor de engenharia foi unificado no Projetista — a etapa é operada no
 // Painel do Projetista (modules/projetista/index.php), não em painel próprio.
@@ -148,7 +161,52 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
     </div>
     <?php endif; ?>
 
-    <?php if ($ve_nova_os || $ve_engenharia || $ve_expediente): ?>
+    <?php if ($ve_gestao_prod || $ve_op || $ve_apontamento || $ve_etiquetas || $ve_mrp): ?>
+    <hr class="vend-nav-divider">
+    <div class="vend-nav-group">
+        <span class="vend-nav-label">Gestão de Produção</span>
+        <?php if ($ve_gestao_prod): ?>
+        <a href="<?php echo SITE_URL; ?>/modules/os/painel_gestao.php" class="vend-nav-item <?php echo czNavActive('painel_gestao.php'); ?>"><i class="fas fa-tachometer-alt"></i> Painel de Gestão</a>
+        <?php endif; ?>
+        <?php if ($ve_op): ?>
+        <a href="<?php echo SITE_URL; ?>/modules/os/ordem_producao.php" class="vend-nav-item <?php echo czNavActive('ordem_producao.php'); ?>"><i class="fas fa-clipboard-check"></i> Ordens de Produção</a>
+        <?php endif; ?>
+        <?php if ($ve_apontamento): ?>
+        <a href="<?php echo SITE_URL; ?>/modules/os/apontamento_visual.php" class="vend-nav-item <?php echo czNavActive('apontamento_visual.php'); ?>"><i class="fas fa-stopwatch"></i> Apontamento Visual</a>
+        <?php endif; ?>
+        <?php if ($ve_etiquetas): ?>
+        <a href="<?php echo SITE_URL; ?>/modules/os/gerar_etiquetas.php" class="vend-nav-item <?php echo czNavActive('gerar_etiquetas.php'); ?>"><i class="fas fa-tags"></i> Etiquetas &amp; QR</a>
+        <?php endif; ?>
+        <?php if ($ve_gestao_prod): ?>
+        <a href="<?php echo SITE_URL; ?>/modules/os/timeline_os.php" class="vend-nav-item <?php echo czNavActive('timeline_os.php'); ?>"><i class="fas fa-stream"></i> Timeline de O.S.</a>
+        <a href="<?php echo SITE_URL; ?>/modules/producao/bom_produto.php" class="vend-nav-item <?php echo czNavActive('bom_produto.php'); ?>"><i class="fas fa-sitemap"></i> BOM de Produtos</a>
+        <?php endif; ?>
+        <?php if ($ve_mrp): ?>
+        <a href="<?php echo SITE_URL; ?>/modules/producao/mrp_dashboard.php" class="vend-nav-item <?php echo czNavActive('mrp_dashboard.php'); ?>"><i class="fas fa-boxes"></i> MRP</a>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($ve_estoque || $ve_expedicao || $ve_sac || $ve_importar_jotec): ?>
+    <hr class="vend-nav-divider">
+    <div class="vend-nav-group">
+        <span class="vend-nav-label">Operações</span>
+        <?php if ($ve_estoque): ?>
+        <a href="<?php echo SITE_URL; ?>/modules/estoque/dashboard_estoque.php" class="vend-nav-item <?php echo czNavActive('dashboard_estoque.php'); ?>"><i class="fas fa-warehouse"></i> Estoque</a>
+        <?php endif; ?>
+        <?php if ($ve_expedicao): ?>
+        <a href="<?php echo SITE_URL; ?>/modules/expedicao/dashboard_expedicao.php" class="vend-nav-item <?php echo czNavActive('dashboard_expedicao.php'); ?>"><i class="fas fa-truck"></i> Expedição</a>
+        <?php endif; ?>
+        <?php if ($ve_sac): ?>
+        <a href="<?php echo SITE_URL; ?>/modules/sac/dashboard_chamados.php" class="vend-nav-item <?php echo czNavActive('dashboard_chamados.php'); ?>"><i class="fas fa-headset"></i> SAC / Chamados</a>
+        <?php endif; ?>
+        <?php if ($ve_importar_jotec): ?>
+        <a href="<?php echo SITE_URL; ?>/modules/estoque/importar_jotec.php" class="vend-nav-item <?php echo czNavActive('importar_jotec.php'); ?>"><i class="fas fa-file-import"></i> Importar JOTEC</a>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($ve_nova_os || $ve_engenharia || $ve_expediente || $ve_desenho): ?>
     <hr class="vend-nav-divider">
     <div class="vend-nav-group">
         <span class="vend-nav-label">Ações</span>
@@ -157,6 +215,9 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
         <?php endif; ?>
         <?php if ($ve_engenharia): ?>
         <a href="<?php echo SITE_URL; ?>/modules/engenharia/index.php" class="vend-nav-item <?php echo czNavActive('index.php', 'engenharia'); ?>"><i class="fas fa-cogs"></i> Engenharia de Produto</a>
+        <?php endif; ?>
+        <?php if ($ve_desenho): ?>
+        <a href="<?php echo SITE_URL; ?>/modules/engenharia/desenho_tecnico.php" class="vend-nav-item <?php echo czNavActive('desenho_tecnico.php'); ?>"><i class="fas fa-pencil-ruler"></i> Desenho Técnico</a>
         <?php endif; ?>
         <?php if ($ve_expediente): ?>
         <a href="<?php echo SITE_URL; ?>/modules/os/controle_expediente.php" class="vend-nav-item <?php echo czNavActive('controle_expediente.php'); ?>"><i class="fas fa-user-clock"></i> Expediente</a>
@@ -178,7 +239,7 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
     </div>
     <?php endif; ?>
 
-    <?php if ($ve_faturamento || $ve_contas || $ve_relatorios): ?>
+    <?php if ($ve_faturamento || $ve_contas || $ve_relatorios || $ve_custos): ?>
     <hr class="vend-nav-divider">
     <div class="vend-nav-group">
         <span class="vend-nav-label">Financeiro</span>
@@ -188,6 +249,9 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
         <?php if ($ve_contas): ?>
         <a href="<?php echo SITE_URL; ?>/modules/financeiro/index.php" class="vend-nav-item <?php echo czNavActive('index.php', 'financeiro'); ?>"><i class="fas fa-arrow-down"></i> Contas a Receber</a>
         <a href="<?php echo SITE_URL; ?>/modules/financeiro/contas_pagar.php" class="vend-nav-item <?php echo czNavActive('contas_pagar.php'); ?>"><i class="fas fa-arrow-up"></i> Contas a Pagar</a>
+        <?php endif; ?>
+        <?php if ($ve_custos): ?>
+        <a href="<?php echo SITE_URL; ?>/modules/financeiro/dashboard_custos.php" class="vend-nav-item <?php echo czNavActive('dashboard_custos.php'); ?>"><i class="fas fa-coins"></i> Custos</a>
         <?php endif; ?>
         <?php if ($ve_relatorios): ?>
         <a href="<?php echo SITE_URL; ?>/modules/relatorios/index.php" class="vend-nav-item <?php echo czNavActive('index.php', 'relatorios'); ?>"><i class="fas fa-chart-bar"></i> Relatórios</a>
@@ -199,6 +263,8 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
     <hr class="vend-nav-divider">
     <div class="vend-nav-group">
         <span class="vend-nav-label">Administração</span>
+        <a href="<?php echo SITE_URL; ?>/modules/admin/exportador_interface.php" class="vend-nav-item <?php echo czNavActive('exportador_interface.php'); ?>"><i class="fas fa-download"></i> Exportador de Dados</a>
+        <a href="<?php echo SITE_URL; ?>/modules/dashboard/builder.php" class="vend-nav-item <?php echo czNavActive('builder.php'); ?>"><i class="fas fa-palette"></i> Dashboard Builder</a>
         <a href="<?php echo SITE_URL; ?>/modules/admin/logs_retorno.php" class="vend-nav-item <?php echo czNavActive('logs_retorno.php'); ?>"><i class="fas fa-history"></i> Logs do Sistema</a>
         <a href="<?php echo SITE_URL; ?>/modules/cadastros/logs_exclusao.php" class="vend-nav-item <?php echo czNavActive('logs_exclusao.php'); ?>"><i class="fas fa-trash-restore"></i> Logs de Exclusão</a>
     </div>

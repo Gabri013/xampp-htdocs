@@ -26,7 +26,7 @@ $usuario = [
 ];
 ?>
 
-<?php require_once '../../includes/header.php'; ?>
+<?php include '../../includes/header_vendedor.php'; ?>
 
 <div class="container mt-5">
     <div class="row">
@@ -408,4 +408,4 @@ function carregarHistorico() {
 document.addEventListener('DOMContentLoaded', carregarHistorico);
 </script>
 
-<?php require_once '../../includes/footer.php'; ?>
+<?php include '../../includes/footer_vendedor.php'; ?>

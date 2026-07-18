@@ -1,6 +1,6 @@
 <?php
 // Retorna JSON de clientes para autocomplete (id, nome, documento, telefone, email, endereco)
-require_once dirname(__DIR__) . '/config/config.php';
+require_once dirname(__DIR__, 2) . '/config/config.php';
 requireLogin();
 header('Content-Type: application/json; charset=utf-8');
 

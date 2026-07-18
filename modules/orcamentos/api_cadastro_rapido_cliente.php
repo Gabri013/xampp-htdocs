@@ -1,6 +1,6 @@
 <?php
 // API de cadastro rápido de cliente - integração ERP
-require_once dirname(__DIR__) . '/config/config.php';
+require_once dirname(__DIR__, 2) . '/config/config.php';
 requireLogin();
 requirePermission(['master', 'vendedor']);
 

@@ -17,6 +17,8 @@
 require_once '../../config/config.php';
 require_once '../../includes/workflow.php';
 
+requireLogin();
+
 $db = getDB();
 $usuario_id = $_SESSION['usuario_id'] ?? 0;
 $usuario_nome = $_SESSION['usuario_nome'] ?? 'Usuário';

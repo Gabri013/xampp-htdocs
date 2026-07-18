@@ -3,6 +3,14 @@
  * Configurações Gerais do Sistema - Otimizado para Produção
  */
 
+// Erros: exibir apenas para requisições locais (healthcheck/desenvolvimento);
+// usuários da rede recebem páginas limpas e os erros vão para o log do PHP.
+error_reporting(E_ALL);
+ini_set('log_errors', '1');
+$czRequisicaoLocal = PHP_SAPI === 'cli'
+    || in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true);
+ini_set('display_errors', $czRequisicaoLocal ? '1' : '0');
+
 // Iniciar sessão se ainda não foi iniciada
 if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
     session_start();

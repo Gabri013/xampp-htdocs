@@ -1,6 +1,6 @@
 <?php
 // API de produtos para autocomplete
-require_once dirname(__DIR__) . '/config/config.php';
+require_once dirname(__DIR__, 2) . '/config/config.php';
 requireLogin();
 
 header('Content-Type: application/json; charset=utf-8');
