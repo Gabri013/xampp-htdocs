@@ -13,7 +13,7 @@ function ensureEngenhariaSchema(PDO $db): void
 
     $checked = true;
 
-    if (!shouldRunSchemaSync('engenharia_v3', 86400)) {
+    if (!shouldRunSchemaSync('engenharia_v4', 86400)) {
         return;
     }
 
