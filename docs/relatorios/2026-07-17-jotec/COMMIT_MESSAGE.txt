@@ -1,0 +1,25 @@
+Implementar fluxo completo de DESENHO TÉCNICO E APROVAÇÃO para Cozinka ERP
+
+Adicionado:
+- 6 tabelas MySQL para gerenciamento de desenhos (desenhos_tecnicos, desenhos_arquivos, desenhos_revisoes, desenhos_aprovaes, desenhos_historico)
+- Módulo web completo (modules/engenharia/desenho_tecnico.php) com interface Tailwind CSS
+- API REST (api/desenho.php) com 7+ endpoints para CRUD e fluxo de aprovação
+- Funções auxiliares (desenho_helpers.php) para integração com outros módulos
+- Documentação técnica completa (DESENHO_TECNICO_DOCS.md, DESENHO_EXEMPLOS.md, DESENHO_INSTALACAO.md)
+- Queries SQL úteis (desenho_queries.sql) para gerenciamento e análise
+- Fluxo de aprovação 3 etapas: Gerência → Produção → Qualidade
+- Versionamento automático (v1.0, v1.1, v2.0...)
+- Rastreamento completo de ações e histórico de mudanças
+- Suporte para múltiplos formatos (PDF, DWG, PNG, JPG, DXF, 3D)
+- Integração com O.S. (Ordem de Serviço) e módulos relacionados
+
+Recursos:
+- Upload com validação de tipo e tamanho (máx 50MB)
+- Pré-visualização de imagens
+- Status de aprovação visual
+- Histórico completo com IP e timestamp
+- Permissões por perfil (Projetista, Gerente, Produção, Master)
+- Índices de banco de dados para performance
+- Limpeza automática de desenhos obsoletos
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>

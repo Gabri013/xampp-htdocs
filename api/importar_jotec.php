@@ -13,10 +13,16 @@
 require_once '../config/config.php';
 require_once '../includes/sistema_validacao_100.php';
 
+header('Content-Type: application/json; charset=utf-8');
+
+if (!isLoggedIn() || !hasPermission(['master', 'gerente'])) {
+    http_response_code(401);
+    echo json_encode(['erro' => true, 'mensagem' => 'Não autorizado']);
+    exit;
+}
+
 $db = getDB();
 $acao = $_POST['acao'] ?? $_GET['acao'] ?? null;
-
-header('Content-Type: application/json; charset=utf-8');
 
 if (!$acao) {
     echo json_encode(['erro' => true, 'mensagem' => 'Ação não especificada']);

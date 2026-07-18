@@ -1,0 +1,31 @@
+{
+  "data": "2026-07-17T20:47:26.611865",
+  "total_codigos": 2137,
+  "codigo_minimo": 992,
+  "codigo_maximo": 4003498,
+  "abas_encontradas": [
+    "OUTROS",
+    "MATERIAIS",
+    "GERAL",
+    "INSUMOS DIRETOS",
+    "REVENDA",
+    "INSUMOS INDIRETOS",
+    "ATIVO",
+    "MATERIAL DE CONSUMO"
+  ],
+  "contagem_por_aba": {
+    "OUTROS": 179,
+    "MATERIAIS": 59,
+    "GERAL": 20,
+    "INSUMOS DIRETOS": 554,
+    "REVENDA": 158,
+    "INSUMOS INDIRETOS": 166,
+    "ATIVO": 503,
+    "MATERIAL DE CONSUMO": 498
+  },
+  "contagem_por_tipo": {
+    "INSUMO": 1297,
+    "PRODUTO": 661,
+    "DESCONHECIDO": 179
+  }
+}

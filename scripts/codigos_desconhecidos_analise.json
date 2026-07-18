@@ -1,0 +1,1087 @@
+{
+  "total": 179,
+  "codigos": [
+    992,
+    993,
+    994,
+    995,
+    996,
+    997,
+    998,
+    999,
+    1004508,
+    1007503,
+    1007506,
+    1007507,
+    1007508,
+    1007509,
+    1007510,
+    1007511,
+    1007512,
+    1007513,
+    1007514,
+    1007515,
+    1007516,
+    1007517,
+    1007518,
+    1007519,
+    1007520,
+    1007521,
+    1007522,
+    1007523,
+    1007524,
+    1007525,
+    1007526,
+    1007527,
+    1007528,
+    1007529,
+    1007530,
+    1010501,
+    1010502,
+    1010503,
+    1010504,
+    1010505,
+    1010506,
+    1010507,
+    1010508,
+    1010509,
+    1010510,
+    1010511,
+    1010512,
+    1010513,
+    1010514,
+    1010515,
+    1010516,
+    1010517,
+    1010518,
+    1010519,
+    1010520,
+    1010521,
+    1010522,
+    1010523,
+    1010524,
+    1010525,
+    1010526,
+    1010527,
+    1010528,
+    1010529,
+    1012001,
+    1012002,
+    1012003,
+    1012004,
+    1012005,
+    1012006,
+    1012007,
+    1012008,
+    1012009,
+    1012010,
+    1012011,
+    1012012,
+    1013501,
+    1013502,
+    1013503,
+    1013504,
+    1013505,
+    1013506,
+    1013507,
+    1013508,
+    3000148,
+    3000149,
+    3001501,
+    3001502,
+    3001503,
+    3001504,
+    3001505,
+    3001506,
+    3001507,
+    3001508,
+    3001509,
+    3001510,
+    3001511,
+    3001512,
+    3003001,
+    3003002,
+    3003003,
+    3003004,
+    3003005,
+    3003006,
+    3003007,
+    3003008,
+    3004501,
+    3004502,
+    3004503,
+    3004504,
+    3004505,
+    3004506,
+    3004507,
+    3004508,
+    3004509,
+    3004510,
+    3004511,
+    3004512,
+    3004513,
+    3004514,
+    3004515,
+    3004516,
+    3004517,
+    4000000,
+    4000001,
+    4000002,
+    4000003,
+    4001501,
+    4001502,
+    4001503,
+    4001504,
+    4001505,
+    4001506,
+    4001507,
+    4001508,
+    4001509,
+    4001510,
+    4001511,
+    4001512,
+    4001513,
+    4001514,
+    4001515,
+    4001516,
+    4001517,
+    4001518,
+    4001519,
+    4001520,
+    4001521,
+    4001522,
+    4001523,
+    4001524,
+    4001525,
+    4001526,
+    4001527,
+    4001528,
+    4001529,
+    4001530,
+    4001531,
+    4001532,
+    4001533,
+    4001534,
+    4001535,
+    4001536,
+    4001537,
+    4001538,
+    4001539,
+    4001540,
+    4001541,
+    4001542,
+    4001543,
+    4001544,
+    4001545,
+    4001546,
+    4001547,
+    4001548,
+    4001549,
+    4001550,
+    4001551,
+    4001552
+  ],
+  "range_minimo": 992,
+  "range_maximo": 4001552,
+  "classificacoes": [
+    {
+      "codigo": 992,
+      "tipo": "PRODUTO (legado/teste)",
+      "aba": "PRODUTOS ACABADOS"
+    },
+    {
+      "codigo": 993,
+      "tipo": "PRODUTO (legado/teste)",
+      "aba": "PRODUTOS ACABADOS"
+    },
+    {
+      "codigo": 994,
+      "tipo": "PRODUTO (legado/teste)",
+      "aba": "PRODUTOS ACABADOS"
+    },
+    {
+      "codigo": 995,
+      "tipo": "PRODUTO (legado/teste)",
+      "aba": "PRODUTOS ACABADOS"
+    },
+    {
+      "codigo": 996,
+      "tipo": "PRODUTO (legado/teste)",
+      "aba": "PRODUTOS ACABADOS"
+    },
+    {
+      "codigo": 997,
+      "tipo": "PRODUTO (legado/teste)",
+      "aba": "PRODUTOS ACABADOS"
+    },
+    {
+      "codigo": 998,
+      "tipo": "PRODUTO (legado/teste)",
+      "aba": "PRODUTOS ACABADOS"
+    },
+    {
+      "codigo": 999,
+      "tipo": "PRODUTO (legado/teste)",
+      "aba": "PRODUTOS ACABADOS"
+    },
+    {
+      "codigo": 1004508,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007503,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007506,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007507,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007508,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007509,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007510,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007511,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007512,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007513,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007514,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007515,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007516,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007517,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007518,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007519,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007520,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007521,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007522,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007523,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007524,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007525,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007526,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007527,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007528,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007529,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1007530,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010501,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010502,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010503,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010504,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010505,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010506,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010507,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010508,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010509,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010510,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010511,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010512,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010513,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010514,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010515,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010516,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010517,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010518,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010519,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010520,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010521,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010522,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010523,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010524,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010525,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010526,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010527,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010528,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1010529,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1012001,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1012002,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1012003,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1012004,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1012005,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1012006,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1012007,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1012008,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1012009,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1012010,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1012011,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1012012,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1013501,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1013502,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1013503,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1013504,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1013505,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1013506,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1013507,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 1013508,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3000148,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3000149,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3001501,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3001502,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3001503,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3001504,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3001505,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3001506,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3001507,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3001508,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3001509,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3001510,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3001511,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3001512,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3003001,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3003002,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3003003,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3003004,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3003005,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3003006,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3003007,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3003008,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004501,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004502,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004503,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004504,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004505,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004506,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004507,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004508,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004509,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004510,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004511,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004512,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004513,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004514,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004515,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004516,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 3004517,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4000000,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4000001,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4000002,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4000003,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001501,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001502,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001503,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001504,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001505,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001506,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001507,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001508,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001509,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001510,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001511,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001512,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001513,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001514,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001515,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001516,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001517,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001518,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001519,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001520,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001521,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001522,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001523,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001524,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001525,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001526,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001527,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001528,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001529,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001530,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001531,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001532,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001533,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001534,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001535,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001536,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001537,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001538,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001539,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001540,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001541,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001542,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001543,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001544,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001545,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001546,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001547,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001548,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001549,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001550,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001551,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    },
+    {
+      "codigo": 4001552,
+      "tipo": "DESCONHECIDO",
+      "aba": "GAP"
+    }
+  ],
+  "contagem_por_tipo": {
+    "PRODUTO (legado/teste)": 8,
+    "DESCONHECIDO": 171
+  }
+}

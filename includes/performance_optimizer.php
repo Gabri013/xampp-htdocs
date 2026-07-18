@@ -56,7 +56,7 @@ class PerformanceOptimizer {
 
         // Salva cache
         self::$cache[$cache_key] = $result;
-        self::log_performance('QUERY_SLOW' if $elapsed > 100 else 'QUERY_OK', $sql, $elapsed);
+        self::log_performance($elapsed > 100 ? 'QUERY_SLOW' : 'QUERY_OK', $sql, $elapsed);
 
         return $result;
     }

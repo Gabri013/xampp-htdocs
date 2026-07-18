@@ -27,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'gerar_o
 
     try {
         $db = getDB();
+        ensureOrdensProducaoSchema($db);
         $db->beginTransaction();
 
         // Verificar se já existe OP para esta OS
@@ -60,12 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'gerar_o
             $op_id = $db->lastInsertId();
         }
 
-        // Liberar a O.S. para produção
-        $stmt = $db->prepare("UPDATE ordens_servico SET status = 'em_producao', etapa_atual = 'corte' WHERE id = ?");
-        $stmt->execute([$os_id]);
+        // Liberar a O.S. para produção (primeira etapa do roteiro planejado)
+        $etapaInicial = getPrimeiraEtapaPlanejada($db, (int) $os_id);
+        $stmt = $db->prepare("UPDATE ordens_servico SET status = 'em_producao', etapa_atual = ? WHERE id = ?");
+        $stmt->execute([$etapaInicial, $os_id]);
 
         $stmt = $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, ?, 'em_producao', ?, ?)");
-        $stmt->execute([$os_id, 'pendente', $_SESSION['usuario_id'], 'Ordem de produção gerada e liberada para corte']);
+        $stmt->execute([$os_id, 'pendente', $_SESSION['usuario_id'], 'Ordem de produção gerada e liberada para ' . $etapaInicial]);
 
         // Inserir itens da OP
         foreach ($itens as $item) {
@@ -96,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'gerar_o
 
     try {
         $db = getDB();
+        ensureOrdensProducaoSchema($db);
         $db->beginTransaction();
 
         foreach ($os_ids_array as $os_id) {
@@ -132,12 +135,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'gerar_o
                 $op_id = $db->lastInsertId();
             }
 
-            // Liberar a O.S. para produção
-            $stmt = $db->prepare("UPDATE ordens_servico SET status = 'em_producao', etapa_atual = 'corte' WHERE id = ?");
-            $stmt->execute([$os_id]);
+            // Liberar a O.S. para produção (primeira etapa do roteiro planejado)
+            $etapaInicial = getPrimeiraEtapaPlanejada($db, (int) $os_id);
+            $stmt = $db->prepare("UPDATE ordens_servico SET status = 'em_producao', etapa_atual = ? WHERE id = ?");
+            $stmt->execute([$etapaInicial, $os_id]);
 
             $stmt = $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, ?, 'em_producao', ?, ?)");
-            $stmt->execute([$os_id, 'pendente', $_SESSION['usuario_id'], 'Ordem de produção gerada e liberada para corte']);
+            $stmt->execute([$os_id, 'pendente', $_SESSION['usuario_id'], 'Ordem de produção gerada e liberada para ' . $etapaInicial]);
 
             // Inserir itens
             foreach ($itens as $item) {

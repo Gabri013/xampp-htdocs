@@ -1,0 +1,77 @@
+============================================================
+MAPEAMENTO COMPLETO JOTEC - 2137 CÓDIGOS
+============================================================
+
+Data: 2026-07-17 20:47:26
+
+
+ABA: ATIVO
+   Tipo: PRODUTO
+   Descrição: Ativos fixos, equipamentos para uso
+   Quantidade: 498 códigos
+   Range: 3500001 - 3500498
+   Códigos: 3500001, 3500002, 3500003, 3500004, 3500005, 3500006, 3500007, 3500008, 3500009, 3500010
+            ... (+488 mais)
+
+
+ABA: GERAL
+   Tipo: INSUMO
+   Descrição: Materiais gerais
+   Quantidade: 20 códigos
+   Range: 1001501 - 1004507
+   Códigos: 1001501, 1001502, 1001503, 1001504, 1003001, 1003002, 1003003, 1003004, 1003005, 1003006
+            ... (+10 mais)
+
+
+ABA: INSUMOS DIRETOS
+   Tipo: INSUMO
+   Descrição: Materiais que entram direto na produção
+   Quantidade: 487 códigos
+   Range: 1006001 - 1006489
+   Códigos: 1006001, 1006002, 1006003, 1006004, 1006005, 1006006, 1006007, 1006008, 1006009, 1006010
+            ... (+477 mais)
+
+
+ABA: INSUMOS INDIRETOS
+   Tipo: INSUMO
+   Descrição: Materiais de apoio/consumo/auxiliar
+   Quantidade: 146 códigos
+   Range: 3000000 - 3000147
+   Códigos: 3000000, 3000001, 3000002, 3000003, 3000004, 3000005, 3000006, 3000007, 3000008, 3000009
+            ... (+136 mais)
+
+
+ABA: MATERIAIS
+   Tipo: INSUMO
+   Descrição: Matéria prima, insumos de produção
+   Quantidade: 59 códigos
+   Range: 1000000 - 1000058
+   Códigos: 1000000, 1000001, 1000002, 1000003, 1000004, 1000005, 1000006, 1000007, 1000008, 1000009
+            ... (+49 mais)
+
+
+ABA: MATERIAL DE CONSUMO
+   Tipo: INSUMO
+   Descrição: Materiais consumíveis
+   Quantidade: 498 códigos
+   Range: 4003001 - 4003498
+   Códigos: 4003001, 4003002, 4003003, 4003004, 4003005, 4003006, 4003007, 4003008, 4003009, 4003010
+            ... (+488 mais)
+
+
+ABA: OUTROS
+   Tipo: DESCONHECIDO
+   Descrição: Código não classificado
+   Quantidade: 179 códigos
+   Range: 992 - 4001552
+   Códigos: 992, 993, 994, 995, 996, 997, 998, 999, 1004508, 1007503
+            ... (+169 mais)
+
+
+ABA: REVENDA
+   Tipo: PRODUTO
+   Descrição: Produtos de revenda, sem produção
+   Quantidade: 156 códigos
+   Range: 1500000 - 1500155
+   Códigos: 1500000, 1500001, 1500002, 1500003, 1500004, 1500005, 1500006, 1500007, 1500008, 1500009
+            ... (+146 mais)

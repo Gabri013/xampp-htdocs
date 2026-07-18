@@ -39,25 +39,6 @@ function getTipoArquivoProducao(string $nomeArquivo): string
 
 // Primeira etapa do planejamento da O.S. (os_etapas_producao); usa o fluxo
 // canônico como ordem e 'corte' apenas como último recurso.
-function getPrimeiraEtapaPlanejada(PDO $db, int $osId): string
-{
-    require_once __DIR__ . '/../../includes/workflow.php';
-    $stmtVenda = $db->prepare("SELECT venda_id FROM ordens_servico WHERE id = ?");
-    $stmtVenda->execute([$osId]);
-    $vendaId = (int) $stmtVenda->fetchColumn();
-
-    $etapasPlanejadas = sincronizarPlanejamentoOS($db, $osId, max(0, $vendaId));
-    $etapas = array_column($etapasPlanejadas, 'etapa');
-    if (!empty($etapas)) {
-        foreach (getEtapaFluxo() as $etapaFluxo) {
-            if (in_array($etapaFluxo, $etapas, true)) {
-                return $etapaFluxo;
-            }
-        }
-    }
-    return 'corte';
-}
-
 function garantirOrdemProducao(PDO $db, int $osId, int $usuarioId): array
 {
     require_once __DIR__ . '/../../includes/workflow.php';

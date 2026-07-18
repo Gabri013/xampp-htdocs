@@ -24,53 +24,7 @@ requirePermission(['master', 'gerente', 'producao', 'projetista', 'programacao']
 // Criar tabelas se não existirem
 // ───────────────────────────────────────────────────────────────
 
-$db->exec("CREATE TABLE IF NOT EXISTS ordens_producao (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    os_id INT NOT NULL,
-    numero VARCHAR(50) UNIQUE NOT NULL,
-    status ENUM('pendente', 'em_producao', 'concluida', 'parada', 'cancelada') DEFAULT 'pendente',
-    responsavel_id INT,
-    data_inicio DATETIME,
-    data_termino DATETIME,
-    prazo_original DATETIME,
-    observacoes TEXT,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (os_id) REFERENCES ordens_servico(id) ON DELETE CASCADE,
-    FOREIGN KEY (responsavel_id) REFERENCES usuarios(id) ON DELETE SET NULL,
-    INDEX idx_os_numero (os_id, numero),
-    INDEX idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-$db->exec("CREATE TABLE IF NOT EXISTS ordens_producao_itens (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    op_id INT NOT NULL,
-    os_item_id INT NOT NULL,
-    quantidade INT NOT NULL,
-    quantidade_produzida INT DEFAULT 0,
-    valor_unitario DECIMAL(10,2),
-    status ENUM('pendente', 'produzindo', 'concluido', 'com_defeito') DEFAULT 'pendente',
-    observacao TEXT,
-    data_conclusao DATETIME,
-    FOREIGN KEY (op_id) REFERENCES ordens_producao(id) ON DELETE CASCADE,
-    FOREIGN KEY (os_item_id) REFERENCES os_itens(id) ON DELETE CASCADE,
-    INDEX idx_op_status (op_id, status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-$db->exec("CREATE TABLE IF NOT EXISTS ordens_producao_etapas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    op_id INT NOT NULL,
-    etapa VARCHAR(50) NOT NULL,
-    status ENUM('pendente', 'em_producao', 'concluido', 'parado') DEFAULT 'pendente',
-    usuario_id INT,
-    data_inicio DATETIME,
-    data_conclusao DATETIME,
-    observacao TEXT,
-    sequencia INT,
-    FOREIGN KEY (op_id) REFERENCES ordens_producao(id) ON DELETE CASCADE,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL,
-    INDEX idx_op_etapa (op_id, etapa)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+ensureOrdensProducaoSchema($db);
 
 // ───────────────────────────────────────────────────────────────
 // Processar ações

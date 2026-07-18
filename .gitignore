@@ -22,3 +22,9 @@
 /package-lock.json
 /applications.html
 /bitnami.css
+
+# Dumps de banco ficam fora do Git (e o diretório é bloqueado por .htaccess)
+/backups/*.sql
+
+# Worktrees do Claude Code
+/.claude/worktrees/

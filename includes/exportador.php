@@ -82,7 +82,7 @@ class Exportador
     private function validarAcesso(string $tabela): bool
     {
         // Master tem acesso total
-        if ($this->usuario['tipo'] === 'master') {
+        if (($this->usuario['tipo'] ?? '') === 'master') {
             return true;
         }
 
@@ -477,7 +477,7 @@ class Exportador
     /**
      * Exporta para CSV
      */
-    private function exportarCSV(string $tabela, array $dados): array
+    private function exportarCSV(string $tabela, array $dados): array|false
     {
         if (empty($dados)) {
             $this->adicionarErro("Nenhum dado para exportar");
@@ -512,7 +512,7 @@ class Exportador
     /**
      * Exporta para XLSX (formato Excel aberto)
      */
-    private function exportarXLSX(string $tabela, array $dados): array
+    private function exportarXLSX(string $tabela, array $dados): array|false
     {
         if (empty($dados)) {
             $this->adicionarErro("Nenhum dado para exportar");
@@ -736,7 +736,7 @@ class Exportador
     /**
      * Exporta para PDF
      */
-    private function exportarPDF(string $tabela, array $dados): array
+    private function exportarPDF(string $tabela, array $dados): array|false
     {
         if (empty($dados)) {
             $this->adicionarErro("Nenhum dado para exportar");
@@ -848,7 +848,7 @@ class Exportador
     /**
      * Exporta para JSON
      */
-    private function exportarJSON(string $tabela, array $dados): array
+    private function exportarJSON(string $tabela, array $dados): array|false
     {
         $json = [
             'exportacao' => [

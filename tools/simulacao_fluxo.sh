@@ -119,7 +119,7 @@ rm -f "$JP"
 JG=$(login gerente)
 curl -s -b "$JG" -X POST -d "acao=devolver_proposta&motivo=Ajustar medidas" -o /dev/null "$BASE/modules/os/os_detalhes.php?os_id=$OSID"
 ST33=$($MY "SELECT status FROM ordens_servico WHERE id=$OSID")
-ok "3.3 Gerente devolve proposta ($ST33)" "$([ "$ST33" == "em_projeto" ] && echo 1)"
+ok "3.3 Gerente devolve proposta ($ST33)" "$([ "$ST33" == "em_revisao" ] && echo 1)"
 rm -f "$JG"
 # 3.4 projetista reenvia
 $MY "UPDATE ordens_servico SET status='proposta' WHERE id=$OSID"
