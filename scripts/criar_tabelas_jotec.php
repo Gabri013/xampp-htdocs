@@ -3,7 +3,7 @@
  * Criar tabelas necessárias para importação JOTEC
  */
 
-require_once '../config/config.php';
+require_once __DIR__ . '/../config/config.php';
 
 $db = getDB();
 

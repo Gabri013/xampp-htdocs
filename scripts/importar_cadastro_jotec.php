@@ -7,7 +7,7 @@
  * Importa matérias primas para o banco de dados
  */
 
-require_once '../config/config.php';
+require_once __DIR__ . '/../config/config.php';
 
 // Usando biblioteca PHPExcel/PhpSpreadsheet se disponível
 $excelFile = 'C:\\Users\\gabri\\Downloads\\CADASTRO PRODUTOS JOTEC - 2019 C.xls';

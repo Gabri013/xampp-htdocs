@@ -8,7 +8,7 @@
  * 3. Gerar relatório 100% completo
  */
 
-require_once '../config/config.php';
+require_once __DIR__ . '/../config/config.php';
 
 $db = getDB();
 

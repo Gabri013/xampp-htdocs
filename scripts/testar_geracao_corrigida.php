@@ -3,8 +3,8 @@
  * TESTE - Geração Corrigida de Códigos
  */
 
-require_once '../config/config.php';
-require_once '../includes/padrao_jotec.php';
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../includes/padrao_jotec.php';
 
 $db = getDB();
 
@@ -153,6 +153,10 @@ if ($todos_unicos) {
 } else {
     echo "  ❌ Revisar função criarCodigoUnico()\n";
 }
+
+// Limpar materiais de teste criados por este script
+$removidos = $db->exec("DELETE FROM materias_primas WHERE aba_origem = 'TESTE-AUTO'");
+echo "\n🧹 Limpeza: $removidos material(is) de teste removido(s)\n";
 
 echo "\n════════════════════════════════════════════════════════════════\n";
 

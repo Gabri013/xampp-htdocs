@@ -7,8 +7,8 @@
  * 3. Valida dados
  */
 
-require_once '../config/config.php';
-require_once '../includes/padrao_jotec.php';
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../includes/padrao_jotec.php';
 
 $db = getDB();
 

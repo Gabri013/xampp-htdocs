@@ -6,7 +6,7 @@
  * Importa ~27.000+ registros
  */
 
-require_once '../config/config.php';
+require_once __DIR__ . '/../config/config.php';
 
 $db = getDB();
 set_time_limit(600); // 10 minutos de timeout

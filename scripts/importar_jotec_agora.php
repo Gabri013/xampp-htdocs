@@ -6,7 +6,7 @@
  * Sem parar, sem esperar, SÓ IMPORTA!
  */
 
-require_once '../config/config.php';
+require_once __DIR__ . '/../config/config.php';
 
 $db = getDB();
 set_time_limit(600);
