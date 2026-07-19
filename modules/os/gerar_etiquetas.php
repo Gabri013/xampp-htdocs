@@ -385,10 +385,13 @@ include '../../includes/header_vendedor.php';
                             </div>
                         <?php else: ?>
                             <?php foreach ($os_lista as $os): ?>
-                                <a href="?os_id=<?= $os['id'] ?>" class="etiqueta-os-item">
-                                    <div class="etiqueta-os-numero">OS <?= htmlspecialchars($os['numero']) ?></div>
-                                    <div class="etiqueta-os-cliente"><?= htmlspecialchars(substr($os['razao_social'], 0, 20)) ?></div>
-                                </a>
+                                <div class="etiqueta-os-item" style="display:flex;align-items:center;gap:8px">
+                                    <a href="?os_id=<?= $os['id'] ?>" style="flex:1;min-width:0;text-decoration:none;color:inherit">
+                                        <div class="etiqueta-os-numero">OS <?= htmlspecialchars($os['numero']) ?></div>
+                                        <div class="etiqueta-os-cliente"><?= htmlspecialchars(substr($os['razao_social'], 0, 20)) ?></div>
+                                    </a>
+                                    <button type="button" class="vbtn-sm vbtn-brand" style="flex:none" title="Gerar O.P. + etiqueta agora (1 clique)" onclick="gerarOpEtiqueta(<?= (int) $os['id'] ?>)"><i class="fas fa-industry"></i> O.P.</button>
+                                </div>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
@@ -686,6 +689,65 @@ function carregarHistorico() {
             }
         });
 }
+</script>
+
+<!-- Modal: O.P. + Etiqueta em 1 clique -->
+<div id="modalOpEtiqueta" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:10000;align-items:center;justify-content:center;padding:16px">
+    <div style="background:#fff;border-radius:12px;max-width:380px;width:100%;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.25)">
+        <div style="background:var(--color-cozinca,#D85A30);color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center">
+            <strong id="opEtqTitulo">Etiqueta da O.P.</strong>
+            <button type="button" onclick="fecharOpEtiqueta()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1">&times;</button>
+        </div>
+        <div style="padding:20px;text-align:center">
+            <div id="opEtqBody">
+                <p style="color:#666">Gerando…</p>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;padding:0 18px 18px">
+            <button type="button" class="vbtn-sm vbtn-brand" style="flex:1" onclick="imprimirOpEtiqueta()"><i class="fas fa-print"></i> Imprimir</button>
+            <button type="button" class="vbtn-sm" style="flex:1" onclick="baixarOpEtiqueta()"><i class="fas fa-download"></i> Baixar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let _opEtq = { qr: '', op: '', os: '' };
+function gerarOpEtiqueta(osId) {
+    const modal = document.getElementById('modalOpEtiqueta');
+    document.getElementById('opEtqBody').innerHTML = '<p style="color:#666">Gerando O.P. e etiqueta…</p>';
+    modal.style.display = 'flex';
+    const fd = new FormData();
+    fd.append('acao', 'gerar_op_etiqueta');
+    fd.append('os_id', osId);
+    fetch('<?= SITE_URL ?>/api/etiqueta_qrcode.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.sucesso) { document.getElementById('opEtqBody').innerHTML = '<p style="color:#dc2626">Erro: ' + (data.erro || 'falha') + '</p>'; return; }
+            _opEtq = { qr: data.qr_url, op: data.op_numero, os: data.os_numero };
+            document.getElementById('opEtqTitulo').textContent = (data.criada ? 'O.P. criada' : 'O.P.') + ' ' + data.op_numero;
+            document.getElementById('opEtqBody').innerHTML =
+                '<img src="' + data.qr_url + '" alt="QR" style="width:220px;height:220px;max-width:100%">' +
+                '<p style="font-weight:700;margin:10px 0 2px;font-size:18px">OP ' + data.op_numero + '</p>' +
+                '<p style="color:#666;font-size:13px;margin:0">O.S. ' + data.os_numero + (data.criada ? ' · O.P. gerada agora' : ' · O.P. já existia') + '</p>';
+        })
+        .catch(() => { document.getElementById('opEtqBody').innerHTML = '<p style="color:#dc2626">Erro de conexão.</p>'; });
+}
+function fecharOpEtiqueta() { document.getElementById('modalOpEtiqueta').style.display = 'none'; }
+function imprimirOpEtiqueta() {
+    if (!_opEtq.qr) return;
+    const w = window.open('', '', 'height=420,width=380');
+    w.document.write('<div style="text-align:center;font-family:sans-serif;padding:16px">' +
+        '<img src="' + _opEtq.qr + '" style="width:280px;height:280px"><div style="font-size:22px;font-weight:700;margin-top:8px">OP ' + _opEtq.op + '</div>' +
+        '<div style="color:#555">O.S. ' + _opEtq.os + '</div></div>');
+    w.document.close();
+    setTimeout(() => { w.print(); }, 400);
+}
+function baixarOpEtiqueta() {
+    if (!_opEtq.qr) return;
+    const a = document.createElement('a');
+    a.href = _opEtq.qr; a.download = 'etiqueta_op_' + _opEtq.op + '.png'; a.click();
+}
+document.getElementById('modalOpEtiqueta').addEventListener('click', function(e) { if (e.target === this) fecharOpEtiqueta(); });
 </script>
 
 <?php include '../../includes/footer_vendedor.php'; ?>

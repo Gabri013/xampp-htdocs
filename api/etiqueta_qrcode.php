@@ -194,6 +194,74 @@ if ($acao === 'gerar_qr_svg_op') {
 }
 
 // ───────────────────────────────────────────────────────────────
+// AÇÃO: Gerar O.P. (se ainda não existir) + etiqueta em UM passo
+// Prático: a partir de uma O.S., cria a O.P. (nº O.P. = nº O.S.) e já
+// devolve o QR pronto para imprimir — sem digitar nem trocar de página.
+// ───────────────────────────────────────────────────────────────
+if ($acao === 'gerar_op_etiqueta') {
+    $os_id = (int)($_POST['os_id'] ?? $_GET['os_id'] ?? 0);
+    if ($os_id <= 0) {
+        http_response_code(400);
+        echo json_encode(['sucesso' => false, 'erro' => 'os_id é obrigatório']);
+        exit;
+    }
+    require_once '../includes/engenharia.php';
+    try {
+        ensureOrdensProducaoSchema($db);
+
+        $stmt = $db->prepare("SELECT id, numero FROM ordens_servico WHERE id = ?");
+        $stmt->execute([$os_id]);
+        $os = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$os) {
+            http_response_code(404);
+            echo json_encode(['sucesso' => false, 'erro' => 'O.S. não encontrada']);
+            exit;
+        }
+
+        // Garante a O.P. (nº da O.P. = nº da O.S.)
+        $stmt = $db->prepare("SELECT id, numero FROM ordens_producao WHERE os_id = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$os_id]);
+        $op = $stmt->fetch(PDO::FETCH_ASSOC);
+        $criada = false;
+        if (!$op) {
+            $stmt = $db->prepare("INSERT INTO ordens_producao (os_id, numero, status, criado_em) VALUES (?, ?, 'pendente', NOW())");
+            $stmt->execute([$os_id, $os['numero']]);
+            $op_numero = $os['numero'];
+            $criada = true;
+        } else {
+            $op_numero = $op['numero'];
+        }
+
+        // Registra a etiqueta da O.P. (idempotente por op_numero)
+        $qr_content = "OP|" . $op_numero . "|" . $os_id;
+        $stmt = $db->prepare("SELECT id FROM etiquetas_impressas WHERE op_numero = ? LIMIT 1");
+        $stmt->execute([$op_numero]);
+        if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+            $dados_qr = [
+                'numero_op' => $op_numero, 'os_id' => $os_id, 'os_numero' => $os['numero'],
+                'tipo' => 'ordem_producao', 'timestamp' => time(),
+                'url' => SITE_URL . '/modules/os/scan.php?code=' . urlencode($qr_content),
+            ];
+            $stmt = $db->prepare("INSERT INTO etiquetas_impressas (os_id, op_numero, tipo, conteudo, dados_qr, usuario_id)
+                VALUES (?, ?, 'qr_op', ?, ?, ?)");
+            $stmt->execute([$os_id, $op_numero, $qr_content, json_encode($dados_qr), $_SESSION['usuario_id'] ?? null]);
+        }
+
+        echo json_encode([
+            'sucesso'   => true,
+            'criada'    => $criada,
+            'op_numero' => $op_numero,
+            'os_numero' => $os['numero'],
+            'qr_url'    => gerarQrDataUri($qr_content, 300),
+        ]);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['sucesso' => false, 'erro' => $e->getMessage()]);
+    }
+    exit;
+}
+
+// ───────────────────────────────────────────────────────────────
 // AÇÃO: Gerar código de barras 128
 // ───────────────────────────────────────────────────────────────
 if ($acao === 'gerar_codigo128') {
