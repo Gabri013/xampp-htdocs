@@ -668,10 +668,9 @@ include '../../includes/header_vendedor.php';
                     <input type="hidden" name="acao" value="gerar_op_lote">
                     <button type="submit" class="vbtn-sm btn-primary"><i class="fas fa-layer-group"></i> Gerar OP em lote</button>
                 </form>
-                <?php if ($op_atual): ?>
-                    <a href="imprimir_op.php?os_id=<?= $os_id ?>" target="_blank" class="vbtn-sm"><i class="fas fa-print"></i> Abrir OP</a>
-                <?php endif; ?>
-                <span class="vend-page-sub">Use os botões por item para anexar PDF/DXF e gerar a OP individual quando necessário.</span>
+                <a href="imprimir_op.php?os_id=<?= $os_id ?>" target="_blank" class="vbtn-sm btn-success" title="Ordem de Produção — frente com roteiro/materiais, verso com o desenho técnico"><i class="fas fa-file-lines"></i> O.P. + desenho técnico</a>
+                <a href="imprimir_etiquetas_lote.php?os_id=<?= $os_id ?>" target="_blank" class="vbtn-sm vbtn-brand" title="Uma etiqueta por item, com logo, O.S., descrição, QR e código de barras"><i class="fas fa-tags"></i> Etiquetas em lote</a>
+                <span class="vend-page-sub">A O.P. já sai com o desenho técnico no verso. As etiquetas trazem 1 por item com QR + código de barras.</span>
             </div>
         </div>
 
@@ -870,7 +869,8 @@ include '../../includes/header_vendedor.php';
                                 <td>
                                     <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
                                         <?php if ($os['status'] === 'pendente' || $os['status'] === 'em_projeto' || $os['status'] === 'proposta' || $os['status'] === 'em_producao'): ?>
-                                            <a href="imprimir_op.php?os_id=<?= $os_id ?>&item_id=<?= $item['id'] ?>" target="_blank" class="vbtn-sm" title="Abrir OP do item"><i class="fas fa-print"></i></a>
+                                            <a href="imprimir_op.php?os_id=<?= $os_id ?>&item_id=<?= $item['id'] ?>" target="_blank" class="vbtn-sm" title="Abrir OP do item (com desenho técnico no verso)"><i class="fas fa-print"></i></a>
+                                            <a href="imprimir_etiquetas_lote.php?os_id=<?= $os_id ?>&item_id=<?= $item['id'] ?>" target="_blank" class="vbtn-sm vbtn-brand" title="Etiqueta deste item"><i class="fas fa-tag"></i></a>
                                             <form method="POST" style="display:inline">
                                                 <input type="hidden" name="acao" value="gerar_op_item">
                                                 <input type="hidden" name="os_item_id" value="<?= $item['id'] ?>">
