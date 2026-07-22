@@ -179,6 +179,26 @@ if (!empty($produtoIdsFolha)) {
         }
     } catch (Exception $e) { /* colunas podem não existir em banco antigo */ }
 }
+// Desenho técnico da O.S. (imagem anexada pelo projetista) para o VERSO.
+// Só usa se o arquivo existir no disco — registros mesclados do servidor antigo
+// podem apontar para arquivos que não vieram junto. Ordem: projeto_foto > projeto.
+$desenhoOsImg = '';
+try {
+    $stmtDes = $db->prepare("SELECT nome_arquivo FROM os_arquivos
+        WHERE os_id = ? AND (LOWER(nome_arquivo) LIKE '%.jpg' OR LOWER(nome_arquivo) LIKE '%.jpeg'
+            OR LOWER(nome_arquivo) LIKE '%.png' OR LOWER(nome_arquivo) LIKE '%.webp' OR LOWER(nome_arquivo) LIKE '%.gif')
+        ORDER BY FIELD(tipo, 'projeto_foto', 'projeto') DESC, id DESC");
+    $stmtDes->execute([$osId]);
+    foreach ($stmtDes->fetchAll(PDO::FETCH_COLUMN) as $nomeArq) {
+        foreach (['projetos', 'desenhos'] as $pasta) {
+            if (is_file(BASE_PATH . "/assets/uploads/$pasta/" . $nomeArq)) {
+                $desenhoOsImg = SITE_URL . "/assets/uploads/$pasta/" . rawurlencode($nomeArq);
+                break 2;
+            }
+        }
+    }
+} catch (Exception $e) { /* os_arquivos pode não existir */ }
+
 $obsFolhaPadrao = "Todas as instalações devem obedecer às normas da ABNT;\nMedidas em milímetros;\nDesenho sem escala;\nProduto embalado conforme a distância a ser percorrida.";
 $garantiaFolhaPadrao = 'Todos os produtos fabricados pela Cozinca são testados e garantidos pela fábrica e por seus representantes autorizados. A assistência técnica coberta pela garantia é prestada de segunda a sexta-feira. Para mais informações, consulte o suporte técnico Cozinca.';
 $linhasTexto = fn(?string $t) => array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', (string) $t))));
@@ -341,8 +361,7 @@ header('Content-Type: text/html; charset=UTF-8');
             .op-page:last-child{page-break-after:auto}
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <!-- Barcode Code128 e QR gerados no servidor (SVG/data-URI autocontidos) -->
 </head>
 <body>
     <div class="printbar">
@@ -384,11 +403,11 @@ header('Content-Type: text/html; charset=UTF-8');
                     <?php endif; ?>
                 </div>
                 <div class="cell bc-cell">
-                    <svg class="barcode" data-code="<?= htmlspecialchars($numOpItem) ?>"></svg>
+                    <div class="barcode" style="height:34px"><?= gerarCode128Svg($numOpItem, 40) ?></div>
                     <div class="bc-num"><?= htmlspecialchars($numOpItem) ?></div>
                 </div>
                 <div class="cell qr-cell">
-                    <div class="qr-box" data-qr="<?= htmlspecialchars(SITE_URL . '/modules/os/scan.php?code=' . urlencode($numOpItem)) ?>"></div>
+                    <div class="qr-box"><img src="<?= gerarQrDataUri(SITE_URL . '/modules/os/scan.php?code=' . urlencode($numOpItem), 200) ?>" alt="QR"></div>
                 </div>
             </div>
 
@@ -567,12 +586,16 @@ header('Content-Type: text/html; charset=UTF-8');
         <div class="ft-body">
             <div class="ft-col-esq">
                 <div class="ft-persp">
-                    <?php if ($ftPerspectiva !== ''): ?>
+                    <?php if ($desenhoOsImg !== ''): ?>
+                        <img src="<?= $desenhoOsImg ?>" alt="Desenho técnico">
+                        <span class="rotulo">DESENHO TÉCNICO</span>
+                    <?php elseif ($ftPerspectiva !== ''): ?>
                         <img src="<?= SITE_URL ?>/assets/uploads/produtos/<?= htmlspecialchars($ftPerspectiva) ?>" alt="Perspectiva">
+                        <span class="rotulo">PERSPECTIVA</span>
                     <?php else: ?>
-                        <span style="color:#bbb;font-size:11px;letter-spacing:2px">‹ PERSPECTIVA COM COTAS ›</span>
+                        <span style="color:#bbb;font-size:11px;letter-spacing:2px">‹ DESENHO TÉCNICO / PERSPECTIVA ›</span>
+                        <span class="rotulo">DESENHO TÉCNICO</span>
                     <?php endif; ?>
-                    <span class="rotulo">PERSPECTIVA</span>
                 </div>
                 <div class="ft-sec ft-cod">
                     <div class="barra">Codificação:</div>
@@ -649,22 +672,9 @@ header('Content-Type: text/html; charset=UTF-8');
     <?php endforeach; ?>
 
     <script>
+        // Barcode/QR já vêm prontos do servidor — só espera imagens e imprime.
         window.addEventListener('load', function () {
-            if (typeof JsBarcode !== 'undefined') {
-                document.querySelectorAll('svg.barcode').forEach(function (el) {
-                    try {
-                        JsBarcode(el, el.dataset.code, { format: 'CODE128', displayValue: false, height: 34, margin: 0 });
-                    } catch (e) {}
-                });
-            }
-            if (typeof QRCode !== 'undefined') {
-                document.querySelectorAll('.qr-box').forEach(function (el) {
-                    try {
-                        new QRCode(el, { text: el.dataset.qr, width: 96, height: 96, correctLevel: QRCode.CorrectLevel.M });
-                    } catch (e) {}
-                });
-            }
-            setTimeout(function () { try { window.print(); } catch (e) {} }, 700);
+            setTimeout(function () { try { window.print(); } catch (e) {} }, 400);
         });
     </script>
 </body>

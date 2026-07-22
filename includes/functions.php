@@ -468,3 +468,61 @@ function gerarQrDataUri(string $conteudo, int $size = 300): string {
     }
     return $externa;
 }
+
+/**
+ * Gera um código de barras Code128 (subset B) como SVG inline — sem
+ * dependência externa (o JsBarcode via CDN falha sem internet no cliente).
+ * Uso: identificação da O.P. no padrão industrial (leitores USB/scanner).
+ */
+function gerarCode128Svg(string $texto, int $alturaPx = 40, int $larguraModulo = 2): string {
+    // Tabela de larguras Code128 (índices 0-106; 6 dígitos = barra/espaço alternados)
+    static $padroes = [
+        '212222','222122','222221','121223','121322','131222','122213','122312','132212','221213',
+        '221312','231212','112232','122132','122231','113222','123122','123221','223211','221132',
+        '221231','213212','223112','312131','311222','321122','321221','312212','322112','322211',
+        '212123','212321','232121','111323','131123','131321','112313','132113','132311','211313',
+        '231113','231311','112133','112331','132131','113123','113321','133121','313121','211331',
+        '231131','213113','213311','213131','311123','311321','331121','312113','312311','332111',
+        '314111','221411','431111','111224','111422','121124','121421','141122','141221','112214',
+        '112412','122114','122411','142112','142211','241211','221114','413111','241112','134111',
+        '111242','121142','121241','114212','124112','124211','411212','421112','421211','212141',
+        '214121','412121','111143','111341','131141','114113','114311','411113','411311','113141',
+        '114131','311141','411131','211412','211214','211232','2331112',
+    ];
+    $texto = (string) $texto;
+    if ($texto === '') return '';
+
+    // Subset B: ASCII 32..126
+    $codes = [104]; // Start B
+    $len = strlen($texto);
+    for ($i = 0; $i < $len; $i++) {
+        $o = ord($texto[$i]);
+        if ($o < 32 || $o > 126) $o = 32; // fora do subset vira espaço
+        $codes[] = $o - 32;
+    }
+    // Checksum mod 103
+    $soma = $codes[0];
+    for ($i = 1, $n = count($codes); $i < $n; $i++) $soma += $codes[$i] * $i;
+    $codes[] = $soma % 103;
+    $codes[] = 106; // Stop
+
+    // Monta as barras
+    $x = 0; $barras = [];
+    foreach ($codes as $code) {
+        $p = $padroes[$code];
+        $plen = strlen($p);
+        for ($i = 0; $i < $plen; $i++) {
+            $w = (int) $p[$i] * $larguraModulo;
+            if ($i % 2 === 0) $barras[] = [$x, $w]; // pares = barra
+            $x += $w;
+        }
+    }
+    $larguraTotal = $x; // stop (2331112) já termina na barra dupla final
+
+    $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' . $larguraTotal . ' ' . $alturaPx
+        . '" preserveAspectRatio="none" style="width:100%;height:100%">';
+    foreach ($barras as [$bx, $bw]) {
+        $svg .= '<rect x="' . $bx . '" y="0" width="' . $bw . '" height="' . $alturaPx . '" fill="#000"/>';
+    }
+    return $svg . '</svg>';
+}
