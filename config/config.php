@@ -11,8 +11,21 @@ $czRequisicaoLocal = PHP_SAPI === 'cli'
     || in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true);
 ini_set('display_errors', $czRequisicaoLocal ? '1' : '0');
 
-// Iniciar sessão se ainda não foi iniciada
+// Iniciar sessão se ainda não foi iniciada — com cookie endurecido:
+//  - SameSite=Lax: bloqueia POST cross-site com o cookie (defesa CSRF), mas
+//    mantém a navegação normal funcionando;
+//  - HttpOnly: o cookie de sessão não é acessível via JavaScript (anti-XSS);
+//  - Secure: só marca em HTTPS (não quebra o HTTP do XAMPP local).
 if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+    $czHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['SERVER_PORT'] ?? '') == 443);
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path'     => '/',
+        'httponly' => true,
+        'secure'   => $czHttps,
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 
