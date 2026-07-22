@@ -4,9 +4,20 @@ require_once __DIR__ . '/../../includes/engenharia.php';
 // Leitura liberada também para gestão e setores de produção (ver detalhes/etapas da O.S.)
 requirePermission(['master', 'vendedor', 'projetista', 'gerente', 'producao', 'engenharia', 'programacao', 'corte', 'dobra', 'tubo', 'solda', 'mobiliario', 'coccao', 'refrigeracao', 'acabamento', 'montagem', 'embalagem', 'finalizacao']);
 
-// Ações de escrita (gerar OP, propostas, anexos) continuam restritas
+// Ações de escrita (propostas etc.) — vendedor participa da parte comercial.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !hasPermission(['master', 'vendedor', 'projetista', 'gerente'])) {
     setError('Você não tem permissão para executar esta ação.');
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit;
+}
+
+// Ações de PRODUÇÃO (gerar O.P., anexar DXF/PDF/3D, roteiro, categoria,
+// solicitar material) são do projetista/gerente/produção — NUNCA do vendedor.
+// O vendedor vende; a produção começa quando o projetista assume o pedido.
+$podeProducao = hasPermission(['master', 'projetista', 'gerente', 'producao']);
+$acoesProducao = ['gerar_op_lote', 'gerar_op_item', 'anexar_arquivo_item', 'salvar_roteiro', 'corrigir_categoria', 'solicitar_material', 'enviar_item_setor'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['acao'] ?? '', $acoesProducao, true) && !$podeProducao) {
+    setError('Ação de produção é do projetista/produção — não do vendedor.');
     header('Location: ' . $_SERVER['REQUEST_URI']);
     exit;
 }
@@ -656,6 +667,7 @@ include '../../includes/header_vendedor.php';
             </div>
         </div>
 
+        <?php if ($podeProducao): ?>
         <div class="vend-card" style="margin-top:20px;">
             <div class="vend-card-head">
                 <span class="vend-card-title">Ações de Produção</span>
@@ -673,6 +685,7 @@ include '../../includes/header_vendedor.php';
                 <span class="vend-page-sub">A O.P. já sai com o desenho técnico no verso. As etiquetas trazem 1 por item com QR + código de barras.</span>
             </div>
         </div>
+        <?php endif; ?>
 
         <?php if (in_array($os['status'], ['pendente', 'em_projeto', 'em_revisao'], true)): ?>
         <div class="vend-card">
@@ -843,8 +856,8 @@ include '../../includes/header_vendedor.php';
                                 </td>
                                 <td><?= $item['quantidade'] ?></td>
 <td>
-                                    <?php $podeEnviarItem = in_array($os['status'], ['pendente', 'em_projeto', 'proposta'], true)
-                                        || ($os['status'] === 'em_producao' && ($os['etapa_atual'] ?? '') === 'engenharia'); ?>
+                                    <?php $podeEnviarItem = $podeProducao && (in_array($os['status'], ['pendente', 'em_projeto', 'proposta'], true)
+                                        || ($os['status'] === 'em_producao' && ($os['etapa_atual'] ?? '') === 'engenharia')); ?>
                                     <?php if (!empty($despachosPorItem[(int) $item['id']])): $desp = $despachosPorItem[(int) $item['id']]; ?>
                                         <span class="vbadge vbadge-ok" title="Item já enviado por desmembramento">
                                             <i class="fas fa-share"></i> <?= ucfirst($desp['setor']) ?>
@@ -869,19 +882,23 @@ include '../../includes/header_vendedor.php';
                                 <td>
                                     <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
                                         <?php if ($os['status'] === 'pendente' || $os['status'] === 'em_projeto' || $os['status'] === 'proposta' || $os['status'] === 'em_producao'): ?>
+                                            <?php if ($podeProducao): ?>
                                             <a href="imprimir_op.php?os_id=<?= $os_id ?>&item_id=<?= $item['id'] ?>" target="_blank" class="vbtn-sm" title="Abrir OP do item (com desenho técnico no verso)"><i class="fas fa-print"></i></a>
+                                            <?php endif; ?>
                                             <a href="imprimir_etiquetas_lote.php?os_id=<?= $os_id ?>&item_id=<?= $item['id'] ?>" target="_blank" class="vbtn-sm vbtn-brand" title="Etiqueta deste item"><i class="fas fa-tag"></i></a>
+                                            <?php if ($podeProducao): ?>
                                             <form method="POST" style="display:inline">
                                                 <input type="hidden" name="acao" value="gerar_op_item">
                                                 <input type="hidden" name="os_item_id" value="<?= $item['id'] ?>">
                                                 <button type="submit" class="vbtn-sm btn-primary" title="Gerar OP do item"><i class="fas fa-cubes"></i></button>
                                             </form>
+                                            <?php endif; ?>
                                         <?php endif; ?>
 
                                         <?php if (in_array($os['status'], ['pendente', 'em_projeto', 'proposta', 'em_revisao'], true)): ?>
                                             <button type="button" class="vbtn-sm" title="Editar descrição/medidas do item (alteração do cliente ou do projetista)" onclick='abrirModalEditarItem(<?= (int) $item['id'] ?>, <?= json_encode((string) $item['descricao'], JSON_HEX_APOS | JSON_HEX_QUOT) ?>, "<?= htmlspecialchars((string) $item['quantidade']) ?>")'><i class="fas fa-pencil-alt"></i></button>
                                         <?php endif; ?>
-                                        <?php if (in_array($os['status'], ['pendente', 'em_projeto', 'proposta', 'em_revisao', 'em_producao'], true)): ?>
+                                        <?php if ($podeProducao && in_array($os['status'], ['pendente', 'em_projeto', 'proposta', 'em_revisao', 'em_producao'], true)): ?>
                                             <form method="POST" enctype="multipart/form-data" style="display:inline" id="form-pdf-<?= $item['id'] ?>">
                                                 <input type="hidden" name="acao" value="anexar_arquivo_item">
                                                 <input type="hidden" name="os_id" value="<?= $os_id ?>">
