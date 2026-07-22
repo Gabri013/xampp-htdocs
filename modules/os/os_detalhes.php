@@ -143,6 +143,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'gerar_o
     exit;
 }
 
+// POST: vendedor/gestão envia o pedido ao PROJETISTA (solicita o desenho técnico).
+// O vendedor só vende — aqui ele passa a bola. Ao enviar:
+//  - o pedido vai de 'pendente' para 'em_projeto' (é a vez do projetista);
+//  - a O.P. (nº = nº da O.S.) já é criada como 'pendente', pronta para o
+//    projetista (imprimir_op.php) — as etiquetas já estão sempre disponíveis;
+//  - NÃO entra em produção: a fabricação só começa quando o projetista libera
+//    (Gerar OP em lote), depois de desenhar e definir o roteiro.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'enviar_ao_projetista') {
+    if (!hasPermission(['master', 'vendedor', 'gerente'])) {
+        setError('Sem permissão para enviar ao projetista.');
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+    try {
+        $db->beginTransaction();
+
+        $stmtStatus = $db->prepare("SELECT status, numero FROM ordens_servico WHERE id = ? LIMIT 1 FOR UPDATE");
+        $stmtStatus->execute([$os_id]);
+        $rowOs = $stmtStatus->fetch(PDO::FETCH_ASSOC) ?: [];
+        $statusAtual = (string) ($rowOs['status'] ?? '');
+        $numeroOs = (string) ($rowOs['numero'] ?? '');
+
+        if ($statusAtual !== 'pendente') {
+            throw new RuntimeException('Este pedido já saiu da fila inicial (status atual: ' . $statusAtual . ') — só é possível enviar ao projetista quando está pendente.');
+        }
+
+        // Cria a O.P. (nº = nº da O.S.) já pronta, SEM liberar produção.
+        $stmtOp = $db->prepare("SELECT id FROM ordens_producao WHERE os_id = ? ORDER BY id DESC LIMIT 1");
+        $stmtOp->execute([$os_id]);
+        $opCriada = false;
+        if (!$stmtOp->fetchColumn()) {
+            $db->prepare("INSERT INTO ordens_producao (os_id, numero, status, criado_em) VALUES (?, ?, 'pendente', NOW())")
+               ->execute([$os_id, $numeroOs]);
+            $opCriada = true;
+        }
+
+        // Passa a bola ao projetista: em_projeto + etapa de engenharia (mão do projetista).
+        $db->prepare("UPDATE ordens_servico SET status = 'em_projeto', etapa_atual = 'engenharia' WHERE id = ?")
+           ->execute([$os_id]);
+
+        // Registra o pedido de desenho com a observação do vendedor (o que o cliente quer).
+        $obsDesenho = trim((string) ($_POST['obs_desenho'] ?? ''));
+        $msgHist = 'Enviado ao projetista — solicitação de desenho técnico'
+            . ($obsDesenho !== '' ? ': ' . $obsDesenho : '.');
+        $db->prepare("INSERT INTO os_historico_status (os_id, status_anterior, status_novo, usuario_id, observacao) VALUES (?, 'pendente', 'em_projeto', ?, ?)")
+           ->execute([$os_id, (int) $_SESSION['usuario_id'], $msgHist]);
+
+        $db->commit();
+        setSuccess('Pedido enviado ao projetista. O.P. ' . $numeroOs . ($opCriada ? ' criada' : ' já existente') . ' e etiquetas prontas. A produção só começa quando o projetista liberar.');
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+        setError('Erro ao enviar ao projetista: ' . $e->getMessage());
+    }
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit;
+}
+
 // POST: gerar OP individual do item
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'gerar_op_item') {
     $itemId = (int) ($_POST['os_item_id'] ?? 0);
@@ -666,6 +725,21 @@ include '../../includes/header_vendedor.php';
                 <div class="vend-metric"><div class="vend-metric-label">Vendedor</div><div class="vend-metric-val"><?= htmlspecialchars($os['vendedor_nome']) ?></div></div>
             </div>
         </div>
+
+        <?php if ($os['status'] === 'pendente' && hasPermission(['master', 'vendedor', 'gerente'])): ?>
+        <div class="vend-card" style="margin-top:20px;border:1px solid #D85A30">
+            <div class="vend-card-head"><span class="vend-card-title"><i class="fas fa-drafting-compass"></i> Enviar ao Projetista — solicitar desenho técnico</span></div>
+            <form method="POST" style="padding:12px 16px" onsubmit="return confirm('Enviar este pedido ao projetista para o desenho técnico? A O.P. e as etiquetas ficam prontas; a produção só começa quando o projetista liberar.')">
+                <input type="hidden" name="acao" value="enviar_ao_projetista">
+                <div class="form-group" style="margin-bottom:10px">
+                    <label style="font-size:12px">O que o cliente quer / observações para o projetista (opcional)</label>
+                    <textarea name="obs_desenho" class="form-control" rows="2" placeholder="Ex.: bancada em L com cuba dupla, 2,40m x 0,70m; cliente quer ver proposta antes de fechar a medida"></textarea>
+                </div>
+                <button type="submit" class="vbtn-sm btn-success"><i class="fas fa-paper-plane"></i> Enviar ao Projetista</button>
+                <span class="vend-page-sub" style="margin-left:8px">O vendedor vende; o desenho e a produção são do projetista. A O.P. já sai criada e as etiquetas ficam prontas.</span>
+            </form>
+        </div>
+        <?php endif; ?>
 
         <?php if ($podeProducao): ?>
         <div class="vend-card" style="margin-top:20px;">

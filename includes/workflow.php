@@ -279,7 +279,7 @@ function validateOSStatusTransition(string $from, string $to, ?string $userType 
 
     $allowed = [
         'pendente' => ['em_projeto','em_producao','proposta','cancelada'],
-        'em_projeto' => ['proposta','pendente','cancelada'],
+        'em_projeto' => ['proposta','pendente','em_producao','cancelada'],
         'proposta' => ['em_producao','em_projeto','em_revisao','cancelada'],
         'em_revisao' => ['proposta','em_projeto','em_producao','cancelada'],
         'em_producao' => ['concluida','em_projeto','cancelada'],
