@@ -265,6 +265,7 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
         <span class="vend-nav-label">Administração</span>
         <a href="<?php echo SITE_URL; ?>/modules/admin/exportador_interface.php" class="vend-nav-item <?php echo czNavActive('exportador_interface.php'); ?>"><i class="fas fa-download"></i> Exportador de Dados</a>
         <a href="<?php echo SITE_URL; ?>/modules/dashboard/builder.php" class="vend-nav-item <?php echo czNavActive('builder.php'); ?>"><i class="fas fa-palette"></i> Dashboard Builder</a>
+        <a href="<?php echo SITE_URL; ?>/modules/admin/api_tokens.php" class="vend-nav-item <?php echo czNavActive('api_tokens.php'); ?>"><i class="fas fa-key"></i> Tokens de API</a>
         <a href="<?php echo SITE_URL; ?>/modules/admin/logs_retorno.php" class="vend-nav-item <?php echo czNavActive('logs_retorno.php'); ?>"><i class="fas fa-history"></i> Logs do Sistema</a>
         <a href="<?php echo SITE_URL; ?>/modules/cadastros/logs_exclusao.php" class="vend-nav-item <?php echo czNavActive('logs_exclusao.php'); ?>"><i class="fas fa-trash-restore"></i> Logs de Exclusão</a>
     </div>
