@@ -177,7 +177,6 @@ class FlowValidationSystem:
 
         # Padronizar arquivos
         files_to_standardize = [
-            'modules/os/gerar_etiquetas.php',
             'modules/estoque/dashboard_estoque.php',
             'modules/sac/dashboard_chamados.php',
             'modules/expedicao/dashboard_expedicao.php',

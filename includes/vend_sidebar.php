@@ -26,8 +26,6 @@ $ve_admin          = hasPermission(['master']);
 
 // Painéis integrados (espelham o requirePermission de cada página)
 $ve_gestao_prod    = hasPermission(['master', 'gerente', 'dashboard_producao', 'producao']);
-$ve_op             = hasPermission(['master', 'gerente', 'producao', 'projetista', 'programacao']);
-$ve_etiquetas      = hasPermission(['master', 'gerente', 'dashboard_producao', 'producao', 'projetista']);
 $ve_apontamento    = hasPermission(['master', 'gerente', 'producao', 'engenharia', 'programacao', 'corte', 'dobra', 'tubo', 'solda', 'mobiliario', 'coccao', 'refrigeracao', 'acabamento', 'montagem', 'embalagem', 'finalizacao']);
 $ve_mrp            = hasPermission(['master', 'gerente', 'producao']);
 $ve_estoque        = hasPermission(['master', 'gerente', 'dashboard_producao', 'producao']);
@@ -161,21 +159,15 @@ $logo_sub = getTipoUsuarioNome($tipo_usuario);
     </div>
     <?php endif; ?>
 
-    <?php if ($ve_gestao_prod || $ve_op || $ve_apontamento || $ve_etiquetas || $ve_mrp): ?>
+    <?php if ($ve_gestao_prod || $ve_apontamento || $ve_mrp): ?>
     <hr class="vend-nav-divider">
     <div class="vend-nav-group">
         <span class="vend-nav-label">Gestão de Produção</span>
         <?php if ($ve_gestao_prod): ?>
         <a href="<?php echo SITE_URL; ?>/modules/os/painel_gestao.php" class="vend-nav-item <?php echo czNavActive('painel_gestao.php'); ?>"><i class="fas fa-tachometer-alt"></i> Painel de Gestão</a>
         <?php endif; ?>
-        <?php if ($ve_op): ?>
-        <a href="<?php echo SITE_URL; ?>/modules/os/ordem_producao.php" class="vend-nav-item <?php echo czNavActive('ordem_producao.php'); ?>"><i class="fas fa-clipboard-check"></i> Ordens de Produção</a>
-        <?php endif; ?>
         <?php if ($ve_apontamento): ?>
         <a href="<?php echo SITE_URL; ?>/modules/os/apontamento_visual.php" class="vend-nav-item <?php echo czNavActive('apontamento_visual.php'); ?>"><i class="fas fa-stopwatch"></i> Apontamento Visual</a>
-        <?php endif; ?>
-        <?php if ($ve_etiquetas): ?>
-        <a href="<?php echo SITE_URL; ?>/modules/os/gerar_etiquetas.php" class="vend-nav-item <?php echo czNavActive('gerar_etiquetas.php'); ?>"><i class="fas fa-tags"></i> Etiquetas &amp; QR</a>
         <?php endif; ?>
         <?php if ($ve_gestao_prod): ?>
         <a href="<?php echo SITE_URL; ?>/modules/os/timeline_os.php" class="vend-nav-item <?php echo czNavActive('timeline_os.php'); ?>"><i class="fas fa-stream"></i> Timeline de O.S.</a>
