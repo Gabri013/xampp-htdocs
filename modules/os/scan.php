@@ -57,7 +57,12 @@ $codigoLido = trim($_GET['code'] ?? $_POST['code'] ?? '');
 if ($codigoLido !== '') {
     $osId = resolverCodigoOS($db, $codigoLido);
     if ($osId) {
-        header('Location: os_detalhes.php?os_id=' . $osId);
+        // O.S. em produção → tela de apontamento (chão de fábrica).
+        // Caso contrário → detalhes.
+        $stmtSt = $db->prepare("SELECT status FROM ordens_servico WHERE id = ?");
+        $stmtSt->execute([$osId]);
+        $destino = ($stmtSt->fetchColumn() === 'em_producao') ? 'apontar.php' : 'os_detalhes.php';
+        header('Location: ' . $destino . '?os_id=' . $osId);
         exit;
     }
     $erro = 'Nenhuma O.S. encontrada para o código "' . htmlspecialchars($codigoLido) . '".';
